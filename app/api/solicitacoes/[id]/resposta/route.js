@@ -6,11 +6,17 @@ async function POST(req, { params }) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-  const { texto, anexos } = await req.json();
+  const { texto, anexos, nomeAtendente } = await req.json();
   const { id } = params;
 
   await prisma.resposta.create({
-    data: { solicitacaoId: id, texto, automatica: false },
+    data: {
+      solicitacaoId: id,
+      texto,
+      autor: 'rh',
+      nomeAutor: nomeAtendente || 'RH/DP',
+      automatica: false,
+    },
   });
 
   if (anexos?.length) {
@@ -33,8 +39,8 @@ async function POST(req, { params }) {
   await enviarEmail(
     solicitacao.colaborador.email,
     `Sua solicitação foi respondida: ${solicitacao.assunto.nome}`,
-    `<p>Olá ${solicitacao.colaborador.nome}, sua solicitação recebeu uma resposta:</p><p>${texto}</p>
-     <p>Acesse o portal para ver os detalhes${anexos?.length ? ' e baixar os documentos anexados' : ''}.</p>`
+    `<p>Olá ${solicitacao.colaborador.nome}, ${nomeAtendente || 'a equipe de RH/DP'} respondeu sua solicitação:</p><p>${texto}</p>
+     <p>Acesse o portal para ver os detalhes${anexos?.length ? ' e baixar os documentos anexados' : ''}, e responder se precisar.</p>`
   );
 
   return Response.json({ ok: true });

@@ -40,6 +40,8 @@ model Solicitacao {
   prazo            DateTime?
   dataAbertura     DateTime  @default(now())
   dataEncerramento DateTime?
+  avaliacaoNota       Int?
+  avaliacaoComentario String?
   anexos           Anexo[]
   respostas        Resposta[]
 }
@@ -61,6 +63,8 @@ model Resposta {
   solicitacaoId String
   solicitacao   Solicitacao @relation(fields: [solicitacaoId], references: [id])
   texto         String
+  autor         String      @default("rh") // rh | colaborador
+  nomeAutor     String?
   automatica    Boolean     @default(false)
   data          DateTime    @default(now())
 }
