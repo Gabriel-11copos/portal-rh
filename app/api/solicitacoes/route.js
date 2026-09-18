@@ -8,7 +8,7 @@ async function POST(req) {
   const sessao = getSessaoColaborador();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-  const { assuntoId, descricao, anexos } = await req.json();
+  const { assuntoId, descricao, anexos, emailContato, whatsapp } = await req.json();
 
   const assunto = await prisma.assunto.findUnique({ where: { id: assuntoId } });
   if (!assunto) return Response.json({ erro: 'Assunto inválido.' }, { status: 400 });
@@ -21,6 +21,8 @@ async function POST(req) {
       colaboradorId: sessao.id,
       assuntoId,
       descricao,
+      emailContato,
+      whatsapp,
       prazo,
       status: assunto.respostaAutomatica ? 'respondida' : 'aberta',
       anexos: {
@@ -66,7 +68,7 @@ async function GET(req) {
     const solicitacoes = await prisma.solicitacao.findMany({
       where: status ? { status } : {},
       include: { colaborador: true, assunto: true, respostas: true, anexos: true },
-      orderBy: { dataAbertura: 'desc' },
+      orderBy: { numero: 'desc' },
     });
     return Response.json(solicitacoes);
   }
@@ -75,7 +77,7 @@ async function GET(req) {
     const solicitacoes = await prisma.solicitacao.findMany({
       where: { colaboradorId: sessaoColaborador.id },
       include: { assunto: true, respostas: true, anexos: true },
-      orderBy: { dataAbertura: 'desc' },
+      orderBy: { numero: 'desc' },
     });
     return Response.json(solicitacoes);
   }

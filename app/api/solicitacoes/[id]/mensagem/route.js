@@ -1,12 +1,11 @@
 const { prisma } = require('../../../../../lib/db');
 const { getSessaoColaborador } = require('../../../../../lib/auth');
-const { enviarEmail } = require('../../../../../lib/email');
 
 async function POST(req, { params }) {
   const sessao = getSessaoColaborador();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-  const { texto } = await req.json();
+  const { texto, anexos } = await req.json();
   const { id } = params;
 
   const solicitacao = await prisma.solicitacao.findUnique({ where: { id } });
@@ -17,17 +16,29 @@ async function POST(req, { params }) {
     return Response.json({ erro: 'Esta solicitação já foi encerrada.' }, { status: 400 });
   }
 
-  await prisma.resposta.create({
-    data: {
-      solicitacaoId: id,
-      texto,
-      autor: 'colaborador',
-      nomeAutor: sessao.nome,
-      automatica: false,
-    },
-  });
+  if (texto && texto.trim()) {
+    await prisma.resposta.create({
+      data: {
+        solicitacaoId: id,
+        texto,
+        autor: 'colaborador',
+        nomeAutor: sessao.nome,
+        automatica: false,
+      },
+    });
+  }
 
-  // Volta para "em análise" para sinalizar ao RH que precisa olhar de novo.
+  if (anexos?.length) {
+    await prisma.anexo.createMany({
+      data: anexos.map((a) => ({
+        solicitacaoId: id,
+        linkDrive: a.link,
+        nomeArquivo: a.nomeArquivo,
+        enviadoPor: 'colaborador',
+      })),
+    });
+  }
+
   const atualizada = await prisma.solicitacao.update({
     where: { id },
     data: { status: 'em_analise' },

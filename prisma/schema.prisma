@@ -8,15 +8,18 @@ datasource db {
 }
 
 model Colaborador {
-  id           String   @id @default(cuid())
-  nome         String
-  matricula    String   @unique
-  email        String
-  loja         String
-  senhaHash    String
-  createdAt    DateTime @default(now())
-  solicitacoes Solicitacao[]
-  comunicados  Comunicado[]
+  id            String   @id @default(cuid())
+  nome          String
+  matricula     String   @unique
+  email         String
+  loja          String
+  cargo         String?
+  dataAdmissao  DateTime?
+  driveFolderId String?
+  senhaHash     String
+  createdAt     DateTime @default(now())
+  solicitacoes  Solicitacao[]
+  comunicados   Comunicado[]
 }
 
 model Assunto {
@@ -31,11 +34,14 @@ model Assunto {
 
 model Solicitacao {
   id               String    @id @default(cuid())
+  numero           Int?      @unique @default(autoincrement())
   colaboradorId    String
   colaborador      Colaborador @relation(fields: [colaboradorId], references: [id])
   assuntoId        String
   assunto          Assunto   @relation(fields: [assuntoId], references: [id])
   descricao        String
+  emailContato     String?
+  whatsapp         String?
   status           String    @default("aberta") // aberta | em_analise | respondida | encerrada
   prazo            DateTime?
   dataAbertura     DateTime  @default(now())

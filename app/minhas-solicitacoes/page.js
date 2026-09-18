@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import NavColaborador from '../components/NavColaborador';
+import UploadAnexo from '../components/UploadAnexo';
 
 const rotulos = {
   aberta: 'Aberta',
@@ -11,19 +12,21 @@ const rotulos = {
 
 function CartaoSolicitacao({ s, onAtualizar }) {
   const [texto, setTexto] = useState('');
+  const [anexosNovos, setAnexosNovos] = useState([]);
   const [avaliando, setAvaliando] = useState(false);
   const [nota, setNota] = useState(5);
   const [comentario, setComentario] = useState('');
 
   async function enviarMensagem(e) {
     e.preventDefault();
-    if (!texto.trim()) return;
+    if (!texto.trim() && anexosNovos.length === 0) return;
     await fetch(`/api/solicitacoes/${s.id}/mensagem`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texto }),
+      body: JSON.stringify({ texto, anexos: anexosNovos }),
     });
     setTexto('');
+    setAnexosNovos([]);
     onAtualizar();
   }
 
@@ -43,23 +46,17 @@ function CartaoSolicitacao({ s, onAtualizar }) {
   return (
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <b>{s.assunto.nome}</b>
+        <div>
+          <span className="numero-solicitacao">#{s.numero} · </span>
+          <b>{s.assunto.nome}</b>
+        </div>
         <span className={`badge ${s.status}`}>{rotulos[s.status]}</span>
       </div>
       <p style={{ color: 'var(--muted)', fontSize: 14 }}>{s.descricao}</p>
 
       {respostasOrdenadas.map((r) => (
-        <div
-          key={r.id}
-          style={{
-            background: r.autor === 'rh' ? 'var(--pastel-blue)' : '#f1f5f9',
-            padding: 10,
-            borderRadius: 8,
-            marginTop: 8,
-            fontSize: 14,
-          }}
-        >
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
+        <div key={r.id} className={`bolha ${r.autor}`}>
+          <div className="autor">
             {r.autor === 'rh' ? (r.nomeAutor || 'RH/DP') : 'Você'}
             {r.automatica && ' · resposta automática'}
           </div>
@@ -67,9 +64,11 @@ function CartaoSolicitacao({ s, onAtualizar }) {
         </div>
       ))}
 
-      {s.anexos.filter((a) => a.enviadoPor === 'rh').map((a) => (
+      {s.anexos.map((a) => (
         <div key={a.id} style={{ marginTop: 6 }}>
-          <a href={a.linkDrive} target="_blank" rel="noreferrer">📎 {a.nomeArquivo}</a>
+          <a href={a.linkDrive} target="_blank" rel="noreferrer">
+            📎 {a.nomeArquivo} {a.enviadoPor === 'rh' ? '(do RH)' : '(enviado por você)'}
+          </a>
         </div>
       ))}
 
@@ -83,6 +82,8 @@ function CartaoSolicitacao({ s, onAtualizar }) {
         <div style={{ marginTop: 12 }}>
           <form onSubmit={enviarMensagem}>
             <textarea rows={2} placeholder="Responder..." value={texto} onChange={(e) => setTexto(e.target.value)} />
+            <UploadAnexo onUploaded={(a) => setAnexosNovos([...anexosNovos, a])} />
+            {anexosNovos.map((a, i) => <div key={i} style={{ fontSize: 13, color: 'var(--success)' }}>✓ {a.nomeArquivo}</div>)}
             <div style={{ display: 'flex', gap: 8 }}>
               <button type="submit">Enviar</button>
               <button type="button" className="secundario" onClick={() => setAvaliando(true)}>
@@ -124,10 +125,8 @@ export default function MinhasSolicitacoes() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2>Minhas solicitações</h2>
-        <Link href="/nova-solicitacao"><button>+ Nova solicitação</button></Link>
-      </div>
+      <NavColaborador />
+      <h2>Minhas solicitações</h2>
 
       {solicitacoes.length === 0 && <p>Você ainda não abriu nenhuma solicitação.</p>}
 

@@ -1,16 +1,27 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH, gerarHash } = require('../../../lib/auth');
 
-// RH cadastra um colaborador com matrícula/senha inicial (colaborador pode trocar depois, se quiser essa tela no futuro).
+// RH cadastra um colaborador. Login = CPF (campo "matricula"). Se a senha não for
+// informada, usa automaticamente os 6 primeiros dígitos do CPF.
 async function POST(req) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-  const { nome, matricula, email, loja, senha } = await req.json();
-  const senhaHash = await gerarHash(senha);
+  const { nome, matricula, email, loja, cargo, dataAdmissao, senha } = await req.json();
+  const cpfLimpo = matricula.replace(/\D/g, '');
+  const senhaFinal = senha && senha.trim() ? senha : cpfLimpo.slice(0, 6);
+  const senhaHash = await gerarHash(senhaFinal);
 
   const colaborador = await prisma.colaborador.create({
-    data: { nome, matricula, email, loja, senhaHash },
+    data: {
+      nome,
+      matricula: cpfLimpo,
+      email,
+      loja,
+      cargo,
+      dataAdmissao: dataAdmissao ? new Date(dataAdmissao) : null,
+      senhaHash,
+    },
   });
 
   return Response.json({ ok: true, id: colaborador.id });

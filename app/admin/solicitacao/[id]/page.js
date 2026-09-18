@@ -61,32 +61,42 @@ export default function DetalheSolicitacao() {
 
       <div className="card" style={{ marginTop: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <h2>{solicitacao.assunto.nome}</h2>
+          <div>
+            <span className="numero-solicitacao">#{solicitacao.numero} · </span>
+            <h2 style={{ display: 'inline' }}>{solicitacao.assunto.nome}</h2>
+          </div>
           <span className={`badge ${solicitacao.status}`}>{rotulos[solicitacao.status]}</span>
         </div>
+        <p style={{ fontWeight: 700, fontSize: 16, marginTop: 8 }}>{solicitacao.colaborador.nome}</p>
         <p style={{ color: 'var(--muted)' }}>
-          {solicitacao.colaborador.nome} · {solicitacao.colaborador.loja} · {solicitacao.colaborador.email}
+          {solicitacao.colaborador.loja} · {solicitacao.emailContato || solicitacao.colaborador.email}
+          {solicitacao.whatsapp && ` · WhatsApp: ${solicitacao.whatsapp}`}
         </p>
         <p>{solicitacao.descricao}</p>
-
-        {solicitacao.anexos.filter((a) => a.enviadoPor === 'colaborador').map((a) => (
-          <div key={a.id}><a href={a.linkDrive} target="_blank" rel="noreferrer">📎 {a.nomeArquivo}</a></div>
-        ))}
       </div>
 
       {respostasOrdenadas.map((r) => (
-        <div
-          key={r.id}
-          className="card"
-          style={{ background: r.autor === 'rh' ? 'var(--pastel-blue)' : '#f1f5f9' }}
-        >
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
+        <div key={r.id} className={`bolha ${r.autor}`}>
+          <div className="autor">
             {r.autor === 'rh' ? (r.nomeAutor || 'RH/DP') : solicitacao.colaborador.nome}
             {r.automatica && ' · resposta automática'}
           </div>
           {r.texto}
         </div>
       ))}
+
+      {solicitacao.anexos.length > 0 && (
+        <div className="card">
+          <b style={{ fontSize: 13 }}>Anexos</b>
+          {solicitacao.anexos.map((a) => (
+            <div key={a.id} style={{ marginTop: 6 }}>
+              <a href={a.linkDrive} target="_blank" rel="noreferrer">
+                📎 {a.nomeArquivo} {a.enviadoPor === 'rh' ? '(enviado pelo RH)' : '(do colaborador)'}
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
 
       {solicitacao.status === 'encerrada' && solicitacao.avaliacaoNota && (
         <div className="card">
@@ -105,7 +115,7 @@ export default function DetalheSolicitacao() {
             <label>Mensagem</label>
             <textarea rows={4} value={texto} onChange={(e) => setTexto(e.target.value)} required />
 
-            <UploadAnexo onUploaded={(a) => setAnexos([...anexos, a])} />
+            <UploadAnexo colaboradorId={solicitacao.colaboradorId} onUploaded={(a) => setAnexos([...anexos, a])} />
             {anexos.map((a, i) => <div key={i} style={{ fontSize: 13, color: 'var(--success)' }}>✓ {a.nomeArquivo}</div>)}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>

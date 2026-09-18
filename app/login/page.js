@@ -32,7 +32,10 @@ export default function Login() {
 
   return (
     <div className="card" style={{ maxWidth: 380, margin: '60px auto' }}>
-      <h2>Portal RH & DP</h2>
+      <div className="topo-marca" style={{ justifyContent: 'center' }}>
+        <img src="/logo.png" alt="Logo" />
+      </div>
+      <h2 style={{ textAlign: 'center' }}>Portal RH & DP</h2>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <button
           className={aba === 'colaborador' ? '' : 'secundario'}
@@ -53,11 +56,11 @@ export default function Login() {
       <form onSubmit={entrar}>
         {aba === 'colaborador' && (
           <>
-            <label>Matrícula</label>
+            <label>CPF (somente números)</label>
             <input value={matricula} onChange={(e) => setMatricula(e.target.value)} required />
           </>
         )}
-        <label>Senha</label>
+        <label>Senha{aba === 'colaborador' ? ' (6 primeiros dígitos do CPF, se ainda não trocou)' : ''}</label>
         <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required />
         {erro && <div className="erro">{erro}</div>}
         <button type="submit">Entrar</button>

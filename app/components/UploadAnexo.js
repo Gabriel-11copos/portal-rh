@@ -2,7 +2,9 @@
 import { useState } from 'react';
 
 // Envia o arquivo para /api/upload (que joga no Google Drive) e devolve {link, nomeArquivo}.
-export default function UploadAnexo({ onUploaded }) {
+// colaboradorId é opcional: usado quando o RH está anexando algo numa solicitação de um
+// colaborador específico, para organizar o arquivo na pasta certa do Drive.
+export default function UploadAnexo({ onUploaded, colaboradorId }) {
   const [enviando, setEnviando] = useState(false);
 
   async function handleChange(e) {
@@ -12,6 +14,7 @@ export default function UploadAnexo({ onUploaded }) {
     setEnviando(true);
     const formData = new FormData();
     formData.append('arquivo', arquivo);
+    if (colaboradorId) formData.append('colaboradorId', colaboradorId);
 
     const res = await fetch('/api/upload', { method: 'POST', body: formData });
     const data = await res.json();
