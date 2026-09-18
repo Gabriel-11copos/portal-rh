@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const rotulos = {
   aberta: 'Aberta',
@@ -26,6 +27,12 @@ const FILTROS = [
 export default function AdminPainel() {
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [filtro, setFiltro] = useState('todas');
+  const router = useRouter();
+
+  async function sair() {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+  }
 
   useEffect(() => {
     fetch('/api/solicitacoes').then((r) => r.json()).then(setSolicitacoes);
@@ -51,6 +58,7 @@ export default function AdminPainel() {
           <Link href="/admin/colaboradores"><button className="secundario">Colaboradores</button></Link>
           <Link href="/admin/comunicados"><button className="secundario">Enviar comunicado</button></Link>
           <Link href="/admin/assuntos"><button className="secundario">Assuntos</button></Link>
+          <button className="secundario" onClick={sair}>Sair</button>
         </div>
       </div>
 
