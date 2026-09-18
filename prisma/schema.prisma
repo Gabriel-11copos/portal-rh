@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+model Colaborador {
+  id           String   @id @default(cuid())
+  nome         String
+  matricula    String   @unique
+  email        String
+  loja         String
+  senhaHash    String
+  createdAt    DateTime @default(now())
+  solicitacoes Solicitacao[]
+  comunicados  Comunicado[]
+}
+
+model Assunto {
+  id                 String  @id @default(cuid())
+  nome               String  @unique
+  prazoPadraoDias    Int     @default(5)
+  responsavelPadrao  String?
+  respostaAutomatica String?
+  ativo              Boolean @default(true)
+  solicitacoes       Solicitacao[]
+}
+
+model Solicitacao {
+  id               String    @id @default(cuid())
+  colaboradorId    String
+  colaborador      Colaborador @relation(fields: [colaboradorId], references: [id])
+  assuntoId        String
+  assunto          Assunto   @relation(fields: [assuntoId], references: [id])
+  descricao        String
+  status           String    @default("aberta") // aberta | em_analise | respondida | encerrada
+  prazo            DateTime?
+  dataAbertura     DateTime  @default(now())
+  dataEncerramento DateTime?
+  anexos           Anexo[]
+  respostas        Resposta[]
+}
+
+model Anexo {
+  id            String       @id @default(cuid())
+  solicitacaoId String?
+  solicitacao   Solicitacao? @relation(fields: [solicitacaoId], references: [id])
+  comunicadoId  String?
+  comunicado    Comunicado?  @relation(fields: [comunicadoId], references: [id])
+  linkDrive     String
+  nomeArquivo   String
+  enviadoPor    String       // colaborador | rh
+  data          DateTime     @default(now())
+}
+
+model Resposta {
+  id            String      @id @default(cuid())
+  solicitacaoId String
+  solicitacao   Solicitacao @relation(fields: [solicitacaoId], references: [id])
+  texto         String
+  automatica    Boolean     @default(false)
+  data          DateTime    @default(now())
+}
+
+model Comunicado {
+  id            String       @id @default(cuid())
+  colaboradorId String?
+  colaborador   Colaborador? @relation(fields: [colaboradorId], references: [id])
+  loja          String?
+  assunto       String
+  texto         String
+  data          DateTime     @default(now())
+  anexos        Anexo[]
+}
