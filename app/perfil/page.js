@@ -4,10 +4,11 @@ import NavColaborador from '../components/NavColaborador';
 import UploadAnexo from '../components/UploadAnexo';
 
 // Converte o link de visualização do Drive num link direto de imagem (pra usar em <img>).
+// O endpoint de "thumbnail" é mais confiável para isso do que o "uc?export=view".
 function fotoDireta(link) {
   if (!link) return null;
   const m = link.match(/\/d\/([^/]+)/);
-  return m ? `https://drive.google.com/uc?export=view&id=${m[1]}` : link;
+  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w400` : link;
 }
 
 export default function MeuPerfil() {
@@ -15,6 +16,7 @@ export default function MeuPerfil() {
   const [nomeSocial, setNomeSocial] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [msg, setMsg] = useState('');
+  const [fotoComErro, setFotoComErro] = useState(false);
 
   function carregar() {
     fetch('/api/perfil').then((r) => r.json()).then((p) => {
@@ -39,6 +41,7 @@ export default function MeuPerfil() {
   }
 
   async function salvarFoto(anexo) {
+    setFotoComErro(false);
     await fetch('/api/perfil', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -69,8 +72,13 @@ export default function MeuPerfil() {
             flexShrink: 0,
           }}
         >
-          {fotoSrc ? (
-            <img src={fotoSrc} alt="Foto de perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {fotoSrc && !fotoComErro ? (
+            <img
+              src={fotoSrc}
+              alt="Foto de perfil"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              onError={() => setFotoComErro(true)}
+            />
           ) : (
             nomeExibido.charAt(0).toUpperCase()
           )}
