@@ -3,11 +3,12 @@ import { useEffect, useState } from 'react';
 import NavColaborador from '../components/NavColaborador';
 import UploadAnexo from '../components/UploadAnexo';
 import Avatar from '../components/Avatar';
+import BotaoVoltar from '../components/BotaoVoltar';
 
 const rotulos = {
-  aberta: 'Aberta',
-  em_analise: 'Em análise',
-  respondida: 'Respondida',
+  aberta: 'Pendente',
+  em_analise: 'Pendente',
+  respondida: 'Em andamento',
   encerrada: 'Encerrada',
 };
 
@@ -54,6 +55,11 @@ function CartaoSolicitacao({ s, onAtualizar, perfil }) {
         <span className={`badge ${s.status}`}>{rotulos[s.status]}</span>
       </div>
       <p style={{ color: 'var(--muted)', fontSize: 14 }}>{s.descricao}</p>
+      {s.status !== 'encerrada' && s.prazo && (
+        <p style={{ fontSize: 12, color: 'var(--muted)' }}>
+          Previsão de resposta: {new Date(s.prazo).toLocaleDateString('pt-BR')}
+        </p>
+      )}
 
       {respostasOrdenadas.map((r) => {
         const isColab = r.autor === 'colaborador';
@@ -137,6 +143,7 @@ export default function MinhasSolicitacoes() {
   return (
     <div>
       <NavColaborador />
+      <BotaoVoltar />
       <h2>Minhas solicitações</h2>
 
       {solicitacoes.length === 0 && <p>Você ainda não abriu nenhuma solicitação.</p>}

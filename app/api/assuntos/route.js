@@ -1,10 +1,12 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH } = require('../../../lib/auth');
 
-// Lista todos os assuntos ativos (usado tanto no formulário do colaborador quanto no admin).
+// Lista assuntos: colaborador vê só os ativos (formulário de nova solicitação);
+// RH vê todos, inclusive inativos, para poder reativar se precisar.
 async function GET() {
+  const sessao = getSessaoRH();
   const assuntos = await prisma.assunto.findMany({
-    where: { ativo: true },
+    where: sessao ? {} : { ativo: true },
     orderBy: { nome: 'asc' },
   });
   return Response.json(assuntos);

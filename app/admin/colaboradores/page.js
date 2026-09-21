@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import BotaoVoltar from '../../components/BotaoVoltar';
 
 export default function CadastrarColaboradores() {
   const [lista, setLista] = useState([]);
@@ -30,6 +31,7 @@ export default function CadastrarColaboradores() {
 
   return (
     <div>
+      <BotaoVoltar />
       <h2>Cadastrar colaboradores</h2>
       <div className="card">
         <form onSubmit={cadastrar}>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import NavColaborador from '../components/NavColaborador';
 import UploadAnexo from '../components/UploadAnexo';
 import Avatar from '../components/Avatar';
+import BotaoVoltar from '../components/BotaoVoltar';
 
 export default function MeuPerfil() {
   const [perfil, setPerfil] = useState(null);
@@ -51,6 +52,7 @@ export default function MeuPerfil() {
   return (
     <div>
       <NavColaborador />
+      <BotaoVoltar />
       <h2>Meu perfil</h2>
 
       <div className="card" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>

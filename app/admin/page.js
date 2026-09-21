@@ -1,12 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const rotulos = {
-  aberta: 'Aberta',
-  em_analise: 'Em análise',
-  respondida: 'Respondida',
+  aberta: 'Pendente',
+  em_analise: 'Pendente',
+  respondida: 'Em andamento',
   encerrada: 'Encerrada',
 };
 
@@ -17,16 +17,20 @@ function diasRestantes(prazo) {
 
 const FILTROS = [
   { chave: 'todas', label: 'Todas' },
-  { chave: 'sem_resposta', label: 'Sem resposta do RH' },
+  { chave: 'pendente', label: 'Pendente' },
   { chave: 'no_prazo', label: 'No prazo' },
   { chave: 'atrasadas', label: 'Atrasadas' },
-  { chave: 'aguardando_colaborador', label: 'Aguardando colaborador' },
+  { chave: 'em_andamento', label: 'Em andamento' },
   { chave: 'encerradas', label: 'Encerradas' },
 ];
 
 export default function AdminPainel() {
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [filtro, setFiltro] = useState('todas');
+  const [colaboradorFiltro, setColaboradorFiltro] = useState('');
+  const [lojaFiltro, setLojaFiltro] = useState('');
+  const [dataDe, setDataDe] = useState('');
+  const [dataAte, setDataAte] = useState('');
   const router = useRouter();
 
   async function sair() {
@@ -38,16 +42,33 @@ export default function AdminPainel() {
     fetch('/api/solicitacoes').then((r) => r.json()).then(setSolicitacoes);
   }, []);
 
+  const colaboradoresUnicos = useMemo(
+    () => [...new Map(solicitacoes.map((s) => [s.colaborador.id, s.colaborador])).values()]
+      .sort((a, b) => a.nome.localeCompare(b.nome)),
+    [solicitacoes]
+  );
+  const lojasUnicas = useMemo(
+    () => [...new Set(solicitacoes.map((s) => s.colaborador.loja))].sort(),
+    [solicitacoes]
+  );
+
   const filtradas = solicitacoes.filter((s) => {
     const dias = diasRestantes(s.prazo);
+    let bateStatus = true;
     switch (filtro) {
-      case 'sem_resposta': return s.status === 'aberta' || s.status === 'em_analise';
-      case 'no_prazo': return s.status !== 'encerrada' && dias !== null && dias >= 0;
-      case 'atrasadas': return s.status !== 'encerrada' && dias !== null && dias < 0;
-      case 'aguardando_colaborador': return s.status === 'respondida';
-      case 'encerradas': return s.status === 'encerrada';
-      default: return true;
+      case 'pendente': bateStatus = s.status === 'aberta' || s.status === 'em_analise'; break;
+      case 'no_prazo': bateStatus = s.status !== 'encerrada' && dias !== null && dias >= 0; break;
+      case 'atrasadas': bateStatus = s.status !== 'encerrada' && dias !== null && dias < 0; break;
+      case 'em_andamento': bateStatus = s.status === 'respondida'; break;
+      case 'encerradas': bateStatus = s.status === 'encerrada'; break;
+      default: bateStatus = true;
     }
+    const bateColaborador = !colaboradorFiltro || s.colaborador.id === colaboradorFiltro;
+    const bateLoja = !lojaFiltro || s.colaborador.loja === lojaFiltro;
+    const dataAbertura = new Date(s.dataAbertura);
+    const bateDataDe = !dataDe || dataAbertura >= new Date(dataDe);
+    const bateDataAte = !dataAte || dataAbertura <= new Date(dataAte + 'T23:59:59');
+    return bateStatus && bateColaborador && bateLoja && bateDataDe && bateDataAte;
   });
 
   return (
@@ -74,10 +95,47 @@ export default function AdminPainel() {
         ))}
       </div>
 
+      <div className="card" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ minWidth: 180 }}>
+          <label>Colaborador</label>
+          <select value={colaboradorFiltro} onChange={(e) => setColaboradorFiltro(e.target.value)} style={{ marginBottom: 0 }}>
+            <option value="">Todos</option>
+            {colaboradoresUnicos.map((c) => (
+              <option key={c.id} value={c.id}>{c.nomeSocial || c.nome}</option>
+            ))}
+          </select>
+        </div>
+        <div style={{ minWidth: 160 }}>
+          <label>Loja</label>
+          <select value={lojaFiltro} onChange={(e) => setLojaFiltro(e.target.value)} style={{ marginBottom: 0 }}>
+            <option value="">Todas</option>
+            {lojasUnicas.map((l) => <option key={l} value={l}>{l}</option>)}
+          </select>
+        </div>
+        <div>
+          <label>De</label>
+          <input type="date" value={dataDe} onChange={(e) => setDataDe(e.target.value)} style={{ marginBottom: 0 }} />
+        </div>
+        <div>
+          <label>Até</label>
+          <input type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} style={{ marginBottom: 0 }} />
+        </div>
+        {(colaboradorFiltro || lojaFiltro || dataDe || dataAte) && (
+          <button
+            type="button"
+            className="secundario"
+            onClick={() => { setColaboradorFiltro(''); setLojaFiltro(''); setDataDe(''); setDataAte(''); }}
+          >
+            Limpar filtros
+          </button>
+        )}
+      </div>
+
       {filtradas.length === 0 && <p style={{ color: 'var(--muted)' }}>Nenhuma solicitação nesse filtro.</p>}
 
       {filtradas.map((s) => {
         const dias = diasRestantes(s.prazo);
+        const atrasada = s.status !== 'encerrada' && dias !== null && dias < 0;
         return (
           <Link key={s.id} href={`/admin/solicitacao/${s.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
             <div className="card">
@@ -86,14 +144,19 @@ export default function AdminPainel() {
                   <span className="numero-solicitacao">#{s.numero} · </span>
                   <b>{s.assunto.nome}</b>
                 </div>
-                <span className={`badge ${s.status}`}>{rotulos[s.status]}</span>
+                <span
+                  className={`badge ${atrasada ? 'encerrada' : s.status}`}
+                  style={atrasada ? { background: '#fed7d7', color: 'var(--danger)' } : {}}
+                >
+                  {atrasada ? 'Atrasada' : rotulos[s.status]}
+                </span>
               </div>
               <p style={{ fontSize: 14, color: 'var(--muted)' }}>
                 {s.colaborador.nomeSocial || s.colaborador.nome} · {s.colaborador.loja}
               </p>
               {s.status !== 'encerrada' && dias !== null && (
                 <span style={{ fontSize: 12, color: dias < 0 ? 'var(--danger)' : dias <= 1 ? 'var(--warning)' : 'var(--muted)' }}>
-                  {dias < 0 ? 'Atrasada' : dias === 0 ? 'Vence hoje' : `${dias} dias restantes`}
+                  {dias < 0 ? `Atrasada há ${Math.abs(dias)} dia(s)` : dias === 0 ? 'Vence hoje' : `${dias} dias restantes`}
                 </span>
               )}
             </div>

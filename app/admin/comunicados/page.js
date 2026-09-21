@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import UploadAnexo from '../../components/UploadAnexo';
+import BotaoVoltar from '../../components/BotaoVoltar';
 
 export default function EnviarComunicado() {
   const router = useRouter();
@@ -82,14 +83,16 @@ export default function EnviarComunicado() {
   }
 
   return (
-    <div className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>Enviar comunicado</h2>
-        <button className="secundario" onClick={() => router.push('/admin/comunicados/historico')}>
-          Ver histórico
-        </button>
-      </div>
-      <form onSubmit={enviar}>
+    <div>
+      <BotaoVoltar />
+      <div className="card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2>Enviar comunicado</h2>
+          <button className="secundario" onClick={() => router.push('/admin/comunicados/historico')}>
+            Ver histórico
+          </button>
+        </div>
+        <form onSubmit={enviar}>
         <label>Assunto</label>
         <input value={assunto} onChange={(e) => setAssunto(e.target.value)} required />
 
@@ -135,6 +138,7 @@ export default function EnviarComunicado() {
 
         <button type="submit" disabled={enviando}>{enviando ? 'Enviando...' : 'Enviar comunicado'}</button>
       </form>
+      </div>
     </div>
   );
 }

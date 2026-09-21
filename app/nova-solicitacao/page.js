@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import UploadAnexo from '../components/UploadAnexo';
 import NavColaborador from '../components/NavColaborador';
+import BotaoVoltar from '../components/BotaoVoltar';
 
 export default function NovaSolicitacao() {
   const router = useRouter();
@@ -49,6 +50,7 @@ export default function NovaSolicitacao() {
   return (
     <div>
       <NavColaborador />
+      <BotaoVoltar />
       <div className="card">
         {perfil && (
           <div style={{ marginBottom: 16 }}>

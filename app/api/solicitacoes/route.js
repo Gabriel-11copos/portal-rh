@@ -1,6 +1,7 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoColaborador, getSessaoRH } = require('../../../lib/auth');
 const { enviarEmail } = require('../../../lib/email');
+const { somarDiasUteis } = require('../../../lib/feriados');
 
 // Cria uma nova solicitação e aplica a triagem automática com base no assunto:
 // define prazo, responsável, e devolve resposta automática se o assunto tiver uma cadastrada.
@@ -13,8 +14,7 @@ async function POST(req) {
   const assunto = await prisma.assunto.findUnique({ where: { id: assuntoId } });
   if (!assunto) return Response.json({ erro: 'Assunto inválido.' }, { status: 400 });
 
-  const prazo = new Date();
-  prazo.setDate(prazo.getDate() + assunto.prazoPadraoDias);
+  const prazo = somarDiasUteis(new Date(), assunto.prazoPadraoDias);
 
   const solicitacao = await prisma.solicitacao.create({
     data: {

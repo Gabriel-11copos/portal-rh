@@ -1,9 +1,8 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import BotaoVoltar from '../../../components/BotaoVoltar';
 
 export default function HistoricoComunicados() {
-  const router = useRouter();
   const [comunicados, setComunicados] = useState([]);
 
   useEffect(() => {
@@ -22,7 +21,7 @@ export default function HistoricoComunicados() {
 
   return (
     <div>
-      <button className="secundario" onClick={() => router.push('/admin/comunicados')}>← Voltar</button>
+      <BotaoVoltar />
       <h2 style={{ marginTop: 16 }}>Histórico de comunicados enviados</h2>
 
       {lotes.length === 0 && <p style={{ color: 'var(--muted)' }}>Nenhum comunicado enviado ainda.</p>}
