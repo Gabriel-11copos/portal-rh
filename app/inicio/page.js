@@ -67,6 +67,18 @@ export default function Inicio() {
           </div>
 
           <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Conteúdos</h3>
+                <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
+                  Cursos, links úteis, contatos, benefícios, regras e manuais
+                </p>
+              </div>
+              <Link href="/conteudos"><button className="secundario">Ver conteúdos</button></Link>
+            </div>
+          </div>
+
+          <div className="card">
             <div
               style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
               onClick={() => setAbrirComunicados(!abrirComunicados)}

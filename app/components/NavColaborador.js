@@ -12,6 +12,7 @@ export default function NavColaborador() {
     { href: '/perfil', label: 'Meu perfil' },
     { href: '/minhas-solicitacoes', label: 'Minhas solicitações' },
     { href: '/nova-solicitacao', label: 'Nova solicitação' },
+    { href: '/conteudos', label: 'Conteúdos' },
   ];
 
   useEffect(() => {

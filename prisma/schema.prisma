@@ -91,3 +91,15 @@ model Comunicado {
   data          DateTime     @default(now())
   anexos        Anexo[]
 }
+
+model Conteudo {
+  id          String   @id @default(cuid())
+  categoria   String
+  titulo      String
+  descricao   String?
+  tipo        String   // arquivo | link | texto
+  url         String?
+  nomeArquivo String?
+  ativo       Boolean  @default(true)
+  criadoEm    DateTime @default(now())
+}
