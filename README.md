@@ -69,4 +69,4 @@ banco de dados** dentro do mesmo projeto, ou um projeto novo — como preferir.
 - Colaborador poder trocar a própria senha.
 - Busca de colaborador por nome (hoje o comunicado avulso pede o ID).
 - App para gestores de loja acompanharem as solicitações da própria equipe.
-   <!-- redeploy -->
+   <!-- redeploy -->.
