@@ -15,6 +15,18 @@ function diasRestantes(prazo) {
   return Math.ceil((new Date(prazo) - new Date()) / (1000 * 60 * 60 * 24));
 }
 
+function pertenceAoFiltro(s, chave) {
+  const dias = diasRestantes(s.prazo);
+  switch (chave) {
+    case 'pendente': return s.status === 'aberta' || s.status === 'em_analise';
+    case 'no_prazo': return s.status !== 'encerrada' && dias !== null && dias >= 0;
+    case 'atrasadas': return s.status !== 'encerrada' && dias !== null && dias < 0;
+    case 'em_andamento': return s.status === 'respondida';
+    case 'encerradas': return s.status === 'encerrada';
+    default: return true; // todas
+  }
+}
+
 const FILTROS = [
   { chave: 'todas', label: 'Todas' },
   { chave: 'pendente', label: 'Pendente' },
@@ -52,25 +64,24 @@ export default function AdminPainel() {
     [solicitacoes]
   );
 
-  const filtradas = solicitacoes.filter((s) => {
-    const dias = diasRestantes(s.prazo);
-    let bateStatus = true;
-    switch (filtro) {
-      case 'pendente': bateStatus = s.status === 'aberta' || s.status === 'em_analise'; break;
-      case 'no_prazo': bateStatus = s.status !== 'encerrada' && dias !== null && dias >= 0; break;
-      case 'atrasadas': bateStatus = s.status !== 'encerrada' && dias !== null && dias < 0; break;
-      case 'em_andamento': bateStatus = s.status === 'respondida'; break;
-      case 'encerradas': bateStatus = s.status === 'encerrada'; break;
-      default: bateStatus = true;
-    }
+  function passaOutrosFiltros(s) {
     const nomeExibido = (s.colaborador.nomeSocial || s.colaborador.nome).toLowerCase();
     const bateColaborador = !colaboradorBusca || nomeExibido.includes(colaboradorBusca.toLowerCase());
     const bateLoja = !lojaBusca || s.colaborador.loja.toLowerCase().includes(lojaBusca.toLowerCase());
     const dataAbertura = new Date(s.dataAbertura);
     const bateDataDe = !dataDe || dataAbertura >= new Date(dataDe);
     const bateDataAte = !dataAte || dataAbertura <= new Date(dataAte + 'T23:59:59');
-    return bateStatus && bateColaborador && bateLoja && bateDataDe && bateDataAte;
-  });
+    return bateColaborador && bateLoja && bateDataDe && bateDataAte;
+  }
+
+  const contagemPorFiltro = Object.fromEntries(
+    FILTROS.map((f) => [
+      f.chave,
+      solicitacoes.filter((s) => pertenceAoFiltro(s, f.chave) && passaOutrosFiltros(s)).length,
+    ])
+  );
+
+  const filtradas = solicitacoes.filter((s) => pertenceAoFiltro(s, filtro) && passaOutrosFiltros(s));
 
   return (
     <div>
@@ -92,6 +103,9 @@ export default function AdminPainel() {
             onClick={() => setFiltro(f.chave)}
           >
             {f.label}
+            {f.chave !== 'encerradas' && contagemPorFiltro[f.chave] > 0 && (
+              <span className="bolinha-notificacao">{contagemPorFiltro[f.chave]}</span>
+            )}
           </button>
         ))}
       </div>
