@@ -27,8 +27,8 @@ const FILTROS = [
 export default function AdminPainel() {
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [filtro, setFiltro] = useState('todas');
-  const [colaboradorFiltro, setColaboradorFiltro] = useState('');
-  const [lojaFiltro, setLojaFiltro] = useState('');
+  const [colaboradorBusca, setColaboradorBusca] = useState('');
+  const [lojaBusca, setLojaBusca] = useState('');
   const [dataDe, setDataDe] = useState('');
   const [dataAte, setDataAte] = useState('');
   const router = useRouter();
@@ -63,8 +63,9 @@ export default function AdminPainel() {
       case 'encerradas': bateStatus = s.status === 'encerrada'; break;
       default: bateStatus = true;
     }
-    const bateColaborador = !colaboradorFiltro || s.colaborador.id === colaboradorFiltro;
-    const bateLoja = !lojaFiltro || s.colaborador.loja === lojaFiltro;
+    const nomeExibido = (s.colaborador.nomeSocial || s.colaborador.nome).toLowerCase();
+    const bateColaborador = !colaboradorBusca || nomeExibido.includes(colaboradorBusca.toLowerCase());
+    const bateLoja = !lojaBusca || s.colaborador.loja.toLowerCase().includes(lojaBusca.toLowerCase());
     const dataAbertura = new Date(s.dataAbertura);
     const bateDataDe = !dataDe || dataAbertura >= new Date(dataDe);
     const bateDataAte = !dataAte || dataAbertura <= new Date(dataAte + 'T23:59:59');
@@ -96,21 +97,33 @@ export default function AdminPainel() {
       </div>
 
       <div className="card" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div style={{ minWidth: 180 }}>
+        <div style={{ minWidth: 200 }}>
           <label>Colaborador</label>
-          <select value={colaboradorFiltro} onChange={(e) => setColaboradorFiltro(e.target.value)} style={{ marginBottom: 0 }}>
-            <option value="">Todos</option>
+          <input
+            list="lista-colaboradores"
+            placeholder="Digite para buscar..."
+            value={colaboradorBusca}
+            onChange={(e) => setColaboradorBusca(e.target.value)}
+            style={{ marginBottom: 0 }}
+          />
+          <datalist id="lista-colaboradores">
             {colaboradoresUnicos.map((c) => (
-              <option key={c.id} value={c.id}>{c.nomeSocial || c.nome}</option>
+              <option key={c.id} value={c.nomeSocial || c.nome} />
             ))}
-          </select>
+          </datalist>
         </div>
-        <div style={{ minWidth: 160 }}>
+        <div style={{ minWidth: 180 }}>
           <label>Loja</label>
-          <select value={lojaFiltro} onChange={(e) => setLojaFiltro(e.target.value)} style={{ marginBottom: 0 }}>
-            <option value="">Todas</option>
-            {lojasUnicas.map((l) => <option key={l} value={l}>{l}</option>)}
-          </select>
+          <input
+            list="lista-lojas"
+            placeholder="Digite para buscar..."
+            value={lojaBusca}
+            onChange={(e) => setLojaBusca(e.target.value)}
+            style={{ marginBottom: 0 }}
+          />
+          <datalist id="lista-lojas">
+            {lojasUnicas.map((l) => <option key={l} value={l} />)}
+          </datalist>
         </div>
         <div>
           <label>De</label>
@@ -120,11 +133,11 @@ export default function AdminPainel() {
           <label>Até</label>
           <input type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} style={{ marginBottom: 0 }} />
         </div>
-        {(colaboradorFiltro || lojaFiltro || dataDe || dataAte) && (
+        {(colaboradorBusca || lojaBusca || dataDe || dataAte) && (
           <button
             type="button"
             className="secundario"
-            onClick={() => { setColaboradorFiltro(''); setLojaFiltro(''); setDataDe(''); setDataAte(''); }}
+            onClick={() => { setColaboradorBusca(''); setLojaBusca(''); setDataDe(''); setDataAte(''); }}
           >
             Limpar filtros
           </button>
