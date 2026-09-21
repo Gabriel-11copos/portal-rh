@@ -8,9 +8,9 @@ export default function NavColaborador() {
   const router = useRouter();
   const [naoLidos, setNaoLidos] = useState([]);
   const links = [
+    { href: '/perfil', label: 'Meu perfil' },
     { href: '/minhas-solicitacoes', label: 'Minhas solicitações' },
     { href: '/nova-solicitacao', label: 'Nova solicitação' },
-    { href: '/perfil', label: 'Meu perfil' },
   ];
 
   useEffect(() => {
@@ -56,12 +56,12 @@ export default function NavColaborador() {
         </div>
       )}
 
-      <div className="topo-marca" style={{ justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className="topo-marca">
+        <button className="secundario botao-sair" onClick={sair} style={{ padding: '4px 12px', fontSize: 13 }}>Sair</button>
+        <Link href="/inicio">
           <img src="/logo.png" alt="Logo" />
-          <span>Portal RH & DP</span>
-        </div>
-        <button className="secundario" onClick={sair} style={{ padding: '4px 12px', fontSize: 13 }}>Sair</button>
+        </Link>
+        <div className="titulo-portal">Portal do Colaborador</div>
       </div>
       <div className="nav-colaborador">
         {links.map((l) => (

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import NavColaborador from '../components/NavColaborador';
 import UploadAnexo from '../components/UploadAnexo';
+import Avatar from '../components/Avatar';
 
 const rotulos = {
   aberta: 'Aberta',
@@ -10,7 +11,7 @@ const rotulos = {
   encerrada: 'Encerrada',
 };
 
-function CartaoSolicitacao({ s, onAtualizar }) {
+function CartaoSolicitacao({ s, onAtualizar, perfil }) {
   const [texto, setTexto] = useState('');
   const [anexosNovos, setAnexosNovos] = useState([]);
   const [avaliando, setAvaliando] = useState(false);
@@ -54,15 +55,23 @@ function CartaoSolicitacao({ s, onAtualizar }) {
       </div>
       <p style={{ color: 'var(--muted)', fontSize: 14 }}>{s.descricao}</p>
 
-      {respostasOrdenadas.map((r) => (
-        <div key={r.id} className={`bolha ${r.autor}`}>
-          <div className="autor">
-            {r.autor === 'rh' ? (r.nomeAutor || 'RH/DP') : 'Você'}
-            {r.automatica && ' · resposta automática'}
+      {respostasOrdenadas.map((r) => {
+        const isColab = r.autor === 'colaborador';
+        const nomeAvatar = isColab ? (perfil?.nomeSocial || perfil?.nome || 'Você') : (r.nomeAutor || 'RH');
+        return (
+          <div key={r.id} className="linha-mensagem" style={{ justifyContent: isColab ? 'flex-end' : 'flex-start' }}>
+            {!isColab && <Avatar fotoUrl={null} nome={nomeAvatar} size={28} />}
+            <div className={`bolha ${r.autor}`}>
+              <div className="autor">
+                {isColab ? 'Você' : (r.nomeAutor || 'RH/DP')}
+                {r.automatica && ' · resposta automática'}
+              </div>
+              {r.texto}
+            </div>
+            {isColab && <Avatar fotoUrl={perfil?.fotoUrl} nome={nomeAvatar} size={28} />}
           </div>
-          {r.texto}
-        </div>
-      ))}
+        );
+      })}
 
       {s.anexos.map((a) => (
         <div key={a.id} style={{ marginTop: 6 }}>
@@ -115,10 +124,12 @@ function CartaoSolicitacao({ s, onAtualizar }) {
 export default function MinhasSolicitacoes() {
   const [solicitacoes, setSolicitacoes] = useState([]);
   const [comunicados, setComunicados] = useState([]);
+  const [perfil, setPerfil] = useState(null);
 
   function carregar() {
     fetch('/api/solicitacoes').then((r) => r.json()).then(setSolicitacoes);
     fetch('/api/comunicados').then((r) => r.json()).then(setComunicados);
+    fetch('/api/perfil').then((r) => r.json()).then(setPerfil);
   }
 
   useEffect(() => { carregar(); }, []);
@@ -131,7 +142,7 @@ export default function MinhasSolicitacoes() {
       {solicitacoes.length === 0 && <p>Você ainda não abriu nenhuma solicitação.</p>}
 
       {solicitacoes.map((s) => (
-        <CartaoSolicitacao key={s.id} s={s} onAtualizar={carregar} />
+        <CartaoSolicitacao key={s.id} s={s} onAtualizar={carregar} perfil={perfil} />
       ))}
 
       {comunicados.length > 0 && (

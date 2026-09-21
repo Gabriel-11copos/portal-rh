@@ -31,16 +31,26 @@ body {
 h1, h2, h3 { color: var(--verde); }
 
 .topo-marca {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  position: relative;
+  text-align: center;
   margin-bottom: 20px;
 }
-.topo-marca img { height: 36px; }
-.topo-marca span { font-weight: 700; color: var(--preto); font-size: 15px; }
+.topo-marca img { height: 56px; }
+.topo-marca .titulo-portal {
+  font-weight: 700;
+  color: var(--preto);
+  font-size: 22px;
+  margin-top: 8px;
+}
+.topo-marca .botao-sair {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
 
 .nav-colaborador {
   display: flex;
+  justify-content: center;
   gap: 6px;
   margin-bottom: 20px;
   border-bottom: 1px solid var(--border);
@@ -127,27 +137,31 @@ button.destaque:hover { background: #e6c200; }
 .bolha {
   padding: 10px 14px;
   border-radius: 18px;
-  margin-top: 8px;
   font-size: 14px;
-  max-width: 90%;
+  max-width: 78%;
   position: relative;
 }
 .bolha.rh {
   background: white;
   border: 1px solid var(--border);
   border-top-left-radius: 4px;
-  margin-right: auto;
 }
 .bolha.colaborador {
   background: var(--verde-pastel);
   border-top-right-radius: 4px;
-  margin-left: auto;
 }
 .bolha .autor {
   font-size: 11px;
   color: var(--muted);
   margin-bottom: 3px;
   font-weight: 600;
+}
+
+.linha-mensagem {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: flex-end;
 }
 
 .numero-solicitacao {

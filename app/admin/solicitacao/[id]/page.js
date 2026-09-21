@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import UploadAnexo from '../../../components/UploadAnexo';
+import Avatar from '../../../components/Avatar';
 
 const rotulos = {
   aberta: 'Aberta',
@@ -82,15 +83,23 @@ export default function DetalheSolicitacao() {
         <p>{solicitacao.descricao}</p>
       </div>
 
-      {respostasOrdenadas.map((r) => (
-        <div key={r.id} className={`bolha ${r.autor}`}>
-          <div className="autor">
-            {r.autor === 'rh' ? (r.nomeAutor || 'RH/DP') : solicitacao.colaborador.nome}
-            {r.automatica && ' · resposta automática'}
+      {respostasOrdenadas.map((r) => {
+        const isColab = r.autor === 'colaborador';
+        const nomeColab = solicitacao.colaborador.nomeSocial || solicitacao.colaborador.nome;
+        return (
+          <div key={r.id} className="linha-mensagem" style={{ justifyContent: isColab ? 'flex-end' : 'flex-start' }}>
+            {!isColab && <Avatar fotoUrl={null} nome={r.nomeAutor || 'RH'} size={28} />}
+            <div className={`bolha ${r.autor}`}>
+              <div className="autor">
+                {isColab ? nomeColab : (r.nomeAutor || 'RH/DP')}
+                {r.automatica && ' · resposta automática'}
+              </div>
+              {r.texto}
+            </div>
+            {isColab && <Avatar fotoUrl={solicitacao.colaborador.fotoUrl} nome={nomeColab} size={28} />}
           </div>
-          {r.texto}
-        </div>
-      ))}
+        );
+      })}
 
       {solicitacao.anexos.length > 0 && (
         <div className="card">

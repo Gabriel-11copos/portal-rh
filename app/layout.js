@@ -1,7 +1,7 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Portal RH & DP',
+  title: 'Portal do Colaborador',
   description: 'Solicitações e comunicados de RH/DP',
 };
 

@@ -27,15 +27,15 @@ export default function Login() {
       return;
     }
 
-    router.push(aba === 'colaborador' ? '/minhas-solicitacoes' : '/admin');
+    router.push(aba === 'colaborador' ? '/inicio' : '/admin');
   }
 
   return (
     <div className="card" style={{ maxWidth: 380, margin: '60px auto' }}>
-      <div className="topo-marca" style={{ justifyContent: 'center' }}>
+      <div className="topo-marca" style={{ marginBottom: 12 }}>
         <img src="/logo.png" alt="Logo" />
+        <div className="titulo-portal">Portal do Colaborador</div>
       </div>
-      <h2 style={{ textAlign: 'center' }}>Portal RH & DP</h2>
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <button
           className={aba === 'colaborador' ? '' : 'secundario'}

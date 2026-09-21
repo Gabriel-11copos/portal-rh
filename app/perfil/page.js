@@ -2,21 +2,13 @@
 import { useEffect, useState } from 'react';
 import NavColaborador from '../components/NavColaborador';
 import UploadAnexo from '../components/UploadAnexo';
-
-// Converte o link de visualização do Drive num link direto de imagem (pra usar em <img>).
-// O endpoint de "thumbnail" é mais confiável para isso do que o "uc?export=view".
-function fotoDireta(link) {
-  if (!link) return null;
-  const m = link.match(/\/d\/([^/]+)/);
-  return m ? `https://drive.google.com/thumbnail?id=${m[1]}&sz=w400` : link;
-}
+import Avatar from '../components/Avatar';
 
 export default function MeuPerfil() {
   const [perfil, setPerfil] = useState(null);
   const [nomeSocial, setNomeSocial] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [msg, setMsg] = useState('');
-  const [fotoComErro, setFotoComErro] = useState(false);
 
   function carregar() {
     fetch('/api/perfil').then((r) => r.json()).then((p) => {
@@ -41,7 +33,6 @@ export default function MeuPerfil() {
   }
 
   async function salvarFoto(anexo) {
-    setFotoComErro(false);
     await fetch('/api/perfil', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -56,7 +47,6 @@ export default function MeuPerfil() {
     ? new Date(perfil.dataAdmissao).toLocaleDateString('pt-BR')
     : '-';
   const nomeExibido = perfil.nomeSocial || perfil.nome;
-  const fotoSrc = fotoDireta(perfil.fotoUrl);
 
   return (
     <div>
@@ -64,25 +54,7 @@ export default function MeuPerfil() {
       <h2>Meu perfil</h2>
 
       <div className="card" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-        <div
-          style={{
-            width: 72, height: 72, borderRadius: '50%', overflow: 'hidden',
-            background: 'var(--verde-pastel)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', fontSize: 28, fontWeight: 700, color: 'var(--verde)',
-            flexShrink: 0,
-          }}
-        >
-          {fotoSrc && !fotoComErro ? (
-            <img
-              src={fotoSrc}
-              alt="Foto de perfil"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              onError={() => setFotoComErro(true)}
-            />
-          ) : (
-            nomeExibido.charAt(0).toUpperCase()
-          )}
-        </div>
+        <Avatar fotoUrl={perfil.fotoUrl} nome={nomeExibido} size={72} />
         <div>
           <div style={{ fontWeight: 700, fontSize: 18 }}>{nomeExibido}</div>
           <div style={{ color: 'var(--muted)', fontSize: 14 }}>{perfil.cargo || '-'} · {perfil.loja}</div>
