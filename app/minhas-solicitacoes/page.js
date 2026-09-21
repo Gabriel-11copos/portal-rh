@@ -139,7 +139,10 @@ export default function MinhasSolicitacoes() {
           <h3 style={{ marginTop: 32 }}>Comunicados recebidos do RH</h3>
           {comunicados.map((c) => (
             <div key={c.id} className="card">
-              <b>{c.assunto}</b>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <b>{c.assunto}</b>
+                {!c.lido && <span className="badge aberta">Novo</span>}
+              </div>
               <p style={{ fontSize: 14 }}>{c.texto}</p>
               {c.anexos.map((a) => (
                 <div key={a.id}>

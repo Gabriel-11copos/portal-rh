@@ -14,4 +14,24 @@ async function GET() {
   return Response.json(dadosPublicos);
 }
 
-module.exports = { GET };
+// Permite que o colaborador defina/edite seu nome social e sua foto de perfil.
+async function PATCH(req) {
+  const sessao = getSessaoColaborador();
+  if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
+
+  const { nomeSocial, fotoUrl } = await req.json();
+
+  const dados = {};
+  if (nomeSocial !== undefined) dados.nomeSocial = nomeSocial?.trim() || null;
+  if (fotoUrl !== undefined) dados.fotoUrl = fotoUrl;
+
+  const colaborador = await prisma.colaborador.update({
+    where: { id: sessao.id },
+    data: dados,
+  });
+
+  const { senhaHash, driveFolderId, ...dadosPublicos } = colaborador;
+  return Response.json(dadosPublicos);
+}
+
+module.exports = { GET, PATCH };

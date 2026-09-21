@@ -89,7 +89,7 @@ export default function AdminPainel() {
                 <span className={`badge ${s.status}`}>{rotulos[s.status]}</span>
               </div>
               <p style={{ fontSize: 14, color: 'var(--muted)' }}>
-                {s.colaborador.nome} · {s.colaborador.loja}
+                {s.colaborador.nomeSocial || s.colaborador.nome} · {s.colaborador.loja}
               </p>
               {s.status !== 'encerrada' && dias !== null && (
                 <span style={{ fontSize: 12, color: dias < 0 ? 'var(--danger)' : dias <= 1 ? 'var(--warning)' : 'var(--muted)' }}>

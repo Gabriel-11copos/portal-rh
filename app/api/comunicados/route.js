@@ -1,9 +1,8 @@
+const crypto = require('crypto');
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH, getSessaoColaborador } = require('../../../lib/auth');
 const { enviarEmail } = require('../../../lib/email');
 
-// RH envia um comunicado para uma lista de colaboradores (selecionados um a um,
-// por loja, ou todos) — sempre recebendo os IDs já resolvidos pelo front-end.
 async function POST(req) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -14,11 +13,13 @@ async function POST(req) {
     return Response.json({ erro: 'Selecione pelo menos um colaborador.' }, { status: 400 });
   }
 
+  const loteId = crypto.randomUUID();
   const destinatarios = await prisma.colaborador.findMany({ where: { id: { in: colaboradorIds } } });
 
   for (const colaborador of destinatarios) {
     await prisma.comunicado.create({
       data: {
+        loteId,
         colaboradorId: colaborador.id,
         assunto,
         texto,

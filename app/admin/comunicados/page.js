@@ -27,7 +27,8 @@ export default function EnviarComunicado() {
 
   const filtrados = useMemo(() => {
     return colaboradores.filter((c) => {
-      const bateBusca = !busca || c.nome.toLowerCase().includes(busca.toLowerCase());
+      const nomeExibido = c.nomeSocial || c.nome;
+      const bateBusca = !busca || nomeExibido.toLowerCase().includes(busca.toLowerCase());
       const bateLoja = !lojaFiltro || c.loja === lojaFiltro;
       return bateBusca && bateLoja;
     });
@@ -82,7 +83,12 @@ export default function EnviarComunicado() {
 
   return (
     <div className="card">
-      <h2>Enviar comunicado</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h2>Enviar comunicado</h2>
+        <button className="secundario" onClick={() => router.push('/admin/comunicados/historico')}>
+          Ver histórico
+        </button>
+      </div>
       <form onSubmit={enviar}>
         <label>Assunto</label>
         <input value={assunto} onChange={(e) => setAssunto(e.target.value)} required />
@@ -119,7 +125,7 @@ export default function EnviarComunicado() {
                 onChange={() => alternar(c.id)}
                 style={{ width: 'auto', margin: 0 }}
               />
-              <span>{c.nome} <span style={{ color: 'var(--muted)' }}>· {c.loja}</span></span>
+              <span>{c.nomeSocial || c.nome} <span style={{ color: 'var(--muted)' }}>· {c.loja}</span></span>
             </label>
           ))}
           {filtrados.length === 0 && <p style={{ fontSize: 13, color: 'var(--muted)' }}>Nenhum colaborador encontrado.</p>}

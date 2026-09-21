@@ -67,7 +67,14 @@ export default function DetalheSolicitacao() {
           </div>
           <span className={`badge ${solicitacao.status}`}>{rotulos[solicitacao.status]}</span>
         </div>
-        <p style={{ fontWeight: 700, fontSize: 16, marginTop: 8 }}>{solicitacao.colaborador.nome}</p>
+        <p style={{ fontWeight: 700, fontSize: 16, marginTop: 8 }}>
+          {solicitacao.colaborador.nomeSocial || solicitacao.colaborador.nome}
+          {solicitacao.colaborador.nomeSocial && (
+            <span style={{ fontWeight: 400, fontSize: 13, color: 'var(--muted)' }}>
+              {' '}(nome civil: {solicitacao.colaborador.nome})
+            </span>
+          )}
+        </p>
         <p style={{ color: 'var(--muted)' }}>
           {solicitacao.colaborador.loja} · {solicitacao.emailContato || solicitacao.colaborador.email}
           {solicitacao.whatsapp && ` · WhatsApp: ${solicitacao.whatsapp}`}

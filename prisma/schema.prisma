@@ -10,6 +10,8 @@ datasource db {
 model Colaborador {
   id            String   @id @default(cuid())
   nome          String
+  nomeSocial    String?
+  fotoUrl       String?
   matricula     String   @unique
   email         String
   loja          String
@@ -77,11 +79,14 @@ model Resposta {
 
 model Comunicado {
   id            String       @id @default(cuid())
+  loteId        String?
   colaboradorId String?
   colaborador   Colaborador? @relation(fields: [colaboradorId], references: [id])
   loja          String?
   assunto       String
   texto         String
+  lido          Boolean      @default(false)
+  lidoEm        DateTime?
   data          DateTime     @default(now())
   anexos        Anexo[]
 }
