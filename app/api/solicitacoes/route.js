@@ -25,6 +25,7 @@ async function POST(req) {
       whatsapp,
       prazo,
       status: assunto.respostaAutomatica ? 'respondida' : 'aberta',
+      vistoColaborador: !assunto.respostaAutomatica,
       anexos: {
         create: (anexos || []).map((a) => ({
           linkDrive: a.link,

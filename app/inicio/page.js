@@ -7,12 +7,14 @@ import Avatar from '../components/Avatar';
 export default function Inicio() {
   const [perfil, setPerfil] = useState(null);
   const [comunicados, setComunicados] = useState([]);
+  const [naoVistasCount, setNaoVistasCount] = useState(0);
   const [abrirSolicitacoes, setAbrirSolicitacoes] = useState(false);
   const [abrirComunicados, setAbrirComunicados] = useState(false);
 
   useEffect(() => {
     fetch('/api/perfil').then((r) => r.json()).then(setPerfil);
     fetch('/api/comunicados').then((r) => r.json()).then(setComunicados);
+    fetch('/api/solicitacoes/nao-vistas').then((r) => r.json()).then((d) => setNaoVistasCount(d.count || 0));
   }, []);
 
   if (!perfil) {
@@ -50,7 +52,10 @@ export default function Inicio() {
               style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
               onClick={() => setAbrirSolicitacoes(!abrirSolicitacoes)}
             >
-              <h3 style={{ margin: 0 }}>Solicitações</h3>
+              <h3 style={{ margin: 0 }}>
+                Solicitações
+                {naoVistasCount > 0 && <span className="bolinha-notificacao">{naoVistasCount}</span>}
+              </h3>
               <span style={{ color: 'var(--muted)' }}>{abrirSolicitacoes ? '▲' : '▼'}</span>
             </div>
             {abrirSolicitacoes && (

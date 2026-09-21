@@ -48,6 +48,7 @@ model Solicitacao {
   prazo            DateTime?
   dataAbertura     DateTime  @default(now())
   dataEncerramento DateTime?
+  vistoColaborador Boolean   @default(true)
   avaliacaoNota       Int?
   avaliacaoComentario String?
   anexos           Anexo[]

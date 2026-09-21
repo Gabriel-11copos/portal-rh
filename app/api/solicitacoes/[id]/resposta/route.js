@@ -32,7 +32,7 @@ async function POST(req, { params }) {
 
   const solicitacao = await prisma.solicitacao.update({
     where: { id },
-    data: { status: 'respondida' },
+    data: { status: 'respondida', vistoColaborador: false },
     include: { colaborador: true, assunto: true },
   });
 

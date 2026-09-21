@@ -136,6 +136,7 @@ export default function MinhasSolicitacoes() {
     fetch('/api/solicitacoes').then((r) => r.json()).then(setSolicitacoes);
     fetch('/api/comunicados').then((r) => r.json()).then(setComunicados);
     fetch('/api/perfil').then((r) => r.json()).then(setPerfil);
+    fetch('/api/solicitacoes/marcar-vistas', { method: 'POST' });
   }
 
   useEffect(() => { carregar(); }, []);

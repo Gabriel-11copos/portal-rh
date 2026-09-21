@@ -7,6 +7,7 @@ export default function NavColaborador() {
   const pathname = usePathname();
   const router = useRouter();
   const [naoLidos, setNaoLidos] = useState([]);
+  const [naoVistasCount, setNaoVistasCount] = useState(0);
   const links = [
     { href: '/perfil', label: 'Meu perfil' },
     { href: '/minhas-solicitacoes', label: 'Minhas solicitações' },
@@ -17,6 +18,9 @@ export default function NavColaborador() {
     fetch('/api/comunicados')
       .then((r) => r.json())
       .then((lista) => setNaoLidos((lista || []).filter((c) => !c.lido)));
+    fetch('/api/solicitacoes/nao-vistas')
+      .then((r) => r.json())
+      .then((d) => setNaoVistasCount(d.count || 0));
   }, []);
 
   async function sair() {
@@ -67,6 +71,9 @@ export default function NavColaborador() {
         {links.map((l) => (
           <Link key={l.href} href={l.href} className={pathname === l.href ? 'ativo' : ''}>
             {l.label}
+            {l.href === '/minhas-solicitacoes' && naoVistasCount > 0 && (
+              <span className="bolinha-notificacao">{naoVistasCount}</span>
+            )}
           </Link>
         ))}
       </div>

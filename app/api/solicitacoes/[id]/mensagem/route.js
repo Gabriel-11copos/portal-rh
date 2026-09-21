@@ -41,7 +41,7 @@ async function POST(req, { params }) {
 
   const atualizada = await prisma.solicitacao.update({
     where: { id },
-    data: { status: 'em_analise' },
+    data: { status: 'em_analise', vistoColaborador: true },
     include: { assunto: true, colaborador: true },
   });
 
