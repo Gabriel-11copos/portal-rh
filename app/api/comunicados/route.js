@@ -2,27 +2,24 @@ const { prisma } = require('../../../lib/db');
 const { getSessaoRH, getSessaoColaborador } = require('../../../lib/auth');
 const { enviarEmail } = require('../../../lib/email');
 
-// RH envia um comunicado (aviso ou documento) para um colaborador específico ou uma loja inteira.
+// RH envia um comunicado para uma lista de colaboradores (selecionados um a um,
+// por loja, ou todos) — sempre recebendo os IDs já resolvidos pelo front-end.
 async function POST(req) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-  const { colaboradorId, loja, assunto, texto, anexos } = await req.json();
+  const { colaboradorIds, assunto, texto, anexos } = await req.json();
 
-  let destinatarios = [];
-  if (colaboradorId) {
-    destinatarios = [await prisma.colaborador.findUnique({ where: { id: colaboradorId } })];
-  } else if (loja) {
-    destinatarios = await prisma.colaborador.findMany({ where: { loja } });
-  } else {
-    return Response.json({ erro: 'Informe um colaborador ou uma loja.' }, { status: 400 });
+  if (!colaboradorIds?.length) {
+    return Response.json({ erro: 'Selecione pelo menos um colaborador.' }, { status: 400 });
   }
 
+  const destinatarios = await prisma.colaborador.findMany({ where: { id: { in: colaboradorIds } } });
+
   for (const colaborador of destinatarios) {
-    const comunicado = await prisma.comunicado.create({
+    await prisma.comunicado.create({
       data: {
         colaboradorId: colaborador.id,
-        loja: loja || null,
         assunto,
         texto,
         anexos: {
@@ -45,7 +42,6 @@ async function POST(req) {
   return Response.json({ ok: true, enviados: destinatarios.length });
 }
 
-// Lista comunicados: do colaborador logado, ou todos (RH).
 async function GET() {
   const sessaoColaborador = getSessaoColaborador();
   const sessaoRH = getSessaoRH();
