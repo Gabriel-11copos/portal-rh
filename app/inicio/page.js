@@ -8,6 +8,7 @@ export default function Inicio() {
   const [perfil, setPerfil] = useState(null);
   const [comunicados, setComunicados] = useState([]);
   const [naoVistasCount, setNaoVistasCount] = useState(0);
+  const [docsNaoVistosCount, setDocsNaoVistosCount] = useState(0);
   const [abrirSolicitacoes, setAbrirSolicitacoes] = useState(false);
   const [abrirComunicados, setAbrirComunicados] = useState(false);
 
@@ -15,6 +16,7 @@ export default function Inicio() {
     fetch('/api/perfil').then((r) => r.json()).then(setPerfil);
     fetch('/api/comunicados').then((r) => r.json()).then(setComunicados);
     fetch('/api/solicitacoes/nao-vistas').then((r) => r.json()).then((d) => setNaoVistasCount(d.count || 0));
+    fetch('/api/documentos/nao-vistas').then((r) => r.json()).then((d) => setDocsNaoVistosCount(d.count || 0));
   }, []);
 
   if (!perfil) {
@@ -64,6 +66,21 @@ export default function Inicio() {
                 <Link href="/nova-solicitacao"><button className="secundario">Enviar solicitação</button></Link>
               </div>
             )}
+          </div>
+
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>
+                  Documentos
+                  {docsNaoVistosCount > 0 && <span className="bolinha-notificacao">{docsNaoVistosCount}</span>}
+                </h3>
+                <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
+                  Contracheques e outros documentos pessoais
+                </p>
+              </div>
+              <Link href="/documentos"><button className="secundario">Ver documentos</button></Link>
+            </div>
           </div>
 
           <div className="card">

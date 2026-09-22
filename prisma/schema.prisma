@@ -22,6 +22,7 @@ model Colaborador {
   createdAt     DateTime @default(now())
   solicitacoes  Solicitacao[]
   comunicados   Comunicado[]
+  documentos    Documento[]
 }
 
 model Assunto {
@@ -112,4 +113,16 @@ model AdminUsuario {
   fotoUrl   String?
   senhaHash String
   criadoEm  DateTime @default(now())
+}
+
+model Documento {
+  id               String   @id @default(cuid())
+  colaboradorId    String
+  colaborador      Colaborador @relation(fields: [colaboradorId], references: [id])
+  tipo             String   // Contracheque, Informe de rendimentos, etc.
+  competencia      String   // ex: "08/2026"
+  url              String
+  nomeArquivo      String
+  vistoColaborador Boolean  @default(false)
+  criadoEm         DateTime @default(now())
 }

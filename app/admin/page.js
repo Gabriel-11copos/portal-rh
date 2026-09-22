@@ -92,6 +92,7 @@ export default function AdminPainel() {
           <Link href="/admin/comunicados"><button className="secundario">Enviar comunicado</button></Link>
           <Link href="/admin/assuntos"><button className="secundario">Assuntos</button></Link>
           <Link href="/admin/conteudos"><button className="secundario">Conteúdos</button></Link>
+          <Link href="/admin/documentos"><button className="secundario">Documentos</button></Link>
           <Link href="/admin/usuarios"><button className="secundario">Usuários</button></Link>
           <button className="secundario" onClick={sair}>Sair</button>
         </div>

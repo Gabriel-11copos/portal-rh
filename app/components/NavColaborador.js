@@ -8,11 +8,13 @@ export default function NavColaborador() {
   const router = useRouter();
   const [naoLidos, setNaoLidos] = useState([]);
   const [naoVistasCount, setNaoVistasCount] = useState(0);
+  const [docsNaoVistosCount, setDocsNaoVistosCount] = useState(0);
   const links = [
     { href: '/perfil', label: 'Meu perfil' },
     { href: '/minhas-solicitacoes', label: 'Minhas solicitações' },
     { href: '/nova-solicitacao', label: 'Nova solicitação' },
     { href: '/conteudos', label: 'Conteúdos' },
+    { href: '/documentos', label: 'Documentos' },
   ];
 
   useEffect(() => {
@@ -22,6 +24,9 @@ export default function NavColaborador() {
     fetch('/api/solicitacoes/nao-vistas')
       .then((r) => r.json())
       .then((d) => setNaoVistasCount(d.count || 0));
+    fetch('/api/documentos/nao-vistas')
+      .then((r) => r.json())
+      .then((d) => setDocsNaoVistosCount(d.count || 0));
   }, []);
 
   async function sair() {
@@ -74,6 +79,9 @@ export default function NavColaborador() {
             {l.label}
             {l.href === '/minhas-solicitacoes' && naoVistasCount > 0 && (
               <span className="bolinha-notificacao">{naoVistasCount}</span>
+            )}
+            {l.href === '/documentos' && docsNaoVistosCount > 0 && (
+              <span className="bolinha-notificacao">{docsNaoVistosCount}</span>
             )}
           </Link>
         ))}
