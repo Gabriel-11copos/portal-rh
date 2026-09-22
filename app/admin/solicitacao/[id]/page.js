@@ -12,6 +12,17 @@ const rotulos = {
   encerrada: 'Encerrada',
 };
 
+function formatarDataHora(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const aa = String(d.getFullYear()).slice(-2);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${dd}/${mm}/${aa} ${hh}:${min}`;
+}
+
 function iconeArquivo(nome) {
   const ext = (nome.split('.').pop() || '').toLowerCase();
   if (['pdf'].includes(ext)) return '📄';
@@ -27,7 +38,6 @@ export default function DetalheSolicitacao() {
   const router = useRouter();
   const [solicitacao, setSolicitacao] = useState(null);
   const [texto, setTexto] = useState('');
-  const [nomeAtendente, setNomeAtendente] = useState('');
   const [anexos, setAnexos] = useState([]);
   const [alterandoPrazo, setAlterandoPrazo] = useState(false);
   const [novoPrazo, setNovoPrazo] = useState('');
@@ -37,23 +47,14 @@ export default function DetalheSolicitacao() {
     setSolicitacao(todas.find((s) => s.id === id));
   }
 
-  useEffect(() => {
-    carregar();
-    const nomeSalvo = localStorage.getItem('nomeAtendenteRH');
-    if (nomeSalvo) setNomeAtendente(nomeSalvo);
-  }, [id]);
+  useEffect(() => { carregar(); }, [id]);
 
   async function responder(e) {
     e.preventDefault();
-    if (!nomeAtendente.trim()) {
-      alert('Informe seu nome antes de responder.');
-      return;
-    }
-    localStorage.setItem('nomeAtendenteRH', nomeAtendente);
     await fetch(`/api/solicitacoes/${id}/resposta`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texto, anexos, nomeAtendente }),
+      body: JSON.stringify({ texto, anexos }),
     });
     setTexto('');
     setAnexos([]);
@@ -78,7 +79,20 @@ export default function DetalheSolicitacao() {
 
   if (!solicitacao) return <p>Carregando...</p>;
 
+  const nomeColab = solicitacao.colaborador.nomeSocial || solicitacao.colaborador.nome;
+
+  // A descrição inicial vira a primeira "mensagem" da conversa, junto com as respostas.
+  const mensagemInicial = {
+    id: 'inicial',
+    autor: 'colaborador',
+    texto: solicitacao.descricao,
+    data: solicitacao.dataAbertura,
+    nomeAutor: nomeColab,
+    fotoUrl: solicitacao.colaborador.fotoUrl,
+  };
   const respostasOrdenadas = [...solicitacao.respostas].sort((a, b) => new Date(a.data) - new Date(b.data));
+  const conversa = [mensagemInicial, ...respostasOrdenadas];
+
   const diasRestantes = solicitacao.prazo
     ? Math.ceil((new Date(solicitacao.prazo) - new Date()) / (1000 * 60 * 60 * 24))
     : null;
@@ -99,7 +113,7 @@ export default function DetalheSolicitacao() {
           </span>
         </div>
         <p style={{ fontWeight: 700, fontSize: 16, marginTop: 8 }}>
-          {solicitacao.colaborador.nomeSocial || solicitacao.colaborador.nome}
+          {nomeColab}
           {solicitacao.colaborador.nomeSocial && (
             <span style={{ fontWeight: 400, fontSize: 13, color: 'var(--muted)' }}>
               {' '}(nome civil: {solicitacao.colaborador.nome})
@@ -110,7 +124,7 @@ export default function DetalheSolicitacao() {
           {solicitacao.colaborador.loja} · {solicitacao.emailContato || solicitacao.colaborador.email}
           {solicitacao.whatsapp && ` · WhatsApp: ${solicitacao.whatsapp}`}
         </p>
-        <p>{solicitacao.descricao}</p>
+        <p style={{ fontSize: 12, color: 'var(--muted)' }}>Aberta em {formatarDataHora(solicitacao.dataAbertura)}</p>
 
         {solicitacao.status !== 'encerrada' && (
           <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
@@ -143,20 +157,22 @@ export default function DetalheSolicitacao() {
         )}
       </div>
 
-      {respostasOrdenadas.map((r) => {
+      {conversa.map((r) => {
         const isColab = r.autor === 'colaborador';
-        const nomeColab = solicitacao.colaborador.nomeSocial || solicitacao.colaborador.nome;
         return (
           <div key={r.id} className="linha-mensagem" style={{ justifyContent: isColab ? 'flex-end' : 'flex-start' }}>
-            {!isColab && <Avatar fotoUrl={null} nome={r.nomeAutor || 'RH'} size={28} />}
+            {!isColab && <Avatar fotoUrl={r.autorFotoUrl} nome={r.nomeAutor || 'RH'} size={28} />}
             <div className={`bolha ${r.autor}`}>
               <div className="autor">
                 {isColab ? nomeColab : (r.nomeAutor || 'RH/DP')}
                 {r.automatica && ' · resposta automática'}
               </div>
               {r.texto}
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4, textAlign: 'right' }}>
+                {formatarDataHora(r.data)}
+              </div>
             </div>
-            {isColab && <Avatar fotoUrl={solicitacao.colaborador.fotoUrl} nome={nomeColab} size={28} />}
+            {isColab && <Avatar fotoUrl={r.fotoUrl} nome={nomeColab} size={28} />}
           </div>
         );
       })}
@@ -190,8 +206,10 @@ export default function DetalheSolicitacao() {
 
       {solicitacao.status === 'encerrada' && solicitacao.avaliacaoNota && (
         <div className="card">
-          <b>Avaliação do colaborador:</b> {solicitacao.avaliacaoNota}/5
-          {solicitacao.avaliacaoComentario && <p style={{ fontSize: 14 }}>"{solicitacao.avaliacaoComentario}"</p>}
+          <b>Avaliação do colaborador:</b>{' '}
+          <span style={{ color: '#f5b301', fontSize: 18 }}>
+            {'★'.repeat(solicitacao.avaliacaoNota)}{'☆'.repeat(5 - solicitacao.avaliacaoNota)}
+          </span>
         </div>
       )}
 
@@ -199,10 +217,6 @@ export default function DetalheSolicitacao() {
         <div className="card">
           <h3>Responder</h3>
           <form onSubmit={responder}>
-            <label>Seu nome (quem está atendendo)</label>
-            <input value={nomeAtendente} onChange={(e) => setNomeAtendente(e.target.value)} required />
-
-            <label>Mensagem</label>
             <textarea rows={4} value={texto} onChange={(e) => setTexto(e.target.value)} required />
 
             <UploadAnexo colaboradorId={solicitacao.colaboradorId} onUploaded={(a) => setAnexos([...anexos, a])} />

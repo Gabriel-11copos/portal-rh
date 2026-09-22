@@ -12,12 +12,22 @@ const rotulos = {
   encerrada: 'Encerrada',
 };
 
+function formatarDataHora(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const aa = String(d.getFullYear()).slice(-2);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${dd}/${mm}/${aa} ${hh}:${min}`;
+}
+
 function CartaoSolicitacao({ s, onAtualizar, perfil }) {
   const [texto, setTexto] = useState('');
   const [anexosNovos, setAnexosNovos] = useState([]);
   const [avaliando, setAvaliando] = useState(false);
   const [nota, setNota] = useState(5);
-  const [comentario, setComentario] = useState('');
 
   async function enviarMensagem(e) {
     e.preventDefault();
@@ -37,13 +47,21 @@ function CartaoSolicitacao({ s, onAtualizar, perfil }) {
     await fetch(`/api/solicitacoes/${s.id}/avaliar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nota, comentario }),
+      body: JSON.stringify({ nota }),
     });
     setAvaliando(false);
     onAtualizar();
   }
 
+  const nomeExibido = perfil?.nomeSocial || perfil?.nome || 'Você';
+  const mensagemInicial = {
+    id: 'inicial',
+    autor: 'colaborador',
+    texto: s.descricao,
+    data: s.dataAbertura,
+  };
   const respostasOrdenadas = [...s.respostas].sort((a, b) => new Date(a.data) - new Date(b.data));
+  const conversa = [mensagemInicial, ...respostasOrdenadas];
 
   return (
     <div className="card">
@@ -54,25 +72,27 @@ function CartaoSolicitacao({ s, onAtualizar, perfil }) {
         </div>
         <span className={`badge ${s.status}`}>{rotulos[s.status]}</span>
       </div>
-      <p style={{ color: 'var(--muted)', fontSize: 14 }}>{s.descricao}</p>
       {s.status !== 'encerrada' && s.prazo && (
         <p style={{ fontSize: 12, color: 'var(--muted)' }}>
           Previsão de resposta: {new Date(s.prazo).toLocaleDateString('pt-BR')}
         </p>
       )}
 
-      {respostasOrdenadas.map((r) => {
+      {conversa.map((r) => {
         const isColab = r.autor === 'colaborador';
-        const nomeAvatar = isColab ? (perfil?.nomeSocial || perfil?.nome || 'Você') : (r.nomeAutor || 'RH');
+        const nomeAvatar = isColab ? nomeExibido : (r.nomeAutor || 'RH');
         return (
           <div key={r.id} className="linha-mensagem" style={{ justifyContent: isColab ? 'flex-end' : 'flex-start' }}>
-            {!isColab && <Avatar fotoUrl={null} nome={nomeAvatar} size={28} />}
+            {!isColab && <Avatar fotoUrl={r.autorFotoUrl} nome={nomeAvatar} size={28} />}
             <div className={`bolha ${r.autor}`}>
               <div className="autor">
                 {isColab ? 'Você' : (r.nomeAutor || 'RH/DP')}
                 {r.automatica && ' · resposta automática'}
               </div>
               {r.texto}
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4, textAlign: 'right' }}>
+                {formatarDataHora(r.data)}
+              </div>
             </div>
             {isColab && <Avatar fotoUrl={perfil?.fotoUrl} nome={nomeAvatar} size={28} />}
           </div>
@@ -88,8 +108,11 @@ function CartaoSolicitacao({ s, onAtualizar, perfil }) {
       ))}
 
       {s.status === 'encerrada' && s.avaliacaoNota && (
-        <p style={{ fontSize: 13, color: 'var(--success)', marginTop: 8 }}>
-          Você avaliou este atendimento: {s.avaliacaoNota}/5 {s.avaliacaoComentario && `— "${s.avaliacaoComentario}"`}
+        <p style={{ fontSize: 14, marginTop: 8 }}>
+          Sua avaliação:{' '}
+          <span style={{ color: '#f5b301', fontSize: 18 }}>
+            {'★'.repeat(s.avaliacaoNota)}{'☆'.repeat(5 - s.avaliacaoNota)}
+          </span>
         </p>
       )}
 
@@ -111,12 +134,18 @@ function CartaoSolicitacao({ s, onAtualizar, perfil }) {
 
       {avaliando && (
         <form onSubmit={encerrarComAvaliacao} style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
-          <label>Nota do atendimento (1 a 5)</label>
-          <select value={nota} onChange={(e) => setNota(Number(e.target.value))}>
-            {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n}</option>)}
-          </select>
-          <label>Comentário (opcional)</label>
-          <textarea rows={2} value={comentario} onChange={(e) => setComentario(e.target.value)} />
+          <label>Avalie o atendimento</label>
+          <div style={{ display: 'flex', gap: 6, fontSize: 30, marginBottom: 12 }}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <span
+                key={n}
+                onClick={() => setNota(n)}
+                style={{ cursor: 'pointer', color: n <= nota ? '#f5b301' : '#d1d5db', lineHeight: 1 }}
+              >
+                ★
+              </span>
+            ))}
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button type="submit">Confirmar encerramento</button>
             <button type="button" className="secundario" onClick={() => setAvaliando(false)}>Cancelar</button>

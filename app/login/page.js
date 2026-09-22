@@ -6,6 +6,7 @@ export default function Login() {
   const router = useRouter();
   const [aba, setAba] = useState('colaborador');
   const [matricula, setMatricula] = useState('');
+  const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState('');
 
@@ -13,7 +14,7 @@ export default function Login() {
     e.preventDefault();
     setErro('');
     const rota = aba === 'colaborador' ? '/api/auth/colaborador' : '/api/auth/rh';
-    const body = aba === 'colaborador' ? { matricula, senha } : { senha };
+    const body = aba === 'colaborador' ? { matricula, senha } : { email, senha };
 
     const res = await fetch(rota, {
       method: 'POST',
@@ -54,13 +55,19 @@ export default function Login() {
       </div>
 
       <form onSubmit={entrar}>
-        {aba === 'colaborador' && (
+        {aba === 'colaborador' ? (
           <>
             <label>CPF (somente números)</label>
             <input value={matricula} onChange={(e) => setMatricula(e.target.value)} required />
+            <label>Senha (6 primeiros dígitos do CPF, se ainda não trocou)</label>
+          </>
+        ) : (
+          <>
+            <label>E-mail</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <label>Senha</label>
           </>
         )}
-        <label>Senha{aba === 'colaborador' ? ' (6 primeiros dígitos do CPF, se ainda não trocou)' : ''}</label>
         <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required />
         {erro && <div className="erro">{erro}</div>}
         <button type="submit">Entrar</button>

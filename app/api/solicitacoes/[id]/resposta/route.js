@@ -6,7 +6,8 @@ async function POST(req, { params }) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-  const { texto, anexos, nomeAtendente } = await req.json();
+  const admin = await prisma.adminUsuario.findUnique({ where: { id: sessao.id } });
+  const { texto, anexos } = await req.json();
   const { id } = params;
 
   await prisma.resposta.create({
@@ -14,7 +15,8 @@ async function POST(req, { params }) {
       solicitacaoId: id,
       texto,
       autor: 'rh',
-      nomeAutor: nomeAtendente || 'RH/DP',
+      nomeAutor: admin?.nome || 'RH/DP',
+      autorFotoUrl: admin?.fotoUrl || null,
       automatica: false,
     },
   });
@@ -39,7 +41,7 @@ async function POST(req, { params }) {
   await enviarEmail(
     solicitacao.colaborador.email,
     `Sua solicitação foi respondida: ${solicitacao.assunto.nome}`,
-    `<p>Olá ${solicitacao.colaborador.nome}, ${nomeAtendente || 'a equipe de RH/DP'} respondeu sua solicitação:</p><p>${texto}</p>
+    `<p>Olá ${solicitacao.colaborador.nome}, ${admin?.nome || 'a equipe de RH/DP'} respondeu sua solicitação:</p><p>${texto}</p>
      <p>Acesse o portal para ver os detalhes${anexos?.length ? ' e baixar os documentos anexados' : ''}, e responder se precisar.</p>`
   );
 

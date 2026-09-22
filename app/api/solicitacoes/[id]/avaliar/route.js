@@ -5,7 +5,7 @@ async function POST(req, { params }) {
   const sessao = getSessaoColaborador();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-  const { nota, comentario } = await req.json();
+  const { nota } = await req.json();
   const { id } = params;
 
   const solicitacao = await prisma.solicitacao.findUnique({ where: { id } });
@@ -19,7 +19,6 @@ async function POST(req, { params }) {
       status: 'encerrada',
       dataEncerramento: new Date(),
       avaliacaoNota: nota || null,
-      avaliacaoComentario: comentario || null,
     },
   });
 

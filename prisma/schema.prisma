@@ -74,6 +74,7 @@ model Resposta {
   texto         String
   autor         String      @default("rh") // rh | colaborador
   nomeAutor     String?
+  autorFotoUrl  String?
   automatica    Boolean     @default(false)
   data          DateTime    @default(now())
 }
@@ -102,4 +103,13 @@ model Conteudo {
   nomeArquivo String?
   ativo       Boolean  @default(true)
   criadoEm    DateTime @default(now())
+}
+
+model AdminUsuario {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  fotoUrl   String?
+  senhaHash String
+  criadoEm  DateTime @default(now())
 }
