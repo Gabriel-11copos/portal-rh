@@ -17,19 +17,30 @@ export default function DistribuirDocumentos() {
     if (!arquivo) return;
 
     setEnviando(true);
-    const formData = new FormData();
-    formData.append('arquivo', arquivo);
-    formData.append('tipo', tipo);
-    formData.append('competencia', competencia);
+    try {
+      const formData = new FormData();
+      formData.append('arquivo', arquivo);
+      formData.append('tipo', tipo);
+      formData.append('competencia', competencia);
 
-    const res = await fetch('/api/documentos/distribuir', { method: 'POST', body: formData });
-    setEnviando(false);
+      const res = await fetch('/api/documentos/distribuir', { method: 'POST', body: formData });
+      const texto = await res.text();
+      let data;
+      try {
+        data = JSON.parse(texto);
+      } catch {
+        throw new Error('O servidor demorou demais ou teve um problema inesperado. Tente novamente com um arquivo menor, ou avise o suporte.');
+      }
 
-    if (res.ok) {
-      setResultado(await res.json());
-    } else {
-      const data = await res.json();
-      setErro(data.erro || 'Erro ao distribuir documentos.');
+      if (res.ok) {
+        setResultado(data);
+      } else {
+        setErro(data.erro || 'Erro ao distribuir documentos.');
+      }
+    } catch (err) {
+      setErro(err.message || 'Erro inesperado ao processar. Tente novamente.');
+    } finally {
+      setEnviando(false);
     }
   }
 
@@ -42,6 +53,10 @@ export default function DistribuirDocumentos() {
         (com todos os colaboradores juntos). O sistema identifica cada um pelo nome
         e pela loja, separa automaticamente, e já manda pra pasta certa de cada
         colaborador no Drive.
+      </p>
+      <p style={{ fontSize: 13, color: 'var(--warning)' }}>
+        ⚠ Para arquivos com muitas pessoas, pode levar 1-2 minutos. Não feche
+        nem atualize esta página enquanto estiver processando.
       </p>
 
       <div className="card">
