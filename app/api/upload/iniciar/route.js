@@ -7,6 +7,7 @@ const { getOrCreatePastaColaborador, criarSessaoUploadResumable } = require('../
 async function POST(req) {
   const { nomeArquivo, mimeType, colaboradorId: colaboradorIdInformado } = await req.json();
   let colaboradorId = colaboradorIdInformado;
+  const origem = req.headers.get('origin') || undefined;
 
   const sessaoColaborador = getSessaoColaborador();
   if (sessaoColaborador) colaboradorId = sessaoColaborador.id;
@@ -17,7 +18,7 @@ async function POST(req) {
     pastaId = await getOrCreatePastaColaborador(colaboradorId, colaborador?.nome || 'Colaborador');
   }
 
-  const sessionUrl = await criarSessaoUploadResumable({ nomeArquivo, mimeType, pastaId });
+  const sessionUrl = await criarSessaoUploadResumable({ nomeArquivo, mimeType, pastaId, origem });
   return Response.json({ sessionUrl });
 }
 
