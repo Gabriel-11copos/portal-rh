@@ -1,0 +1,31 @@
+INTEGRAÇÃO — PORTAL DO COLABORADOR  ->  PORTAL DO GESTOR
+=========================================================
+
+Este pacote liga o Portal do Colaborador ao Portal do Gestor.
+Não substitui nenhum arquivo seu: só cria arquivos novos e INSERE poucas linhas
+nos que já existem. Se o seu código for diferente do esperado, o aplicador para
+antes de mexer em qualquer coisa.
+
+O que tem aqui
+  aplicar.mjs        o aplicador (roda uma vez)
+  arquivos/          os arquivos novos (o aplicador copia pro seu projeto)
+  banco.sql          rodar no Neon do PORTAL DO COLABORADOR
+  contrato-integracao-portal-colaborador.md   como os dois portais conversam
+
+Ordem dos passos
+  1) Rodar o banco.sql no Neon (banco do Portal do Colaborador)
+  2) Rodar o aplicador:   node aplicar.mjs "C:\caminho\da\pasta\portal-rh"
+  3) Variáveis no Vercel do Portal do Colaborador:
+       INTEGRACAO_API_KEY       (o mesmo valor do Portal do Gestor)
+       GESTOR_WEBHOOK_SECRET    (o mesmo valor do Portal do Gestor)
+       GESTOR_WEBHOOK_URL       https://painel-app-flax.vercel.app/api/integracao/colaborador/evento
+       CRON_SECRET              (opcional: um texto aleatório, liga o reenvio diário)
+  4) Variáveis no Vercel do Portal do Gestor:
+       INTEGRACAO_API_KEY       (o mesmo valor)
+       COLABORADOR_API_URL      https://falecomdp.vercel.app
+     e publicar o Portal do Gestor de novo
+  5) Publicar o Portal do Colaborador pelo GitHub Desktop
+  6) No Portal do Colaborador, em Admin > Assuntos, escolher quais assuntos vão pro gestor
+
+Enquanto as variáveis não estiverem todas configuradas, NENHUM pedido vai para o
+gestor (tudo continua indo para o RH, como hoje).
