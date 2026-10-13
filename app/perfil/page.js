@@ -45,7 +45,7 @@ export default function MeuPerfil() {
   if (!perfil) return <p>Carregando...</p>;
 
   const admissao = perfil.dataAdmissao
-    ? new Date(perfil.dataAdmissao).toLocaleDateString('pt-BR')
+    ? new Date(perfil.dataAdmissao).toLocaleDateString('pt-BR', { timeZone: 'UTC' })
     : '-';
   const nomeExibido = perfil.nomeSocial || perfil.nome;
 

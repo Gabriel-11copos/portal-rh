@@ -18,7 +18,7 @@ export default function EnviarComunicado() {
   const [erro, setErro] = useState('');
 
   useEffect(() => {
-    fetch('/api/colaboradores').then((r) => r.json()).then(setColaboradores);
+    fetch('/api/colaboradores').then((r) => r.json()).then((lista) => setColaboradores(lista.filter((c) => c.ativo)));
   }, []);
 
   const lojas = useMemo(

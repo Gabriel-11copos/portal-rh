@@ -18,6 +18,8 @@ model Colaborador {
   cargo         String?
   dataAdmissao  DateTime?
   driveFolderId String?
+  dataNascimento DateTime?
+  ativo          Boolean   @default(true)
   senhaHash     String
   createdAt     DateTime @default(now())
   solicitacoes  Solicitacao[]
@@ -143,4 +145,15 @@ model EventoPendente {
   desistiu         Boolean   @default(false)
   erro             String?
   criadoEm         DateTime  @default(now())
+}
+model HistoricoColaborador {
+  id            String   @id @default(cuid())
+  colaboradorId String
+  tipo          String
+  de            String?
+  para          String?
+  origem        String
+  data          DateTime @default(now())
+
+  @@index([colaboradorId])
 }

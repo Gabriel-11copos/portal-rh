@@ -21,6 +21,7 @@
     "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
+"xlsx": "^0.18.5",
     "prisma": "^5.20.0"
   }
 }

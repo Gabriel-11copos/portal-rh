@@ -15,6 +15,11 @@ async function POST(req) {
     return Response.json({ erro: 'Matrícula ou senha inválida.' }, { status: 401 });
   }
 
+  // Quem foi inativado (saiu da empresa) não consegue mais entrar.
+  if (!colaborador.ativo) {
+    return Response.json({ erro: 'Acesso desativado. Procure o RH/DP.' }, { status: 403 });
+  }
+
   criarSessaoColaborador(colaborador);
   return Response.json({ ok: true });
 }
