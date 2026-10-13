@@ -157,3 +157,29 @@ model HistoricoColaborador {
 
   @@index([colaboradorId])
 }
+model Gorjeta {
+  id               String   @id @default(cuid())
+  colaboradorId    String
+  unidade          String
+  periodoInicio    DateTime
+  periodoFim       DateTime
+  situacao         String
+  cargo            String?
+  atrasosQtd       Int      @default(0)
+  faltasQtd        Int      @default(0)
+  apuracao         Int      @default(0)
+  valorAtrasos     Int      @default(0)
+  valorFaltas      Int      @default(0)
+  redistribuicao   Int      @default(0)
+  brutaFinal       Int      @default(0)
+  devolucao        Int      @default(0)
+  valorFinal       Int      @default(0)
+  retencao         Int      @default(0)
+  liquida          Int      @default(0)
+  vistoColaborador Boolean  @default(false)
+  criadoEm         DateTime @default(now())
+  atualizadoEm     DateTime @default(now()) @updatedAt
+
+  @@unique([colaboradorId, unidade, periodoInicio])
+  @@index([colaboradorId])
+}

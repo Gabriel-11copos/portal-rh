@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import NavColaborador from '../components/NavColaborador';
 import Avatar from '../components/Avatar';
+import CartaoGorjeta from '../components/CartaoGorjeta';
 
 export default function Inicio() {
   const [perfil, setPerfil] = useState(null);
@@ -49,6 +50,7 @@ export default function Inicio() {
         </div>
 
         <div style={{ flex: 1, minWidth: 260 }}>
+<CartaoGorjeta />
           <div className="card">
             <div
               style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
