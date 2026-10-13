@@ -17,7 +17,7 @@ async function PATCH(req, { params }) {
       responsavelPadrao,
       respostaAutomatica: respostaAutomatica || null,
       ...(destino ? { destino: destino === 'gestor' ? 'gestor' : 'rh' } : {}),
-      ...(fluxo ? { fluxo: fluxo === 'atestado' ? 'atestado' : 'padrao' } : {}),
+      ...(fluxo ? { fluxo: ['atestado', 'uniforme'].includes(fluxo) ? fluxo : 'padrao' } : {}),
       ativo,
     },
   });

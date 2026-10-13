@@ -78,6 +78,27 @@ function CartaoSolicitacao({ s, onAtualizar, perfil }) {
         </p>
       )}
 
+      {(() => {
+        let u = null;
+        try {
+          u = s.dadosExtras ? JSON.parse(s.dadosExtras).uniforme : null;
+        } catch {
+          u = null;
+        }
+        if (!u || !u.itens || !u.itens.length) return null;
+        return (
+          <div style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 10, margin: '8px 0', fontSize: 14 }}>
+            <b>Itens pedidos</b> <span style={{ color: 'var(--muted)' }}>({u.motivo}) · pedido em {formatarDataHora(s.dataAbertura)}</span>
+            {u.itens.map((i, k) => (
+              <div key={k}>{i.qtd}× {i.item}{i.tamanho ? ' — tamanho ' + i.tamanho : ''}</div>
+            ))}
+            <div style={{ marginTop: 6, color: u.entregueEm ? 'var(--success)' : 'var(--muted)' }}>
+              {u.entregueEm ? '✅ Recebido em ' + new Date(u.entregueEm + 'T12:00:00').toLocaleDateString('pt-BR') : 'Aguardando entrega'}
+            </div>
+          </div>
+        );
+      })()}
+
       {conversa.map((r) => {
         const isColab = r.autor === 'colaborador';
         const nomeAvatar = isColab ? nomeExibido : (r.nomeAutor || 'RH');

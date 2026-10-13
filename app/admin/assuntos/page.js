@@ -81,6 +81,7 @@ export default function GerenciarAssuntos() {
           <select value={form.fluxo} onChange={(e) => setForm({ ...form, fluxo: e.target.value })}>
             <option value="padrao">Comum</option>
             <option value="atestado">Atestado médico (pede data e dias, e exige o arquivo)</option>
+            <option value="uniforme">Uniforme e EPI (mostra o kit do cargo; só tamanho e quantidade)</option>
           </select>
 
           <label>Resposta automática (opcional — se preenchido, responde sozinho na hora)</label>
@@ -107,7 +108,7 @@ export default function GerenciarAssuntos() {
 
       {assuntos.map((a) => (
         <div key={a.id} className="card" style={{ cursor: 'pointer', opacity: a.ativo ? 1 : 0.5 }} onClick={() => editar(a)}>
-          <b>{a.nome}</b> {!a.ativo && <span className="badge encerrada">Inativo</span>} · prazo: {a.prazoPadraoDias} dias úteis · responsável: {a.responsavelPadrao || '-'} · destino: {a.destino === 'gestor' ? 'gestor da loja' : 'RH/DP'}{a.fluxo === 'atestado' && ' · tipo: atestado médico'}
+          <b>{a.nome}</b> {!a.ativo && <span className="badge encerrada">Inativo</span>} · prazo: {a.prazoPadraoDias} dias úteis · responsável: {a.responsavelPadrao || '-'} · destino: {a.destino === 'gestor' ? 'gestor da loja' : 'RH/DP'}{a.fluxo === 'atestado' && ' · tipo: atestado médico'}{a.fluxo === 'uniforme' && ' · tipo: uniforme e EPI'}
           {a.respostaAutomatica && <p style={{ fontSize: 13, color: 'var(--success)' }}>✓ Resposta automática configurada</p>}
         </div>
       ))}

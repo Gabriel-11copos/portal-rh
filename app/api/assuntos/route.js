@@ -20,7 +20,7 @@ async function POST(req) {
   const { nome, prazoPadraoDias, responsavelPadrao, respostaAutomatica, destino, fluxo } = await req.json();
 
   const assunto = await prisma.assunto.create({
-    data: { nome, prazoPadraoDias, responsavelPadrao, respostaAutomatica, destino: destino === 'gestor' ? 'gestor' : 'rh', fluxo: fluxo === 'atestado' ? 'atestado' : 'padrao' },
+    data: { nome, prazoPadraoDias, responsavelPadrao, respostaAutomatica, destino: destino === 'gestor' ? 'gestor' : 'rh', fluxo: ['atestado', 'uniforme'].includes(fluxo) ? fluxo : 'padrao' },
   });
 
   return Response.json(assunto);
