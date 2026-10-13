@@ -203,3 +203,9 @@ button.destaque:hover { background: #e6c200; }
   color: white;
   border-color: var(--verde);
 }
+
+.bolha.gestor {
+  background: #fff4e0;
+  border: 1px solid #f0d9a8;
+  border-top-left-radius: 4px;
+}

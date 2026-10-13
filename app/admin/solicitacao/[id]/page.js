@@ -125,6 +125,7 @@ export default function DetalheSolicitacao() {
           {solicitacao.whatsapp && ` · WhatsApp: ${solicitacao.whatsapp}`}
         </p>
         <p style={{ fontSize: 12, color: 'var(--muted)' }}>Aberta em {formatarDataHora(solicitacao.dataAbertura)}</p>
+        {solicitacao.destino === 'gestor' && <p style={{ fontSize: 12, color: 'var(--muted)' }}>🧑‍💼 Pedido atendido pelo gestor da loja (Portal do Gestor). O RH acompanha e pode responder também.</p>}
 
         {solicitacao.status !== 'encerrada' && (
           <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12 }}>

@@ -2,6 +2,7 @@ const { prisma } = require('../../../lib/db');
 const { getSessaoColaborador, getSessaoRH } = require('../../../lib/auth');
 const { enviarEmail } = require('../../../lib/email');
 const { somarDiasUteis } = require('../../../lib/feriados');
+const { destinoFinal, avisarGestor } = require('../../../lib/integracao');
 
 // Cria uma nova solicitação e aplica a triagem automática com base no assunto:
 // define prazo, responsável, e devolve resposta automática se o assunto tiver uma cadastrada.
@@ -16,9 +17,14 @@ async function POST(req) {
 
   const prazo = somarDiasUteis(new Date(), assunto.prazoPadraoDias);
 
+  // Pra onde vai o pedido: o assunto manda pro gestor da loja (o Administrativo vai pro RH).
+  const colabDestino = await prisma.colaborador.findUnique({ where: { id: sessao.id } });
+  const destino = destinoFinal(assunto, colabDestino && colabDestino.loja);
+
   const solicitacao = await prisma.solicitacao.create({
     data: {
       colaboradorId: sessao.id,
+      destino,
       assuntoId,
       descricao,
       emailContato,
@@ -54,6 +60,8 @@ async function POST(req) {
     `<p>Olá ${colaborador.nome}, recebemos sua solicitação sobre <b>${assunto.nome}</b>.</p>
      ${assunto.respostaAutomatica ? `<p>${assunto.respostaAutomatica}</p>` : '<p>Ela será analisada pela nossa equipe em breve.</p>'}`
   );
+
+  if (destino === 'gestor') await avisarGestor('solicitacao.criada', solicitacao.id);
 
   return Response.json({ ok: true, id: solicitacao.id });
 }

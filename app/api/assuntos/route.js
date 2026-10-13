@@ -17,10 +17,10 @@ async function POST(req) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-  const { nome, prazoPadraoDias, responsavelPadrao, respostaAutomatica } = await req.json();
+  const { nome, prazoPadraoDias, responsavelPadrao, respostaAutomatica, destino } = await req.json();
 
   const assunto = await prisma.assunto.create({
-    data: { nome, prazoPadraoDias, responsavelPadrao, respostaAutomatica },
+    data: { nome, prazoPadraoDias, responsavelPadrao, respostaAutomatica, destino: destino === 'gestor' ? 'gestor' : 'rh' },
   });
 
   return Response.json(assunto);

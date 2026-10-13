@@ -1,5 +1,6 @@
 const { prisma } = require('../../../../../lib/db');
 const { getSessaoColaborador } = require('../../../../../lib/auth');
+const { avisarGestor } = require('../../../../../lib/integracao');
 
 async function POST(req, { params }) {
   const sessao = getSessaoColaborador();
@@ -16,8 +17,9 @@ async function POST(req, { params }) {
     return Response.json({ erro: 'Esta solicitação já foi encerrada.' }, { status: 400 });
   }
 
+  let respostaCriada = null;
   if (texto && texto.trim()) {
-    await prisma.resposta.create({
+    respostaCriada = await prisma.resposta.create({
       data: {
         solicitacaoId: id,
         texto,
@@ -44,6 +46,19 @@ async function POST(req, { params }) {
     data: { status: 'em_analise', vistoColaborador: true },
     include: { assunto: true, colaborador: true },
   });
+
+  if (atualizada.destino === 'gestor') {
+    await avisarGestor('solicitacao.mensagem', id, {
+      mensagem: {
+        id: respostaCriada ? respostaCriada.id : 'a-' + Date.now(),
+        texto: respostaCriada ? respostaCriada.texto : '',
+        autor: 'colaborador',
+        nomeAutor: sessao.nome,
+        data: new Date().toISOString(),
+        anexos: (anexos || []).map((a) => ({ nome: a.nomeArquivo, link: a.link })),
+      },
+    });
+  }
 
   return Response.json({ ok: true, solicitacao: atualizada });
 }

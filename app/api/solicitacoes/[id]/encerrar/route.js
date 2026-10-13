@@ -1,6 +1,7 @@
 const { prisma } = require('../../../../../lib/db');
 const { getSessaoRH } = require('../../../../../lib/auth');
 const { enviarEmail } = require('../../../../../lib/email');
+const { avisarGestor } = require('../../../../../lib/integracao');
 
 async function POST(req, { params }) {
   const sessao = getSessaoRH();
@@ -19,6 +20,8 @@ async function POST(req, { params }) {
     `Solicitação encerrada: ${solicitacao.assunto.nome}`,
     `<p>Olá ${solicitacao.colaborador.nome}, sua solicitação sobre <b>${solicitacao.assunto.nome}</b> foi encerrada.</p>`
   );
+
+  if (solicitacao.destino === 'gestor') await avisarGestor('solicitacao.encerrada', id);
 
   return Response.json({ ok: true });
 }

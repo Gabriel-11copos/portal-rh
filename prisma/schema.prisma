@@ -26,6 +26,7 @@ model Colaborador {
 }
 
 model Assunto {
+  destino            String  @default("rh") // rh | gestor: pra onde vai o pedido
   id                 String  @id @default(cuid())
   nome               String  @unique
   prazoPadraoDias    Int     @default(5)
@@ -36,6 +37,7 @@ model Assunto {
 }
 
 model Solicitacao {
+  destino          String    @default("rh") // rh | gestor
   id               String    @id @default(cuid())
   numero           Int?      @unique @default(autoincrement())
   colaboradorId    String
@@ -69,6 +71,8 @@ model Anexo {
 }
 
 model Resposta {
+  idExterno     String?     // id da mensagem quando veio do Portal do Gestor (evita duplicar)
+  @@unique([solicitacaoId, idExterno])
   id            String      @id @default(cuid())
   solicitacaoId String
   solicitacao   Solicitacao @relation(fields: [solicitacaoId], references: [id])
@@ -125,4 +129,16 @@ model Documento {
   nomeArquivo      String
   vistoColaborador Boolean  @default(false)
   criadoEm         DateTime @default(now())
+}
+
+model EventoPendente {
+  id               String    @id @default(cuid())
+  evento           String
+  corpo            String
+  tentativas       Int       @default(0)
+  proximaTentativa DateTime  @default(now())
+  enviadoEm        DateTime?
+  desistiu         Boolean   @default(false)
+  erro             String?
+  criadoEm         DateTime  @default(now())
 }

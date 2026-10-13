@@ -1,5 +1,6 @@
 const { prisma } = require('../../../../../lib/db');
 const { getSessaoColaborador } = require('../../../../../lib/auth');
+const { avisarGestor } = require('../../../../../lib/integracao');
 
 async function POST(req, { params }) {
   const sessao = getSessaoColaborador();
@@ -13,7 +14,7 @@ async function POST(req, { params }) {
     return Response.json({ erro: 'Solicitação não encontrada.' }, { status: 404 });
   }
 
-  await prisma.solicitacao.update({
+  const atualizadaAv = await prisma.solicitacao.update({
     where: { id },
     data: {
       status: 'encerrada',
@@ -21,6 +22,11 @@ async function POST(req, { params }) {
       avaliacaoNota: nota || null,
     },
   });
+
+  if (atualizadaAv.destino === 'gestor') {
+    await avisarGestor('solicitacao.encerrada', id);
+    await avisarGestor('solicitacao.avaliada', id);
+  }
 
   return Response.json({ ok: true });
 }

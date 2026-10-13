@@ -68,7 +68,7 @@ function CartaoSolicitacao({ s, onAtualizar, perfil }) {
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <div>
           <span className="numero-solicitacao">#{s.numero} · </span>
-          <b>{s.assunto.nome}</b>
+          <b>{s.assunto.nome}</b>{s.destino === 'gestor' && <span style={{ fontSize: 12, color: 'var(--muted)' }}> · atendimento da sua loja</span>}
         </div>
         <span className={`badge ${s.status}`}>{rotulos[s.status]}</span>
       </div>
@@ -129,6 +129,12 @@ function CartaoSolicitacao({ s, onAtualizar, perfil }) {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {s.status === 'encerrada' && !s.avaliacaoNota && s.destino === 'gestor' && !avaliando && (
+        <div style={{ marginTop: 12 }}>
+          <button type="button" className="secundario" onClick={() => setAvaliando(true)}>Avaliar o atendimento</button>
         </div>
       )}
 

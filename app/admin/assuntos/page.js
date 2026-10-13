@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import BotaoVoltar from '../../components/BotaoVoltar';
 
-const VAZIO = { nome: '', prazoPadraoDias: 5, responsavelPadrao: '', respostaAutomatica: '', ativo: true };
+const VAZIO = { nome: '', prazoPadraoDias: 5, responsavelPadrao: '', respostaAutomatica: '', destino: 'rh', ativo: true };
 
 export default function GerenciarAssuntos() {
   const [assuntos, setAssuntos] = useState([]);
@@ -21,6 +21,7 @@ export default function GerenciarAssuntos() {
       prazoPadraoDias: a.prazoPadraoDias,
       responsavelPadrao: a.responsavelPadrao || '',
       respostaAutomatica: a.respostaAutomatica || '',
+      destino: a.destino || 'rh',
       ativo: a.ativo,
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -69,6 +70,12 @@ export default function GerenciarAssuntos() {
           <label>Responsável padrão (ex: RH, DP, Financeiro)</label>
           <input value={form.responsavelPadrao} onChange={(e) => setForm({ ...form, responsavelPadrao: e.target.value })} />
 
+          <label>Para onde vai o pedido</label>
+          <select value={form.destino} onChange={(e) => setForm({ ...form, destino: e.target.value })}>
+            <option value="rh">RH/DP (como sempre)</option>
+            <option value="gestor">Gestor da loja (aparece no Portal do Gestor)</option>
+          </select>
+
           <label>Resposta automática (opcional — se preenchido, responde sozinho na hora)</label>
           <textarea rows={3} value={form.respostaAutomatica} onChange={(e) => setForm({ ...form, respostaAutomatica: e.target.value })} />
 
@@ -93,7 +100,7 @@ export default function GerenciarAssuntos() {
 
       {assuntos.map((a) => (
         <div key={a.id} className="card" style={{ cursor: 'pointer', opacity: a.ativo ? 1 : 0.5 }} onClick={() => editar(a)}>
-          <b>{a.nome}</b> {!a.ativo && <span className="badge encerrada">Inativo</span>} · prazo: {a.prazoPadraoDias} dias úteis · responsável: {a.responsavelPadrao || '-'}
+          <b>{a.nome}</b> {!a.ativo && <span className="badge encerrada">Inativo</span>} · prazo: {a.prazoPadraoDias} dias úteis · responsável: {a.responsavelPadrao || '-'} · destino: {a.destino === 'gestor' ? 'gestor da loja' : 'RH/DP'}
           {a.respostaAutomatica && <p style={{ fontSize: 13, color: 'var(--success)' }}>✓ Resposta automática configurada</p>}
         </div>
       ))}
