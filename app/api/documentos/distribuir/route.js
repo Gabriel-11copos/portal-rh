@@ -1,7 +1,7 @@
-const { prisma } = require('../../../../lib/db');
-const { getSessaoRH } = require('../../../../lib/auth');
-const { uploadArquivo } = require('../../../../lib/drive');
-const { processarContracheques } = require('../../../../lib/holerites');
+import { prisma } from '../../../../lib/db';
+import { getSessaoRH } from '../../../../lib/auth';
+import { uploadArquivo } from '../../../../lib/drive';
+import { processarContracheques } from '../../../../lib/holerites';
 
 // Pede ao Vercel o máximo de tempo permitido pra essa rota (processar dezenas de
 // arquivos e subir cada um pro Drive pode levar mais que o padrão de poucos segundos).
@@ -23,7 +23,7 @@ async function processarEmLotes(itens, tamanhoLote, fn) {
 // precisar de nenhum tratamento prévio). O próprio servidor identifica cada
 // colaborador pelo nome + loja, separa em PDFs individuais, sobe pra pasta de
 // cada um no Drive, e registra em "Documentos".
-async function POST(req) {
+export async function POST(req) {
   try {
     const sessao = getSessaoRH();
     if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -68,5 +68,3 @@ async function POST(req) {
     return Response.json({ erro: `Erro ao processar: ${err.message || 'erro desconhecido'}` }, { status: 500 });
   }
 }
-
-module.exports = { POST };
