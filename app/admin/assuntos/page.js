@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import BotaoVoltar from '../../components/BotaoVoltar';
 
-const VAZIO = { nome: '', prazoPadraoDias: 5, responsavelPadrao: '', respostaAutomatica: '', destino: 'rh', ativo: true };
+const VAZIO = { nome: '', prazoPadraoDias: 5, responsavelPadrao: '', respostaAutomatica: '', destino: 'rh', fluxo: 'padrao', ativo: true };
 
 export default function GerenciarAssuntos() {
   const [assuntos, setAssuntos] = useState([]);
@@ -22,6 +22,7 @@ export default function GerenciarAssuntos() {
       responsavelPadrao: a.responsavelPadrao || '',
       respostaAutomatica: a.respostaAutomatica || '',
       destino: a.destino || 'rh',
+      fluxo: a.fluxo || 'padrao',
       ativo: a.ativo,
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -76,6 +77,12 @@ export default function GerenciarAssuntos() {
             <option value="gestor">Gestor da loja (aparece no Portal do Gestor)</option>
           </select>
 
+          <label>Tipo de pedido</label>
+          <select value={form.fluxo} onChange={(e) => setForm({ ...form, fluxo: e.target.value })}>
+            <option value="padrao">Comum</option>
+            <option value="atestado">Atestado médico (pede data e dias, e exige o arquivo)</option>
+          </select>
+
           <label>Resposta automática (opcional — se preenchido, responde sozinho na hora)</label>
           <textarea rows={3} value={form.respostaAutomatica} onChange={(e) => setForm({ ...form, respostaAutomatica: e.target.value })} />
 
@@ -100,7 +107,7 @@ export default function GerenciarAssuntos() {
 
       {assuntos.map((a) => (
         <div key={a.id} className="card" style={{ cursor: 'pointer', opacity: a.ativo ? 1 : 0.5 }} onClick={() => editar(a)}>
-          <b>{a.nome}</b> {!a.ativo && <span className="badge encerrada">Inativo</span>} · prazo: {a.prazoPadraoDias} dias úteis · responsável: {a.responsavelPadrao || '-'} · destino: {a.destino === 'gestor' ? 'gestor da loja' : 'RH/DP'}
+          <b>{a.nome}</b> {!a.ativo && <span className="badge encerrada">Inativo</span>} · prazo: {a.prazoPadraoDias} dias úteis · responsável: {a.responsavelPadrao || '-'} · destino: {a.destino === 'gestor' ? 'gestor da loja' : 'RH/DP'}{a.fluxo === 'atestado' && ' · tipo: atestado médico'}
           {a.respostaAutomatica && <p style={{ fontSize: 13, color: 'var(--success)' }}>✓ Resposta automática configurada</p>}
         </div>
       ))}

@@ -26,6 +26,7 @@ model Colaborador {
 }
 
 model Assunto {
+  fluxo              String  @default("padrao") // padrao | atestado (pede data e dias)
   destino            String  @default("rh") // rh | gestor: pra onde vai o pedido
   id                 String  @id @default(cuid())
   nome               String  @unique
@@ -37,6 +38,7 @@ model Assunto {
 }
 
 model Solicitacao {
+  dadosExtras      String?   // JSON com dados extras do pedido (ex.: data e dias do atestado)
   destino          String    @default("rh") // rh | gestor
   id               String    @id @default(cuid())
   numero           Int?      @unique @default(autoincrement())

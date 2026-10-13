@@ -6,7 +6,7 @@ async function PATCH(req, { params }) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-  const { nome, prazoPadraoDias, responsavelPadrao, respostaAutomatica, ativo, destino } = await req.json();
+  const { nome, prazoPadraoDias, responsavelPadrao, respostaAutomatica, ativo, destino, fluxo } = await req.json();
   const { id } = params;
 
   const assunto = await prisma.assunto.update({
@@ -17,6 +17,7 @@ async function PATCH(req, { params }) {
       responsavelPadrao,
       respostaAutomatica: respostaAutomatica || null,
       ...(destino ? { destino: destino === 'gestor' ? 'gestor' : 'rh' } : {}),
+      ...(fluxo ? { fluxo: fluxo === 'atestado' ? 'atestado' : 'padrao' } : {}),
       ativo,
     },
   });

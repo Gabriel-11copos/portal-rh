@@ -15,6 +15,9 @@ export default function NovaSolicitacao() {
   const [whatsapp, setWhatsapp] = useState('');
   const [anexos, setAnexos] = useState([]);
   const [enviado, setEnviado] = useState(false);
+  const [dataAtestado, setDataAtestado] = useState('');
+  const [dias, setDias] = useState('');
+  const [erro, setErro] = useState('');
 
   useEffect(() => {
     fetch('/api/assuntos').then((r) => r.json()).then(setAssuntos);
@@ -26,13 +29,25 @@ export default function NovaSolicitacao() {
 
   async function enviar(e) {
     e.preventDefault();
+    setErro('');
+    if (ehAtestado && anexos.length === 0) {
+      setErro('Anexe a foto ou o PDF do atestado.');
+      return;
+    }
     const res = await fetch('/api/solicitacoes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ assuntoId, descricao, anexos, emailContato, whatsapp }),
+      body: JSON.stringify({ assuntoId, descricao, anexos, emailContato, whatsapp, dadosExtras: ehAtestado ? { dataAtestado, dias: Number(dias) } : undefined }),
     });
     if (res.ok) setEnviado(true);
+    else {
+      const d = await res.json().catch(() => ({}));
+      setErro(d.erro || 'Não foi possível enviar. Tente de novo.');
+    }
   }
+
+  const assuntoSelecionado = assuntos.find((a) => a.id === assuntoId);
+  const ehAtestado = !!assuntoSelecionado && assuntoSelecionado.fluxo === 'atestado';
 
   if (enviado) {
     return (
@@ -68,6 +83,17 @@ export default function NovaSolicitacao() {
             ))}
           </select>
 
+          {ehAtestado && (
+            <div style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+              <b>Dados do atestado</b>
+              <label>Data do atestado (primeiro dia)</label>
+              <input type="date" value={dataAtestado} onChange={(e) => setDataAtestado(e.target.value)} required />
+              <label>Quantos dias de atestado?</label>
+              <input type="number" min="1" max="30" value={dias} onChange={(e) => setDias(e.target.value)} required />
+              <p style={{ fontSize: 13, color: 'var(--muted)' }}>Anexe abaixo a foto ou o PDF do atestado. Seu gestor vai conferir a data e os dias e encaminhar ao RH.</p>
+            </div>
+          )}
+
           <label>Descreva sua solicitação</label>
           <textarea rows={5} value={descricao} onChange={(e) => setDescricao(e.target.value)} required />
 
@@ -82,6 +108,7 @@ export default function NovaSolicitacao() {
             <div key={i} style={{ fontSize: 13, color: 'var(--success)' }}>✓ {a.nomeArquivo}</div>
           ))}
 
+          {erro && <p style={{ color: 'var(--danger)', marginTop: 8 }}>{erro}</p>}
           <div style={{ marginTop: 16 }}>
             <button type="submit">Enviar solicitação</button>
           </div>

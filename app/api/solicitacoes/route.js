@@ -10,10 +10,21 @@ async function POST(req) {
   const sessao = getSessaoColaborador();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-  const { assuntoId, descricao, anexos, emailContato, whatsapp } = await req.json();
+  const { assuntoId, descricao, anexos, emailContato, whatsapp, dadosExtras } = await req.json();
 
   const assunto = await prisma.assunto.findUnique({ where: { id: assuntoId } });
   if (!assunto) return Response.json({ erro: 'Assunto inválido.' }, { status: 400 });
+
+  // Pedido de atestado: precisa da data, dos dias e de pelo menos um arquivo.
+  let extrasJson = null;
+  if (assunto.fluxo === 'atestado') {
+    const dataAtestado = String((dadosExtras && dadosExtras.dataAtestado) || '');
+    const dias = Number(dadosExtras && dadosExtras.dias);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataAtestado)) return Response.json({ erro: 'Informe a data do atestado.' }, { status: 400 });
+    if (!Number.isInteger(dias) || dias < 1 || dias > 30) return Response.json({ erro: 'Informe quantos dias (de 1 a 30).' }, { status: 400 });
+    if (!anexos || !anexos.length) return Response.json({ erro: 'Anexe a foto ou o PDF do atestado.' }, { status: 400 });
+    extrasJson = JSON.stringify({ dataAtestado, dias });
+  }
 
   const prazo = somarDiasUteis(new Date(), assunto.prazoPadraoDias);
 
@@ -25,6 +36,7 @@ async function POST(req) {
     data: {
       colaboradorId: sessao.id,
       destino,
+      dadosExtras: extrasJson,
       assuntoId,
       descricao,
       emailContato,
