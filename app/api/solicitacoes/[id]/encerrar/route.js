@@ -21,7 +21,7 @@ async function POST(req, { params }) {
     `<p>Olá ${solicitacao.colaborador.nome}, sua solicitação sobre <b>${solicitacao.assunto.nome}</b> foi encerrada.</p>`
   );
 
-  if (solicitacao.destino === 'gestor') await avisarGestor('solicitacao.encerrada', id);
+  await avisarGestor('solicitacao.encerrada', id);
 
   return Response.json({ ok: true });
 }

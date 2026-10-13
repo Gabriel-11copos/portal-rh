@@ -46,7 +46,7 @@ async function POST(req, { params }) {
      <p>Acesse o portal para ver os detalhes${anexos?.length ? ' e baixar os documentos anexados' : ''}, e responder se precisar.</p>`
   );
 
-  if (solicitacao.destino === 'gestor') {
+  {
     await avisarGestor('solicitacao.mensagem', id, {
       mensagem: {
         id: respostaCriada.id,

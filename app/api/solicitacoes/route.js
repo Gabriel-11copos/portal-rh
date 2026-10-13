@@ -104,7 +104,7 @@ async function POST(req) {
      ${assunto.respostaAutomatica ? `<p>${assunto.respostaAutomatica}</p>` : '<p>Ela será analisada pela nossa equipe em breve.</p>'}`
   );
 
-  if (destino === 'gestor') await avisarGestor('solicitacao.criada', solicitacao.id);
+  await avisarGestor('solicitacao.criada', solicitacao.id);
 
   return Response.json({ ok: true, id: solicitacao.id });
 }

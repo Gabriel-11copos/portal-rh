@@ -23,7 +23,7 @@ async function POST(req, { params }) {
     },
   });
 
-  if (atualizadaAv.destino === 'gestor') {
+  {
     await avisarGestor('solicitacao.encerrada', id);
     await avisarGestor('solicitacao.avaliada', id);
   }

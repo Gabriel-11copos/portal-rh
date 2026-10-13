@@ -197,7 +197,7 @@ export default function DetalheSolicitacao() {
                 <span style={{ fontSize: 20 }}>{iconeArquivo(a.nomeArquivo)}</span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nomeArquivo}</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{a.enviadoPor === 'rh' ? 'Enviado pelo RH' : 'Do colaborador'}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{a.enviadoPor === 'rh' ? 'Enviado pelo RH' : a.enviadoPor === 'gestor' ? 'Enviado pelo gestor' : 'Do colaborador'}</div>
                 </span>
               </a>
             ))}

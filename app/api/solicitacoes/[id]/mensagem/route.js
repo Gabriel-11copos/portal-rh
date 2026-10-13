@@ -47,7 +47,7 @@ async function POST(req, { params }) {
     include: { assunto: true, colaborador: true },
   });
 
-  if (atualizada.destino === 'gestor') {
+  {
     await avisarGestor('solicitacao.mensagem', id, {
       mensagem: {
         id: respostaCriada ? respostaCriada.id : 'a-' + Date.now(),

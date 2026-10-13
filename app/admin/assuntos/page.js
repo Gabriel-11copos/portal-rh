@@ -73,7 +73,7 @@ export default function GerenciarAssuntos() {
 
           <label>Para onde vai o pedido</label>
           <select value={form.destino} onChange={(e) => setForm({ ...form, destino: e.target.value })}>
-            <option value="rh">RH/DP (como sempre)</option>
+            <option value="rh">RH/DP (só o RH vê; também aparece no painel, só pro RH)</option>
             <option value="gestor">Gestor da loja (aparece no Portal do Gestor)</option>
           </select>
 

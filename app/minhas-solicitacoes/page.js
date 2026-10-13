@@ -123,7 +123,7 @@ function CartaoSolicitacao({ s, onAtualizar, perfil }) {
       {s.anexos.map((a) => (
         <div key={a.id} style={{ marginTop: 6 }}>
           <a href={a.linkDrive} target="_blank" rel="noreferrer">
-            📎 {a.nomeArquivo} {a.enviadoPor === 'rh' ? '(do RH)' : '(enviado por você)'}
+            📎 {a.nomeArquivo} {a.enviadoPor === 'colaborador' ? '(enviado por você)' : a.enviadoPor === 'gestor' ? '(do gestor)' : '(do RH)'}
           </a>
         </div>
       ))}
