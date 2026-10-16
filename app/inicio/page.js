@@ -1,144 +1,216 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import NavColaborador from '../components/NavColaborador';
 import Avatar from '../components/Avatar';
-import CartaoGorjeta from '../components/CartaoGorjeta';
-import CartaoEscala from '../components/CartaoEscala';
 import CartaoAniversario from '../components/CartaoAniversario';
-import CartaoConquistas from '../components/CartaoConquistas';
-import CartaoGuias from '../components/CartaoGuias';
+import GradeCaixinhas, { aplicarOrdemCaixinhas } from '../components/GradeCaixinhas';
+
+// <ajudantes>
+// Lista das caixinhas (na ordem padrão). Para acrescentar uma nova, é só incluir uma linha aqui
+// (e tratar o id dela em montarCaixinhas, se ela tiver bolinha ou regra para aparecer).
+const CAIXINHAS = [
+  { id: 'solicitacoes', icon: '📨', title: 'Minhas solicitações', desc: 'Acompanhe seus pedidos ao RH e ao DP', href: '/minhas-solicitacoes' },
+  { id: 'nova', icon: '✍️', title: 'Nova solicitação', desc: 'Envie um pedido ao RH ou ao DP', href: '/nova-solicitacao' },
+  { id: 'comunicados', icon: '📢', title: 'Comunicados', desc: 'Avisos do RH e da empresa', href: '/comunicados' },
+  { id: 'documentos', icon: '📄', title: 'Documentos', desc: 'Contracheques e outros documentos pessoais', href: '/documentos' },
+  { id: 'gorjeta', icon: '💰', title: 'Minha gorjeta', desc: 'Extrato por período: apuração, descontos e valor líquido', href: '/gorjeta' },
+  { id: 'escala', icon: '🗓️', title: 'Minha escala', desc: 'Veja seus turnos da semana', href: '/escala' },
+  { id: 'conquistas', icon: '🏅', title: 'Minhas conquistas', desc: 'Veja seus selos', href: '/conquistas' },
+  { id: 'guias', icon: '📖', title: 'Guias e treinamentos', desc: 'Passo a passo, manuais e treinamentos', href: '/guias' },
+  { id: 'conteudos', icon: '📚', title: 'Conteúdos', desc: 'Cursos, links úteis, contatos, benefícios, regras e manuais', href: '/conteudos' },
+  { id: 'perfil', icon: '👤', title: 'Meu perfil', desc: 'Foto, nome social e seus dados', href: '/perfil' },
+];
+
+function primeiroNome(nome) {
+  return String(nome || '').trim().split(/\s+/)[0] || '';
+}
+
+// "Hoje: 18:00 às 02:00 · Loja" (mesma regra do antigo cartão da escala)
+function resumoEscala(escala) {
+  if (!escala || !escala.liberada) return null;
+  const hoje = escala.dias && escala.dias[0];
+  if (!hoje || hoje.erro) return 'Veja seus turnos da semana';
+  const turno = (hoje.itens || []).find((i) => i.status === 'TRABALHO' && i.entrada && i.saida);
+  if (turno) return `Hoje: ${turno.entrada} às ${turno.saida}${turno.lojaNome ? ` · ${turno.lojaNome}` : ''}`;
+  if ((hoje.itens || []).length === 0) return 'Hoje: sem escala lançada';
+  return 'Hoje: sem turno de trabalho';
+}
+
+// Decide quais caixinhas aparecem e com qual bolinha. Gorjeta, escala e guias só aparecem
+// quando a pessoa tem algo para ver (como acontecia com os cartões soltos de antes).
+function montarCaixinhas(d) {
+  const lista = [];
+  for (const base of CAIXINHAS) {
+    if (base.id === 'gorjeta' && !(d.gorjeta && d.gorjeta.total > 0)) continue;
+    if (base.id === 'escala' && !(d.escala && d.escala.liberada)) continue;
+    if (base.id === 'guias' && !(d.guias > 0)) continue;
+
+    const c = { ...base };
+    if (c.id === 'solicitacoes') c.contador = d.solicitacoes;
+    if (c.id === 'documentos') c.contador = d.documentos;
+    if (c.id === 'comunicados') c.contador = d.comunicadosNaoLidos;
+    if (c.id === 'gorjeta') c.contador = d.gorjeta.naoVistas;
+    if (c.id === 'escala') c.desc = resumoEscala(d.escala) || c.desc;
+    if (c.id === 'conquistas' && d.conquistas) {
+      c.contador = d.conquistas.novos;
+      if (d.conquistas.total > 0) c.desc = `${d.conquistas.total} conquista${d.conquistas.total > 1 ? 's' : ''}`;
+      else if (d.conquistas.tempo && d.conquistas.tempo.proximo) c.desc = `Próximo selo: ${d.conquistas.tempo.proximo.nome}`;
+    }
+    if (c.id === 'guias') c.desc = `${d.guias} ${d.guias === 1 ? 'guia disponível' : 'guias disponíveis'}`;
+    lista.push(c);
+  }
+  return lista;
+}
+// </ajudantes>
+
+// Busca um endereço sem nunca dar erro: se falhar, devolve null e a tela segue.
+async function buscar(url) {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
+async function preferencias(acao, ordem) {
+  try {
+    const res = await fetch('/api/preferencias-colaborador', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao, ordem }),
+    });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null; // se falhar, a tela continua com a ordem que já tem
+  }
+}
+
+const VAZIO = { solicitacoes: 0, documentos: 0, comunicadosNaoLidos: 0, gorjeta: null, escala: null, conquistas: null, guias: 0 };
 
 export default function Inicio() {
+  const router = useRouter();
   const [perfil, setPerfil] = useState(null);
-  const [comunicados, setComunicados] = useState([]);
-  const [naoVistasCount, setNaoVistasCount] = useState(0);
-  const [docsNaoVistosCount, setDocsNaoVistosCount] = useState(0);
-  const [abrirSolicitacoes, setAbrirSolicitacoes] = useState(false);
-  const [abrirComunicados, setAbrirComunicados] = useState(false);
+  const [falhou, setFalhou] = useState(false);
+  const [dados, setDados] = useState(VAZIO);
+  const [pronto, setPronto] = useState(false);
+  const [organizando, setOrganizando] = useState(false);
+  const [ordem, setOrdem] = useState(null);   // null = ordem padrão
+
+  async function carregarComunicados() {
+    const lista = await buscar('/api/comunicados');
+    if (Array.isArray(lista)) setDados((d) => ({ ...d, comunicadosNaoLidos: lista.filter((c) => !c.lido).length }));
+  }
+
+  // números das bolinhas (rápidos, só banco de dados)
+  async function carregarNumeros() {
+    const [sol, doc, gor, con, gui] = await Promise.all([
+      buscar('/api/solicitacoes/nao-vistas'),
+      buscar('/api/documentos/nao-vistas'),
+      buscar('/api/gorjetas/nao-vistas'),
+      buscar('/api/conquistas'),
+      buscar('/api/guias'),
+    ]);
+    setDados((d) => ({
+      ...d,
+      solicitacoes: (sol && sol.count) || 0,
+      documentos: (doc && doc.count) || 0,
+      gorjeta: gor && typeof gor.total === 'number' ? gor : null,
+      conquistas: con && !con.erro ? con : null,
+      guias: Array.isArray(gui) ? gui.length : 0,
+    }));
+    await carregarComunicados();
+  }
 
   useEffect(() => {
-    fetch('/api/perfil').then((r) => r.json()).then(setPerfil);
-    fetch('/api/comunicados').then((r) => r.json()).then(setComunicados);
-    fetch('/api/solicitacoes/nao-vistas').then((r) => r.json()).then((d) => setNaoVistasCount(d.count || 0));
-    fetch('/api/documentos/nao-vistas').then((r) => r.json()).then((d) => setDocsNaoVistosCount(d.count || 0));
+    let vivo = true;
+    (async () => {
+      const p = await buscar('/api/perfil');
+      if (!vivo) return;
+      if (!p || p.erro) { setFalhou(true); return; }
+      setPerfil(p);
+      await carregarNumeros();
+      if (vivo) setPronto(true);
+    })();
+    preferencias('ler').then((d) => { if (vivo && d && Array.isArray(d.ordem)) setOrdem(d.ordem); });
+    // a escala pode demorar (o serviço de escalas às vezes "acorda"): a caixinha aparece quando chegar
+    buscar('/api/escala?dias=1').then((e) => { if (vivo && e && !e.erro) setDados((d) => ({ ...d, escala: e })); });
+
+    const atualizar = setInterval(carregarNumeros, 90000);
+    const aoLerComunicado = () => carregarComunicados();
+    window.addEventListener('comunicados-lidos', aoLerComunicado);
+    return () => { vivo = false; clearInterval(atualizar); window.removeEventListener('comunicados-lidos', aoLerComunicado); };
   }, []);
 
-  if (!perfil) {
+  function reordenar(novaOrdem) {
+    setOrdem(novaOrdem);                  // muda na hora
+    preferencias('salvar', novaOrdem);    // e grava em segundo plano
+  }
+
+  async function restaurar() {
+    setOrdem(null);
+    await preferencias('restaurar');
+  }
+
+  if (falhou) {
     return (
       <div>
         <NavColaborador />
-        <p>Carregando...</p>
+        <div className="erro">Não foi possível carregar seus dados. Atualize a página ou entre de novo.</div>
+      </div>
+    );
+  }
+
+  if (!perfil || !pronto) {
+    return (
+      <div>
+        <NavColaborador />
+        <p style={{ color: 'var(--muted)' }}>Carregando...</p>
       </div>
     );
   }
 
   const nomeExibido = perfil.nomeSocial || perfil.nome;
-  const naoLidosCount = comunicados.filter((c) => !c.lido).length;
+  const cards = aplicarOrdemCaixinhas(montarCaixinhas(dados), ordem);
+
+  function abrir(id) {
+    const c = cards.find((x) => x.id === id);
+    if (c) router.push(c.href);
+  }
 
   return (
     <div>
       <NavColaborador />
 
-      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <div className="card" style={{ width: 220, textAlign: 'center', flexShrink: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-            <Avatar fotoUrl={perfil.fotoUrl} nome={nomeExibido} size={72} />
-          </div>
-          <div style={{ fontWeight: 700 }}>{nomeExibido}</div>
-          <div style={{ fontSize: 13, color: 'var(--muted)' }}>{perfil.cargo || '-'}</div>
-          <div style={{ fontSize: 13, color: 'var(--muted)' }}>{perfil.loja}</div>
-          <Link href="/perfil">
-            <button className="secundario" style={{ marginTop: 12, width: '100%' }}>Ver perfil completo</button>
-          </Link>
-        </div>
-
-        <div style={{ flex: 1, minWidth: 260 }}>
-<CartaoGorjeta />
-<CartaoEscala />
-<CartaoAniversario />
-<CartaoConquistas />
-<CartaoGuias />
-          <div className="card">
-            <div
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-              onClick={() => setAbrirSolicitacoes(!abrirSolicitacoes)}
-            >
-              <h3 style={{ margin: 0 }}>
-                Solicitações
-                {naoVistasCount > 0 && <span className="bolinha-notificacao">{naoVistasCount}</span>}
-              </h3>
-              <span style={{ color: 'var(--muted)' }}>{abrirSolicitacoes ? '▲' : '▼'}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', margin: '4px 0 6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Avatar fotoUrl={perfil.fotoUrl} nome={nomeExibido} size={56} />
+          <div>
+            <h2 style={{ margin: 0 }}>Olá, {primeiroNome(nomeExibido)}!</h2>
+            <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+              {[perfil.cargo, perfil.loja].filter(Boolean).join(' · ') || 'O que você precisa fazer hoje?'}
             </div>
-            {abrirSolicitacoes && (
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <Link href="/minhas-solicitacoes"><button>Minhas solicitações</button></Link>
-                <Link href="/nova-solicitacao"><button className="secundario">Enviar solicitação</button></Link>
-              </div>
-            )}
-          </div>
-
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ margin: 0 }}>
-                  Documentos
-                  {docsNaoVistosCount > 0 && <span className="bolinha-notificacao">{docsNaoVistosCount}</span>}
-                </h3>
-                <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
-                  Contracheques e outros documentos pessoais
-                </p>
-              </div>
-              <Link href="/documentos"><button className="secundario">Ver documentos</button></Link>
-            </div>
-          </div>
-
-          <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ margin: 0 }}>Conteúdos</h3>
-                <p style={{ fontSize: 13, color: 'var(--muted)', margin: '4px 0 0' }}>
-                  Cursos, links úteis, contatos, benefícios, regras e manuais
-                </p>
-              </div>
-              <Link href="/conteudos"><button className="secundario">Ver conteúdos</button></Link>
-            </div>
-          </div>
-
-          <div className="card">
-            <div
-              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-              onClick={() => setAbrirComunicados(!abrirComunicados)}
-            >
-              <h3 style={{ margin: 0 }}>
-                Comunicados recebidos
-                {naoLidosCount > 0 && <span className="badge aberta" style={{ marginLeft: 8 }}>{naoLidosCount} novo(s)</span>}
-              </h3>
-              <span style={{ color: 'var(--muted)' }}>{abrirComunicados ? '▲' : '▼'}</span>
-            </div>
-            {abrirComunicados && (
-              <div style={{ marginTop: 12 }}>
-                {comunicados.length === 0 && (
-                  <p style={{ fontSize: 14, color: 'var(--muted)' }}>Nenhum comunicado recebido ainda.</p>
-                )}
-                {comunicados.map((c) => (
-                  <div key={c.id} style={{ borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <b>{c.assunto}</b>
-                      {!c.lido && <span className="badge aberta">Novo</span>}
-                    </div>
-                    <p style={{ fontSize: 14 }}>{c.texto}</p>
-                    {c.anexos.map((a) => (
-                      <div key={a.id}>
-                        <a href={a.linkDrive} target="_blank" rel="noreferrer">📎 {a.nomeArquivo}</a>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {organizando && <button type="button" className="secundario" onClick={restaurar}>Restaurar ordem padrão</button>}
+          <button type="button" className={organizando ? '' : 'secundario'} onClick={() => setOrganizando((v) => !v)}>
+            {organizando ? '✔ Concluir' : '✋ Organizar caixinhas'}
+          </button>
+        </div>
+      </div>
+
+      {organizando && (
+        <p style={{ margin: '8px 0 14px', fontSize: 13, color: 'var(--muted)' }}>
+          Arraste as caixinhas para mudar a ordem (no celular, segure um instante e arraste). A sua ordem fica salva só para você.
+        </p>
+      )}
+
+      <div style={{ marginTop: 14 }}>
+        <CartaoAniversario />
+        <GradeCaixinhas cards={cards} organizando={organizando} onAbrir={abrir} onReordenar={reordenar} />
       </div>
     </div>
   );

@@ -15,12 +15,13 @@ export default function NavColaborador() {
     { href: '/nova-solicitacao', label: 'Nova solicitação' },
     { href: '/conteudos', label: 'Conteúdos' },
     { href: '/documentos', label: 'Documentos' },
+    { href: '/comunicados', label: 'Comunicados' },
   ];
 
   useEffect(() => {
     fetch('/api/comunicados')
       .then((r) => r.json())
-      .then((lista) => setNaoLidos((lista || []).filter((c) => !c.lido)));
+      .then((lista) => setNaoLidos(Array.isArray(lista) ? lista.filter((c) => !c.lido) : []));
     fetch('/api/solicitacoes/nao-vistas')
       .then((r) => r.json())
       .then((d) => setNaoVistasCount(d.count || 0));
@@ -38,6 +39,7 @@ export default function NavColaborador() {
     const atual = naoLidos[0];
     await fetch(`/api/comunicados/${atual.id}/lido`, { method: 'POST' });
     setNaoLidos(naoLidos.slice(1));
+    window.dispatchEvent(new Event('comunicados-lidos'));
   }
 
   return (
@@ -73,6 +75,7 @@ export default function NavColaborador() {
         </Link>
         <div className="titulo-portal">Portal do Colaborador</div>
       </div>
+      {pathname !== '/inicio' && (
       <div className="nav-colaborador">
         {links.map((l) => (
           <Link key={l.href} href={l.href} className={pathname === l.href ? 'ativo' : ''}>
@@ -83,9 +86,13 @@ export default function NavColaborador() {
             {l.href === '/documentos' && docsNaoVistosCount > 0 && (
               <span className="bolinha-notificacao">{docsNaoVistosCount}</span>
             )}
+            {l.href === '/comunicados' && naoLidos.length > 0 && (
+              <span className="bolinha-notificacao">{naoLidos.length}</span>
+            )}
           </Link>
         ))}
       </div>
+      )}
     </div>
   );
 }
