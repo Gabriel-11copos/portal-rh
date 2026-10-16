@@ -162,9 +162,9 @@ export default function SelosAdmin() {
           <div className="card">
             <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 0 }}>Calculados sozinhos, a partir da data de admissão e de nascimento.</p>
             {dados.automaticos.tempo.map((t) => (
-              <div key={t.codigo} style={{ fontSize: 14, padding: '3px 0' }}>{t.icone} <b>{t.nome}</b> · {t.descricao}</div>
+              <div key={t.codigo} style={{ fontSize: 14, padding: '3px 0' }}><IconeSelo icone={t.icone} imagem={`/selos/${t.codigo}.png`} tamanho={28} /> <b>{t.nome}</b> · {t.descricao}</div>
             ))}
-            <div style={{ fontSize: 14, padding: '3px 0' }}>{dados.automaticos.aniversario.icone} <b>{dados.automaticos.aniversario.nome}</b> · {dados.automaticos.aniversario.descricao}</div>
+            <div style={{ fontSize: 14, padding: '3px 0' }}><IconeSelo icone={dados.automaticos.aniversario.icone} imagem={`/selos/${dados.automaticos.aniversario.codigo}.png`} tamanho={28} /> <b>{dados.automaticos.aniversario.nome}</b> · {dados.automaticos.aniversario.descricao}</div>
           </div>
         </>
       )}

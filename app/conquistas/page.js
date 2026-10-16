@@ -47,11 +47,11 @@ const ESTILOS = `
 .sl-destaque { background: var(--verde-pastel); border: 1px solid var(--verde); border-radius: 18px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
 `;
 
-function Selo({ icone, nome, descricao, estado, extra, mensagem, novo }) {
+function Selo({ icone, imagem, nome, descricao, estado, extra, mensagem, novo }) {
   return (
     <div className={`sl-selo ${estado === 'ganho' ? 'sl-ganho' : 'sl-bloqueado'}`}>
       {novo && <span className="sl-novo">NOVO</span>}
-      <div className={`sl-icone ${ehImagemDeSelo(icone) ? 'sl-icone-img' : ''}`}><IconeSelo icone={icone} tamanho={ehImagemDeSelo(icone) ? 68 : 32} /></div>
+      <div className={`sl-icone ${ehImagemDeSelo(icone) || imagem ? 'sl-icone-img' : ''}`}><IconeSelo icone={icone} imagem={imagem} tamanho={ehImagemDeSelo(icone) || imagem ? 68 : 32} /></div>
       <div className="sl-nome">{nome}</div>
       {descricao && <div className="sl-desc">{descricao}</div>}
       {extra && <div className="sl-extra">{extra}</div>}
@@ -89,7 +89,7 @@ export default function MinhasConquistas() {
         <>
           {dados.aniversario && (
             <div className="sl-destaque">
-              <div className="sl-icone" style={{ margin: 0, background: '#fff' }}>{dados.aniversario.icone}</div>
+              <div className="sl-icone sl-icone-img" style={{ margin: 0 }}><IconeSelo icone={dados.aniversario.icone} imagem={`/selos/${dados.aniversario.codigo}.png`} tamanho={68} /></div>
               <div>
                 <div className="sl-nome">{dados.aniversario.nome}</div>
                 <div className="sl-desc">Você é aniversariante do mês. Parabéns! 🎂</div>
@@ -108,6 +108,7 @@ export default function MinhasConquistas() {
                   <Selo
                     key={n.codigo}
                     icone={n.icone}
+                    imagem={`/selos/${n.codigo}.png`}
                     nome={n.nome}
                     descricao={n.descricao}
                     estado={n.conquistado ? 'ganho' : 'bloqueado'}
