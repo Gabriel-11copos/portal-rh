@@ -233,3 +233,36 @@ model GuiaMidia {
   dados    Bytes
   criadoEm DateTime @default(now())
 }
+model Missao {
+  id               String    @id @default(cuid())
+  titulo           String
+  descricao        String    @default("")
+  modo             String
+  seloId           String?
+  recompensaTexto  String    @default("")
+  rotuloReferencia String    @default("")
+  repetivel        Boolean   @default(false)
+  prazo            DateTime?
+  ativo            Boolean   @default(true)
+  criadoEm         DateTime  @default(now())
+}
+
+model MissaoPedido {
+  id                   String    @id @default(cuid())
+  missaoId             String
+  colaboradorId        String
+  referencia           String?
+  mensagem             String?
+  status               String    @default("pendente")
+  motivoRecusa         String?
+  decididoPor          String?
+  decididoEm           DateTime?
+  recompensaPendente   Boolean   @default(false)
+  recompensaEntregueEm DateTime?
+  vistoColaborador     Boolean   @default(true)
+  criadoEm             DateTime  @default(now())
+
+  @@index([colaboradorId])
+  @@index([missaoId])
+  @@index([status])
+}

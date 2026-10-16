@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import NavColaborador from '../components/NavColaborador';
 import BotaoVoltar from '../components/BotaoVoltar';
+import IconeSelo, { ehImagemDeSelo } from '../components/IconeSelo';
 
 // <ajudantes>
 // "14 meses" -> "1 ano e 2 meses"
@@ -37,6 +38,7 @@ const ESTILOS = `
   width: 60px; height: 60px; margin: 0 auto 8px; border-radius: 50%; background: var(--verde-pastel);
   display: flex; align-items: center; justify-content: center; font-size: 32px;
 }
+.sl-icone-img { background: transparent; width: 72px; height: 72px; }
 .sl-nome { font-weight: 700; color: var(--verde); font-size: 15px; }
 .sl-desc { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
 .sl-extra { font-size: 12px; margin-top: 6px; color: #b5603a; font-weight: 700; }
@@ -49,7 +51,7 @@ function Selo({ icone, nome, descricao, estado, extra, mensagem, novo }) {
   return (
     <div className={`sl-selo ${estado === 'ganho' ? 'sl-ganho' : 'sl-bloqueado'}`}>
       {novo && <span className="sl-novo">NOVO</span>}
-      <div className="sl-icone">{icone}</div>
+      <div className={`sl-icone ${ehImagemDeSelo(icone) ? 'sl-icone-img' : ''}`}><IconeSelo icone={icone} tamanho={ehImagemDeSelo(icone) ? 68 : 32} /></div>
       <div className="sl-nome">{nome}</div>
       {descricao && <div className="sl-desc">{descricao}</div>}
       {extra && <div className="sl-extra">{extra}</div>}

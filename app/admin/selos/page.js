@@ -2,10 +2,24 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import BotaoVoltar from '../../components/BotaoVoltar';
+import IconeSelo, { ehImagemDeSelo } from '../../components/IconeSelo';
 
 const GRUPOS = { presenca: 'Presença', reconhecimento: 'Reconhecimento' };
 // Datas de calendário ficam guardadas à meia-noite UTC: ler em UTC evita o "um dia a menos".
 const dataCal = (v) => new Date(v).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+
+// Envia a arte do selo (imagem quadrada) e devolve o endereço para usar como ícone.
+async function enviarArteDoSelo(arquivo) {
+  if (!arquivo) return { erro: 'Escolha uma imagem.' };
+  if (!arquivo.type.startsWith('image/')) return { erro: 'Escolha um arquivo de imagem (PNG, JPG ou WebP).' };
+  if (arquivo.size > 4 * 1024 * 1024) return { erro: 'A imagem passa de 4 MB. Use uma imagem menor (512 x 512 já basta).' };
+  const form = new FormData();
+  form.set('arquivo', arquivo);
+  const res = await fetch('/api/guias/midia', { method: 'POST', body: form });
+  const json = await res.json();
+  if (!res.ok) return { erro: json.erro || 'Não foi possível enviar a imagem.' };
+  return { icone: `/api/guias/midia/${json.id}` };
+}
 
 export default function SelosAdmin() {
   const [dados, setDados] = useState(null);
@@ -83,8 +97,12 @@ export default function SelosAdmin() {
         <form onSubmit={criar}>
           <label>Nome</label>
           <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Ex: Salvou o Turno" required />
-          <label>Ícone (um emoji)</label>
-          <input value={form.icone} onChange={(e) => setForm({ ...form, icone: e.target.value })} placeholder="🏆" style={{ maxWidth: 120 }} required />
+          <label>Ícone: um emoji ou uma imagem</label>
+          {ehImagemDeSelo(form.icone)
+            ? <div style={{ marginBottom: 8 }}><IconeSelo icone={form.icone} tamanho={64} /> <button type="button" className="secundario" style={{ padding: '2px 10px', fontSize: 12 }} onClick={() => setForm({ ...form, icone: '' })}>Tirar a imagem</button></div>
+            : <input value={form.icone} onChange={(e) => setForm({ ...form, icone: e.target.value })} placeholder="🏆" style={{ maxWidth: 120 }} required />}
+          <label>Ou envie a arte do selo (PNG quadrado, de preferência 512 x 512)</label>
+          <input type="file" accept="image/*" onChange={async (e) => { const r = await enviarArteDoSelo(e.target.files[0]); if (r.erro) setErro(r.erro); else { setErro(''); setForm({ ...form, icone: r.icone }); } }} />
           <label>Descrição (aparece para o colaborador)</label>
           <input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="Ex: Cobriu um turno quando a equipe precisou" />
           <label>Grupo</label>
@@ -104,8 +122,12 @@ export default function SelosAdmin() {
             <div>
               <label>Nome</label>
               <input value={edicao.nome} onChange={(e) => setEdicao({ ...edicao, nome: e.target.value })} />
-              <label>Ícone</label>
-              <input value={edicao.icone} onChange={(e) => setEdicao({ ...edicao, icone: e.target.value })} style={{ maxWidth: 120 }} />
+              <label>Ícone: um emoji ou uma imagem</label>
+              {ehImagemDeSelo(edicao.icone)
+                ? <div style={{ marginBottom: 8 }}><IconeSelo icone={edicao.icone} tamanho={64} /> <button type="button" className="secundario" style={{ padding: '2px 10px', fontSize: 12 }} onClick={() => setEdicao({ ...edicao, icone: '' })}>Tirar a imagem</button></div>
+                : <input value={edicao.icone} onChange={(e) => setEdicao({ ...edicao, icone: e.target.value })} style={{ maxWidth: 120 }} placeholder="🏆" />}
+              <label>Ou envie a arte do selo (PNG quadrado, de preferência 512 x 512)</label>
+              <input type="file" accept="image/*" onChange={async (e) => { const r = await enviarArteDoSelo(e.target.files[0]); if (r.erro) setErro(r.erro); else { setErro(''); setEdicao({ ...edicao, icone: r.icone }); } }} />
               <label>Descrição</label>
               <input value={edicao.descricao} onChange={(e) => setEdicao({ ...edicao, descricao: e.target.value })} />
               <div style={{ display: 'flex', gap: 8 }}>
@@ -116,7 +138,7 @@ export default function SelosAdmin() {
           ) : (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <div>
-                <span style={{ fontSize: 24, marginRight: 8 }}>{s.icone}</span>
+                <span style={{ marginRight: 8 }}><IconeSelo icone={s.icone} tamanho={ehImagemDeSelo(s.icone) ? 40 : 24} /></span>
                 <b>{s.nome}</b>{' '}
                 <span className="badge encerrada">{GRUPOS[s.grupo] || s.grupo}</span>
                 {!s.ativo && <span className="badge encerrada" style={{ marginLeft: 6 }}>Desativado</span>}
@@ -153,7 +175,7 @@ export default function SelosAdmin() {
         <div key={g.id} className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <div>
-              <b>{g.icone} {g.selo}</b> · {g.colaborador}
+              <b><IconeSelo icone={g.icone} tamanho={18} /> {g.selo}</b> · {g.colaborador}
               <div style={{ fontSize: 13, color: 'var(--muted)' }}>
                 {g.loja ? `${g.loja} · ` : ''}{dataCal(g.data)}{g.periodoRef ? ` · ref. ${g.periodoRef}` : ''}
                 {g.concedidoPor ? ` · por ${g.concedidoPor}` : ''}{g.visto ? ' · visto' : ' · ainda não visto'}

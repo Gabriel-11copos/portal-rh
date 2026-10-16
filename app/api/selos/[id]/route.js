@@ -1,6 +1,6 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
-const { lerCamposDoSelo } = require('../../../../lib/selos');
+const { lerCamposDoSelo, idDaImagemDoSelo } = require('../../../../lib/selos');
 
 // Só RH. Edita nome, descrição e ícone, ou ativa e desativa um selo.
 // Desativar esconde o selo na hora de conceder, mas quem já ganhou continua com ele.
@@ -18,7 +18,21 @@ async function PATCH(req, { params }) {
     const existe = await prisma.selo.findUnique({ where: { id: params.id } });
     if (!existe) return Response.json({ erro: 'Selo não encontrado.' }, { status: 404 });
 
-    return Response.json(await prisma.selo.update({ where: { id: params.id }, data: saida }));
+    // se o ícone virou uma imagem enviada, ela precisa existir de verdade e ser uma imagem
+    const novaImagem = saida.icone !== undefined ? idDaImagemDoSelo(saida.icone) : null;
+    if (novaImagem) {
+      const m = await prisma.guiaMidia.findUnique({ where: { id: novaImagem } });
+      if (!m || !String(m.tipoMime).startsWith('image/')) return Response.json({ erro: 'A imagem do selo não foi encontrada. Envie de novo.' }, { status: 400 });
+    }
+
+    const atualizado = await prisma.selo.update({ where: { id: params.id }, data: saida });
+
+    // trocou a imagem por outra (ou voltou para emoji): apaga a antiga para não acumular arquivo à toa
+    const antiga = idDaImagemDoSelo(existe.icone);
+    if (saida.icone !== undefined && antiga && antiga !== novaImagem) {
+      await prisma.guiaMidia.deleteMany({ where: { id: antiga } });
+    }
+    return Response.json(atualizado);
   } catch (err) {
     console.error('Erro ao editar selo:', err);
     return Response.json({ erro: 'Não foi possível salvar o selo.' }, { status: 500 });

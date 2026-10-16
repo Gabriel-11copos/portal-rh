@@ -13,6 +13,7 @@ const CAIXINHAS = [
   { id: 'gorjetas', icon: '💰', title: 'Gorjetas', desc: 'Extrato de gorjeta por unidade e período', href: '/admin/gorjetas' },
   { id: 'aniversariantes', icon: '🎂', title: 'Aniversariantes', desc: 'Quem faz aniversário no mês e o cartão de parabéns', href: '/admin/aniversariantes' },
   { id: 'selos', icon: '🏅', title: 'Selos', desc: 'Reconhecimentos, presença e tempo de casa', href: '/admin/selos' },
+  { id: 'missoes', icon: '🎯', title: 'Missões', desc: 'Missões, aprovações e recompensas', href: '/admin/missoes' },
   { id: 'escala', icon: '🗓️', title: 'Escala (prévia)', desc: 'Ver a escala de um colaborador como ele vê', href: '/admin/escala-previa' },
   { id: 'guias', icon: '📖', title: 'Guias e treinamentos', desc: 'Páginas com texto, imagens, arquivos e links', href: '/admin/guias' },
   { id: 'conteudos', icon: '📚', title: 'Conteúdos', desc: 'Cursos, links, benefícios, regras e manuais', href: '/admin/conteudos' },
@@ -47,7 +48,7 @@ function primeiroNomeSaudacao(nome) {
 }
 
 // Monta a lista final: soma bolinha e aviso às caixinhas certas.
-function montarCaixinhas(base, resumo, aniversariosHoje) {
+function montarCaixinhas(base, resumo, aniversariosHoje, missoes = null) {
   return base.map((c) => {
     if (c.id === 'solicitacoes' && resumo) {
       return {
@@ -55,6 +56,9 @@ function montarCaixinhas(base, resumo, aniversariosHoje) {
         contador: resumo.pendentes,
         aviso: resumo.atrasadas > 0 ? `⏰ ${resumo.atrasadas} atrasada${resumo.atrasadas > 1 ? 's' : ''}` : null,
       };
+    }
+    if (c.id === 'missoes' && missoes) {
+      return { ...c, contador: missoes.pendentes, aviso: missoes.aEntregar > 0 ? `🎁 ${missoes.aEntregar} a entregar` : null };
     }
     if (c.id === 'aniversariantes' && aniversariosHoje > 0) {
       return { ...c, aviso: `🎂 ${aniversariosHoje} hoje` };
@@ -70,6 +74,7 @@ export default function PainelRH() {
   const [ordem, setOrdem] = useState(null);          // null = ordem padrão
   const [resumo, setResumo] = useState(null);
   const [aniversariosHoje, setAniversariosHoje] = useState(0);
+  const [missoes, setMissoes] = useState(null);
   const [nome, setNome] = useState('');
 
   async function preferencias(acao, novaOrdem) {
@@ -108,6 +113,11 @@ export default function PainelRH() {
         const d = await r.json();
         if (vivo && r.ok) setAniversariosHoje(contarAniversariantesHoje(d));
       } catch { /* idem */ }
+      try {
+        const r = await fetch('/api/missoes-admin');
+        const d = await r.json();
+        if (vivo && r.ok) setMissoes({ pendentes: (d.pendentes || []).length, aEntregar: (d.aEntregar || []).length });
+      } catch { /* idem */ }
     }
     atualizar();
     const t = setInterval(atualizar, 90000);
@@ -129,7 +139,7 @@ export default function PainelRH() {
     router.push('/login');
   }
 
-  const cards = aplicarOrdemCaixinhas(montarCaixinhas(CAIXINHAS, resumo, aniversariosHoje), ordem);
+  const cards = aplicarOrdemCaixinhas(montarCaixinhas(CAIXINHAS, resumo, aniversariosHoje, missoes), ordem);
 
   function abrir(id) {
     const c = CAIXINHAS.find((x) => x.id === id);

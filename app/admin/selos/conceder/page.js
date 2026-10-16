@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import * as XLSX from 'xlsx';
 import BotaoVoltar from '../../../components/BotaoVoltar';
+import IconeSelo, { ehImagemDeSelo } from '../../../components/IconeSelo';
 
 // <planilha>
 // Transforma uma planilha em texto, para o servidor achar os CPFs. Números de 10 dígitos
@@ -152,7 +153,7 @@ export default function ConcederSelos() {
         <label>Selo</label>
         <select value={seloId} onChange={(e) => { setSeloId(e.target.value); invalidar(); }}>
           <option value="">Escolha...</option>
-          {selos.map((s) => <option key={s.id} value={s.id}>{s.icone} {s.nome}</option>)}
+          {selos.map((s) => <option key={s.id} value={s.id}>{ehImagemDeSelo(s.icone) ? s.nome : `${s.icone} ${s.nome}`}</option>)}
         </select>
 
         {exigeRef && (
@@ -204,7 +205,7 @@ export default function ConcederSelos() {
         <div className="card">
           <h3 style={{ marginTop: 0 }}>Confira antes de conceder</h3>
           <p style={{ fontSize: 14 }}>
-            <span style={{ fontSize: 22 }}>{previa.selo.icone}</span> <b>{previa.selo.nome}</b> será concedido a <b>{previa.novos.length}</b> pessoa(s). Nada foi gravado ainda.
+            <IconeSelo icone={previa.selo.icone} tamanho={24} /> <b>{previa.selo.nome}</b> será concedido a <b>{previa.novos.length}</b> pessoa(s). Nada foi gravado ainda.
           </p>
           <Lista titulo="Vão receber" itens={previa.novos} render={(c) => `${c.nome} — ${c.loja}`} />
           <Lista titulo="Já têm esse selo neste mês de referência (serão pulados)" itens={previa.jaTem} render={(c) => `${c.nome} — ${c.loja}`} cor="var(--muted)" />
@@ -220,7 +221,7 @@ export default function ConcederSelos() {
       {resultado && (
         <div className="card">
           <h3 style={{ marginTop: 0, color: 'var(--success)' }}>✓ Selos concedidos</h3>
-          <p>{resultado.selo.icone} <b>{resultado.selo.nome}</b> foi concedido a <b>{resultado.criados}</b> pessoa(s). Elas verão o selo em "Minhas conquistas", com a bolinha de novidade na tela inicial.</p>
+          <p><IconeSelo icone={resultado.selo.icone} tamanho={22} /> <b>{resultado.selo.nome}</b> foi concedido a <b>{resultado.criados}</b> pessoa(s). Elas verão o selo em "Minhas conquistas", com a bolinha de novidade na tela inicial.</p>
         </div>
       )}
     </div>

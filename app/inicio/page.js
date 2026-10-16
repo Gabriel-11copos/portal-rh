@@ -17,6 +17,7 @@ const CAIXINHAS = [
   { id: 'gorjeta', icon: '💰', title: 'Minha gorjeta', desc: 'Extrato por período: apuração, descontos e valor líquido', href: '/gorjeta' },
   { id: 'escala', icon: '🗓️', title: 'Minha escala', desc: 'Veja seus turnos da semana', href: '/escala' },
   { id: 'conquistas', icon: '🏅', title: 'Minhas conquistas', desc: 'Veja seus selos', href: '/conquistas' },
+  { id: 'missoes', icon: '🎯', title: 'Missões', desc: 'Cumpra missões e ganhe selos e recompensas', href: '/missoes' },
   { id: 'guias', icon: '📖', title: 'Guias e treinamentos', desc: 'Passo a passo, manuais e treinamentos', href: '/guias' },
   { id: 'conteudos', icon: '📚', title: 'Conteúdos', desc: 'Cursos, links úteis, contatos, benefícios, regras e manuais', href: '/conteudos' },
   { id: 'perfil', icon: '👤', title: 'Meu perfil', desc: 'Foto, nome social e seus dados', href: '/perfil' },
@@ -45,6 +46,7 @@ function montarCaixinhas(d) {
     if (base.id === 'gorjeta' && !(d.gorjeta && d.gorjeta.total > 0)) continue;
     if (base.id === 'escala' && !(d.escala && d.escala.liberada)) continue;
     if (base.id === 'guias' && !(d.guias > 0)) continue;
+    if (base.id === 'missoes' && !(d.missoes && d.missoes.total > 0)) continue;
 
     const c = { ...base };
     if (c.id === 'solicitacoes') c.contador = d.solicitacoes;
@@ -56,6 +58,10 @@ function montarCaixinhas(d) {
       c.contador = d.conquistas.novos;
       if (d.conquistas.total > 0) c.desc = `${d.conquistas.total} conquista${d.conquistas.total > 1 ? 's' : ''}`;
       else if (d.conquistas.tempo && d.conquistas.tempo.proximo) c.desc = `Próximo selo: ${d.conquistas.tempo.proximo.nome}`;
+    }
+    if (c.id === 'missoes') {
+      c.contador = d.missoes.novos;
+      if (d.missoes.disponiveis > 0) c.desc = `${d.missoes.disponiveis} ${d.missoes.disponiveis === 1 ? 'missão para cumprir' : 'missões para cumprir'}`;
     }
     if (c.id === 'guias') c.desc = `${d.guias} ${d.guias === 1 ? 'guia disponível' : 'guias disponíveis'}`;
     lista.push(c);
@@ -88,7 +94,7 @@ async function preferencias(acao, ordem) {
   }
 }
 
-const VAZIO = { solicitacoes: 0, documentos: 0, comunicadosNaoLidos: 0, gorjeta: null, escala: null, conquistas: null, guias: 0 };
+const VAZIO = { solicitacoes: 0, documentos: 0, comunicadosNaoLidos: 0, gorjeta: null, escala: null, conquistas: null, guias: 0, missoes: null };
 
 export default function Inicio() {
   const router = useRouter();
@@ -106,12 +112,13 @@ export default function Inicio() {
 
   // números das bolinhas (rápidos, só banco de dados)
   async function carregarNumeros() {
-    const [sol, doc, gor, con, gui] = await Promise.all([
+    const [sol, doc, gor, con, gui, mis] = await Promise.all([
       buscar('/api/solicitacoes/nao-vistas'),
       buscar('/api/documentos/nao-vistas'),
       buscar('/api/gorjetas/nao-vistas'),
       buscar('/api/conquistas'),
       buscar('/api/guias'),
+      buscar('/api/missoes'),
     ]);
     setDados((d) => ({
       ...d,
@@ -120,6 +127,9 @@ export default function Inicio() {
       gorjeta: gor && typeof gor.total === 'number' ? gor : null,
       conquistas: con && !con.erro ? con : null,
       guias: Array.isArray(gui) ? gui.length : 0,
+      missoes: mis && Array.isArray(mis.missoes)
+        ? { total: mis.missoes.length, disponiveis: mis.missoes.filter((m) => m.estado === 'disponivel').length, novos: mis.novos || 0 }
+        : null,
     }));
     await carregarComunicados();
   }
