@@ -189,3 +189,28 @@ model PreferenciaPainel {
   ordemCards   Json?
   atualizadoEm DateTime @default(now()) @updatedAt
 }
+model Selo {
+  id        String   @id @default(cuid())
+  codigo    String   @unique
+  nome      String
+  descricao String   @default("")
+  icone     String
+  grupo     String
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+}
+
+model SeloConcedido {
+  id               String   @id @default(cuid())
+  colaboradorId    String
+  seloId           String
+  data             DateTime
+  periodoRef       String?
+  mensagem         String?
+  concedidoPor     String?
+  vistoColaborador Boolean  @default(false)
+  criadoEm         DateTime @default(now())
+
+  @@unique([colaboradorId, seloId, periodoRef])
+  @@index([colaboradorId])
+}
