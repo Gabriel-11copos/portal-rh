@@ -10,6 +10,7 @@ const CAIXINHAS = [
   { id: 'colaboradores', icon: '👥', title: 'Colaboradores', desc: 'Cadastro, lista de ativos e histórico', href: '/admin/colaboradores' },
   { id: 'comunicados', icon: '📢', title: 'Enviar comunicado', desc: 'Avisos para um, vários ou todos', href: '/admin/comunicados' },
   { id: 'documentos', icon: '📄', title: 'Documentos', desc: 'Contracheques e documentos por colaborador', href: '/admin/documentos' },
+  { id: 'contracheques', icon: '🧾', title: 'Distribuir contracheques', desc: 'Envie os PDFs e cada colaborador recebe o dele', href: '/admin/contracheques' },
   { id: 'gorjetas', icon: '💰', title: 'Gorjetas', desc: 'Extrato de gorjeta por unidade e período', href: '/admin/gorjetas' },
   { id: 'aniversariantes', icon: '🎂', title: 'Aniversariantes', desc: 'Quem faz aniversário no mês e o cartão de parabéns', href: '/admin/aniversariantes' },
   { id: 'selos', icon: '🏅', title: 'Selos', desc: 'Reconhecimentos, presença e tempo de casa', href: '/admin/selos' },

@@ -1,0 +1,336 @@
+'use client';
+import { useEffect, useState } from 'react';
+import BotaoVoltar from '../../components/BotaoVoltar';
+
+// <leitor>
+function normalizar(t) {
+  return String(t == null ? '' : t)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase().replace(/\s+/g, ' ').trim();
+}
+
+// Razão social que aparece no contracheque -> nome da loja no cadastro
+const EMPRESAS = {
+  'BREWTECO TERRACO BAR E RESTAURANTE LTDA': 'Brewteco Terraço',
+  'BREWTECO GAVEA BAR E RESTAURANTE LTDA': 'Brewteco Gávea',
+  'BREWTECO ROSAS BAR E RESTAURANTE LTDA': 'Brewteco Rosas',
+  'BREWTECO TIJUCA BAR E RESTAURANTE LTDA': 'Brewteco Tijuca',
+  'ONZE COPOS PARTICIPACOES S.A.': 'Onze Copos (Administrativo)',
+  'BREWTECO LARANJEIRAS BAR E RESTAURANTE LTDA': 'Brewteco Laranjeiras',
+  'BAR MARISQUEIRA DO LEBLON LTDA': 'Marisqueira do Leblon',
+  'CERVEJARIA BREWTECO LTDA': 'Cervejaria Brewteco (Fábrica)',
+  'BREWTECO MORRO DA URCA BAR E RESTAURANTE LTDA': 'Brewteco Morro da Urca',
+  'ONZE COPOS EVENTOS LTDA': 'Onze Copos Eventos',
+};
+
+// Lê o texto de cada página do PDF, linha por linha (de cima para baixo, da esquerda para a direita).
+async function lerTextoPaginas(pdfjsLib, dados) {
+  const pdf = await pdfjsLib.getDocument({ data: dados }).promise;
+  const paginas = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const conteudo = await page.getTextContent();
+    const itens = conteudo.items
+      .filter((it) => typeof it.str === 'string' && it.str.trim() !== '')
+      .map((it) => ({ x: it.transform[4], y: it.transform[5], s: it.str.trim() }));
+    itens.sort((a, b) => b.y - a.y || a.x - b.x);
+    const linhas = [];
+    let atual = null;
+    for (const it of itens) {
+      if (!atual || Math.abs(atual.y - it.y) > 2) { atual = { y: it.y, itens: [] }; linhas.push(atual); }
+      atual.itens.push(it);
+    }
+    paginas.push(linhas.map((l) => l.itens.sort((a, b) => a.x - b.x).map((it) => it.s).join(' ')).join('\n'));
+  }
+  if (pdf.destroy) pdf.destroy();
+  return paginas;
+}
+
+// O nome do colaborador é a linha que termina com o código de 6 dígitos (ex: "ANA LIMA 000123").
+function extrairNome(texto) {
+  const linhas = texto.split('\n').map((l) => l.trim()).filter(Boolean);
+  for (const linha of linhas) {
+    if (/Demonstrativo de Pagamento/i.test(linha)) continue;
+    const m = linha.match(/^(.+?)\s+(?<!\d)(\d{6})$/);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+
+// A empresa é a linha que contém uma das razões sociais conhecidas.
+function extrairEmpresa(texto) {
+  const linhas = texto.split('\n').map(normalizar).filter(Boolean);
+  const chaves = Object.keys(EMPRESAS).sort((a, b) => b.length - a.length);
+  for (const linha of linhas) {
+    for (const chave of chaves) {
+      if (linha.includes(chave)) return EMPRESAS[chave];
+    }
+  }
+  return null;
+}
+
+// Descobre de quem é o PDF, comparando o nome lido com o cadastro (elenco).
+// Resultado: ok | aviso (publica, mas com ressalva) | nao (não identificado).
+function identificar(paginas, elenco) {
+  let nomeLido = null;
+  let empresaLida = null;
+  for (const texto of paginas) {
+    if (!nomeLido) nomeLido = extrairNome(texto);
+    if (!empresaLida) empresaLida = extrairEmpresa(texto);
+  }
+  const base = { nomeLido, empresaLida };
+  if (!nomeLido) return { ...base, status: 'nao', motivo: 'Não encontrei o nome do colaborador dentro do PDF.' };
+
+  const alvo = normalizar(nomeLido);
+  let candidatos = elenco.filter((c) => c.nomeNorm && (alvo === c.nomeNorm || alvo.startsWith(`${c.nomeNorm} `)));
+  if (candidatos.length === 0) return { ...base, status: 'nao', motivo: `Ninguém no cadastro com o nome "${nomeLido}".` };
+  const maior = Math.max(...candidatos.map((c) => c.nomeNorm.length));
+  candidatos = candidatos.filter((c) => c.nomeNorm.length === maior);
+
+  const daEmpresa = empresaLida ? candidatos.filter((c) => c.loja === empresaLida) : [];
+  const avisos = [];
+  let escolhido;
+  if (daEmpresa.length === 1) {
+    escolhido = daEmpresa[0];
+  } else if (daEmpresa.length > 1 || candidatos.length > 1) {
+    return { ...base, status: 'nao', motivo: `Mais de um colaborador com o nome "${nomeLido}". Envie este arquivo pelo fluxo manual.` };
+  } else {
+    escolhido = candidatos[0];
+    avisos.push(empresaLida
+      ? `A empresa do contracheque (${empresaLida}) é diferente da do cadastro (${escolhido.loja}).`
+      : 'Não reconheci a empresa no PDF; conferi só pelo nome.');
+  }
+  if (!escolhido.ativo) avisos.push('Colaborador inativo no cadastro: não consegue entrar no portal para ver.');
+  return { ...base, status: avisos.length ? 'aviso' : 'ok', colaborador: escolhido, avisos };
+}
+
+// Se dois PDFs do lote são da mesma pessoa, só o primeiro segue; os outros viram "repetido".
+function marcarRepetidos(resultados) {
+  const vistos = new Set();
+  return resultados.map((r) => {
+    if (!r.colaborador) return r;
+    if (vistos.has(r.colaborador.id)) return { ...r, status: 'repetido', motivo: `Já há outro PDF de ${r.colaborador.nome} neste envio.` };
+    vistos.add(r.colaborador.id);
+    return r;
+  });
+}
+// </leitor>
+
+function carregarPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return new Promise((ok, falha) => {
+    const s = document.createElement('script');
+    s.src = '/pdfjs/pdf.min.js';
+    s.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.js';
+      ok(window.pdfjsLib);
+    };
+    s.onerror = () => falha(new Error('Não consegui carregar o leitor de PDF. Atualize a página e tente de novo.'));
+    document.head.appendChild(s);
+  });
+}
+
+function Lista({ titulo, itens, render, cor, aberta }) {
+  if (!itens || itens.length === 0) return null;
+  return (
+    <details style={{ marginTop: 10 }} open={aberta}>
+      <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: 14, color: cor }}>{titulo} ({itens.length})</summary>
+      <ul style={{ fontSize: 13, marginTop: 6 }}>{itens.map((it, i) => <li key={i}>{render(it)}</li>)}</ul>
+    </details>
+  );
+}
+
+export default function Contracheques() {
+  const [tipo, setTipo] = useState('Contracheque');
+  const [mes, setMes] = useState('');                 // "2026-08"
+  const [elenco, setElenco] = useState(null);
+  const [resultados, setResultados] = useState(null);
+  const [lendo, setLendo] = useState('');
+  const [publicando, setPublicando] = useState(null); // { feitos, total }
+  const [relatorio, setRelatorio] = useState(null);   // { criados, substituidos, falhas: [...] }
+  const [erro, setErro] = useState('');
+  const [drive, setDrive] = useState(null);
+
+  const competencia = mes ? `${mes.slice(5, 7)}/${mes.slice(0, 4)}` : '';
+
+  useEffect(() => {
+    fetch('/api/contracheques/elenco')
+      .then(async (r) => ({ ok: r.ok, json: await r.json() }))
+      .then(({ ok, json }) => {
+        if (!ok || !Array.isArray(json)) throw new Error('Não foi possível carregar os colaboradores.');
+        setElenco(json.map((c) => ({ ...c, nomeNorm: normalizar(c.nome) })));
+      })
+      .catch((e) => setErro(e.message));
+  }, []);
+
+  async function testarDrive() {
+    setDrive({ carregando: true });
+    try {
+      const r = await fetch('/api/contracheques/teste-drive');
+      const j = await r.json();
+      setDrive(r.ok && j.ok ? { ok: true } : { ok: false, erro: j.erro || 'Falhou.' });
+    } catch (e) {
+      setDrive({ ok: false, erro: e.message });
+    }
+  }
+
+  async function lerArquivos(e) {
+    const arquivos = [...e.target.files].filter((f) => /\.pdf$/i.test(f.name));
+    setResultados(null); setRelatorio(null); setErro('');
+    if (arquivos.length === 0) return;
+    if (!elenco) { setErro('A lista de colaboradores ainda não carregou. Espere um instante e escolha os arquivos de novo.'); return; }
+    try {
+      const pdfjs = await carregarPdfJs();
+      const lidos = [];
+      for (let i = 0; i < arquivos.length; i++) {
+        setLendo(`Lendo ${i + 1} de ${arquivos.length}...`);
+        const arq = arquivos[i];
+        try {
+          const dados = new Uint8Array(await arq.arrayBuffer());
+          const paginas = await lerTextoPaginas(pdfjs, dados);
+          const r = identificar(paginas, elenco);
+          lidos.push({ ...r, arquivo: arq, nome: arq.name, amostra: paginas[0] ? paginas[0].split('\n').slice(0, 12).join('\n') : '' });
+        } catch {
+          lidos.push({ status: 'nao', motivo: 'Não consegui ler este PDF (pode estar protegido ou corrompido).', arquivo: arq, nome: arq.name, amostra: '' });
+        }
+      }
+      setResultados(marcarRepetidos(lidos));
+    } catch (err) {
+      setErro(err.message || 'Não foi possível ler os arquivos.');
+    } finally {
+      setLendo('');
+    }
+  }
+
+  async function enviar(item) {
+    const form = new FormData();
+    form.set('arquivo', item.arquivo);
+    form.set('colaboradorId', item.colaborador.id);
+    form.set('tipo', tipo);
+    form.set('competencia', competencia);
+    try {
+      const r = await fetch('/api/contracheques/publicar', { method: 'POST', body: form });
+      const j = await r.json();
+      return r.ok ? { item, ok: true, acao: j.acao } : { item, ok: false, erro: j.erro || 'Falhou.' };
+    } catch (e) {
+      return { item, ok: false, erro: e.message || 'Falhou.' };
+    }
+  }
+
+  async function publicar(itens) {
+    if (!window.confirm(`Publicar ${itens.length} documento(s) de "${tipo}" referentes a ${competencia}? Cada colaborador passa a ver o dele em Documentos.`)) return;
+    setRelatorio(null);
+    setPublicando({ feitos: 0, total: itens.length });
+    const fila = [...itens];
+    const feitos = [];
+    async function trabalhador() {
+      while (fila.length > 0) {
+        const item = fila.shift();
+        feitos.push(await enviar(item));
+        setPublicando({ feitos: feitos.length, total: itens.length });
+      }
+    }
+    await Promise.all([trabalhador(), trabalhador(), trabalhador()]);
+    setPublicando(null);
+    setRelatorio({
+      criados: feitos.filter((f) => f.ok && f.acao === 'criado').length,
+      substituidos: feitos.filter((f) => f.ok && f.acao === 'substituido').length,
+      falhas: feitos.filter((f) => !f.ok),
+    });
+  }
+
+  const prontos = resultados ? resultados.filter((r) => r.status === 'ok' || r.status === 'aviso') : [];
+  const avisos = resultados ? resultados.filter((r) => r.status === 'aviso') : [];
+  const naoIdentificados = resultados ? resultados.filter((r) => r.status === 'nao') : [];
+  const repetidos = resultados ? resultados.filter((r) => r.status === 'repetido') : [];
+  const podePublicar = prontos.length > 0 && !!competencia && !!tipo.trim() && !publicando;
+
+  return (
+    <div>
+      <BotaoVoltar />
+      <h2>Distribuir contracheques</h2>
+      <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 0 }}>
+        Escolha os PDFs (um por colaborador, com qualquer nome de arquivo). O portal lê o nome dentro de cada PDF,
+        mostra quem é quem para você conferir e, só depois que você confirmar, guarda cada um na pasta do colaborador.
+        Os arquivos ficam privados: só o próprio colaborador e o RH abrem.
+      </p>
+      {erro && <div className="erro">{erro}</div>}
+
+      <div className="card">
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button type="button" className="secundario" onClick={testarDrive} disabled={drive && drive.carregando}>Testar conexão com o Drive</button>
+          {drive && drive.carregando && <span style={{ fontSize: 13, color: 'var(--muted)' }}>Testando...</span>}
+          {drive && drive.ok && <span style={{ fontSize: 13, color: 'var(--success)' }}>✓ Conexão funcionando.</span>}
+          {drive && drive.ok === false && <span style={{ fontSize: 13, color: 'var(--danger)' }}>✗ {drive.erro}</span>}
+        </div>
+      </div>
+
+      <div className="card">
+        <label>Tipo do documento</label>
+        <input list="tipos-doc" value={tipo} maxLength={40} onChange={(e) => { setTipo(e.target.value); setRelatorio(null); }} />
+        <datalist id="tipos-doc">
+          <option value="Contracheque" /><option value="Contracheque de 13º salário" /><option value="Adiantamento" /><option value="Férias" /><option value="Informe de rendimentos" />
+        </datalist>
+        <label>Competência (mês a que o documento se refere)</label>
+        <input type="month" value={mes} onChange={(e) => { setMes(e.target.value); setRelatorio(null); }} style={{ maxWidth: 220 }} />
+        <label>PDFs (pode escolher vários de uma vez)</label>
+        <input type="file" accept=".pdf,application/pdf" multiple onChange={lerArquivos} disabled={!elenco} />
+        {!elenco && !erro && <p style={{ fontSize: 13, color: 'var(--muted)' }}>Carregando a lista de colaboradores...</p>}
+        {lendo && <p style={{ fontSize: 13, color: 'var(--muted)' }}>{lendo}</p>}
+      </div>
+
+      {resultados && (
+        <div className="card">
+          <h3 style={{ marginTop: 0 }}>Confira antes de publicar</h3>
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', margin: '6px 0 4px' }}>
+            <div><b style={{ fontSize: 22, color: 'var(--success)' }}>{prontos.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>prontos para publicar</div></div>
+            <div><b style={{ fontSize: 22, color: 'var(--warning)' }}>{avisos.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>com aviso</div></div>
+            <div><b style={{ fontSize: 22, color: 'var(--danger)' }}>{naoIdentificados.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>não identificados</div></div>
+            {repetidos.length > 0 && <div><b style={{ fontSize: 22 }}>{repetidos.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>repetidos</div></div>}
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--muted)' }}>Nada foi publicado ainda. Os não identificados e os repetidos ficam de fora.</p>
+
+          <Lista titulo="Com aviso (serão publicados, confira)" itens={avisos} cor="var(--warning)" aberta
+            render={(r) => <span><b>{r.nome}</b> → {r.colaborador.nome}: {r.avisos.join(' ')}</span>} />
+          <Lista titulo="Não identificados (ficam de fora)" itens={naoIdentificados} cor="var(--danger)" aberta
+            render={(r) => (
+              <span>
+                <b>{r.nome}</b>: {r.motivo}
+                {r.amostra && (
+                  <details style={{ marginTop: 4 }}>
+                    <summary style={{ cursor: 'pointer', fontSize: 12, color: 'var(--muted)' }}>Ver o começo do texto lido</summary>
+                    <pre style={{ fontSize: 11, whiteSpace: 'pre-wrap', background: 'var(--pastel-bg)', padding: 8, borderRadius: 8 }}>{r.amostra}</pre>
+                  </details>
+                )}
+              </span>
+            )} />
+          <Lista titulo="Repetidos no envio (ficam de fora)" itens={repetidos} cor="var(--muted)" render={(r) => <span><b>{r.nome}</b>: {r.motivo}</span>} />
+          <Lista titulo="Prontos para publicar" itens={prontos} render={(r) => <span>{r.nome} → <b>{r.colaborador.nome}</b> ({r.colaborador.loja})</span>} />
+
+          <button type="button" style={{ marginTop: 14 }} disabled={!podePublicar} onClick={() => publicar(prontos)}>
+            {publicando ? `Publicando ${publicando.feitos} de ${publicando.total}...` : `Publicar ${prontos.length} documento(s)`}
+          </button>
+          {!competencia && prontos.length > 0 && <p style={{ fontSize: 13, color: 'var(--warning)' }}>Escolha a competência (o mês) para poder publicar.</p>}
+        </div>
+      )}
+
+      {relatorio && (
+        <div className="card">
+          <h3 style={{ marginTop: 0, color: relatorio.falhas.length === 0 ? 'var(--success)' : 'var(--warning)' }}>
+            {relatorio.falhas.length === 0 ? '✓ Publicação concluída' : 'Publicação concluída, com falhas'}
+          </h3>
+          <p style={{ margin: 0 }}>
+            <b>{relatorio.criados}</b> publicado(s){relatorio.substituidos > 0 && <span>, <b>{relatorio.substituidos}</b> substituído(s) (já existia este tipo e competência)</span>}.
+          </p>
+          <Lista titulo="Falharam (nada foi registrado para eles)" itens={relatorio.falhas} cor="var(--danger)" aberta
+            render={(f) => <span><b>{f.item.nome}</b> → {f.item.colaborador.nome}: {f.erro}</span>} />
+          {relatorio.falhas.length > 0 && (
+            <button type="button" style={{ marginTop: 10 }} onClick={() => publicar(relatorio.falhas.map((f) => f.item))}>
+              Tentar de novo os {relatorio.falhas.length} que falharam
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
