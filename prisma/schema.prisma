@@ -183,3 +183,9 @@ model Gorjeta {
   @@unique([colaboradorId, unidade, periodoInicio])
   @@index([colaboradorId])
 }
+
+model PreferenciaPainel {
+  owner        String   @id
+  ordemCards   Json?
+  atualizadoEm DateTime @default(now()) @updatedAt
+}

@@ -1,200 +1,173 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import GradeCaixinhas, { aplicarOrdemCaixinhas } from '../components/GradeCaixinhas';
 
-const rotulos = {
-  aberta: 'Pendente',
-  em_analise: 'Pendente',
-  respondida: 'Em andamento',
-  encerrada: 'Encerrada',
-};
-
-function diasRestantes(prazo) {
-  if (!prazo) return null;
-  return Math.ceil((new Date(prazo) - new Date()) / (1000 * 60 * 60 * 24));
-}
-
-function pertenceAoFiltro(s, chave) {
-  const dias = diasRestantes(s.prazo);
-  switch (chave) {
-    case 'pendente': return s.status === 'aberta' || s.status === 'em_analise';
-    case 'no_prazo': return s.status !== 'encerrada' && dias !== null && dias >= 0;
-    case 'atrasadas': return s.status !== 'encerrada' && dias !== null && dias < 0;
-    case 'em_andamento': return s.status === 'respondida';
-    case 'encerradas': return s.status === 'encerrada';
-    default: return true; // todas
-  }
-}
-
-const FILTROS = [
-  { chave: 'todas', label: 'Todas' },
-  { chave: 'pendente', label: 'Pendente' },
-  { chave: 'no_prazo', label: 'No prazo' },
-  { chave: 'atrasadas', label: 'Atrasadas' },
-  { chave: 'em_andamento', label: 'Em andamento' },
-  { chave: 'encerradas', label: 'Encerradas' },
+// <ajudantes>
+// Lista das caixinhas (na ordem padrão). Para acrescentar uma nova, é só incluir uma linha aqui.
+const CAIXINHAS = [
+  { id: 'solicitacoes', icon: '📨', title: 'Solicitações', desc: 'Pedidos dos colaboradores ao RH e ao DP', href: '/admin/solicitacoes' },
+  { id: 'colaboradores', icon: '👥', title: 'Colaboradores', desc: 'Cadastro, lista de ativos e histórico', href: '/admin/colaboradores' },
+  { id: 'comunicados', icon: '📢', title: 'Enviar comunicado', desc: 'Avisos para um, vários ou todos', href: '/admin/comunicados' },
+  { id: 'documentos', icon: '📄', title: 'Documentos', desc: 'Contracheques e documentos por colaborador', href: '/admin/documentos' },
+  { id: 'gorjetas', icon: '💰', title: 'Gorjetas', desc: 'Extrato de gorjeta por unidade e período', href: '/admin/gorjetas' },
+  { id: 'aniversariantes', icon: '🎂', title: 'Aniversariantes', desc: 'Quem faz aniversário no mês e o cartão de parabéns', href: '/admin/aniversariantes' },
+  { id: 'escala', icon: '🗓️', title: 'Escala (prévia)', desc: 'Ver a escala de um colaborador como ele vê', href: '/admin/escala-previa' },
+  { id: 'conteudos', icon: '📚', title: 'Conteúdos', desc: 'Cursos, links, benefícios, regras e manuais', href: '/admin/conteudos' },
+  { id: 'assuntos', icon: '🗂️', title: 'Assuntos', desc: 'Tipos de pedido, prazos e respostas automáticas', href: '/admin/assuntos' },
+  { id: 'usuarios', icon: '👤', title: 'Usuários', desc: 'Quem acessa o painel do RH', href: '/admin/usuarios' },
 ];
 
-export default function AdminPainel() {
-  const [solicitacoes, setSolicitacoes] = useState([]);
-  const [filtro, setFiltro] = useState('todas');
-  const [colaboradorBusca, setColaboradorBusca] = useState('');
-  const [lojaBusca, setLojaBusca] = useState('');
-  const [dataDe, setDataDe] = useState('');
-  const [dataAte, setDataAte] = useState('');
+// Números do menu. A bolinha mostra só o que está ESPERANDO o RH (pendentes de resposta).
+// "Atrasada" = não encerrada e com o prazo vencido (mesma regra da tela de solicitações).
+function calcularResumo(solicitacoes, agora) {
+  let pendentes = 0;
+  let atrasadas = 0;
+  for (const s of solicitacoes || []) {
+    if (s.status === 'aberta' || s.status === 'em_analise') pendentes++;
+    if (s.status !== 'encerrada' && s.prazo && new Date(s.prazo) < agora) atrasadas++;
+  }
+  return { pendentes, atrasadas };
+}
+
+// Quantos aniversariantes do mês fazem aniversário hoje (resposta de /api/aniversariantes).
+function contarAniversariantesHoje(dados) {
+  if (!dados || !Array.isArray(dados.aniversariantes) || !dados.hoje) return 0;
+  const mes = Number(dados.hoje.slice(5, 7));
+  const dia = Number(dados.hoje.slice(8, 10));
+  return dados.aniversariantes.filter((a) => a.mes === mes && a.dia === dia).length;
+}
+
+// Primeiro nome para a saudação ("Gabriel Silva" -> "Gabriel"). Vazio se não houver nome.
+function primeiroNomeSaudacao(nome) {
+  if (typeof nome !== 'string') return '';
+  return nome.trim().split(/\s+/)[0] || '';
+}
+
+// Monta a lista final: soma bolinha e aviso às caixinhas certas.
+function montarCaixinhas(base, resumo, aniversariosHoje) {
+  return base.map((c) => {
+    if (c.id === 'solicitacoes' && resumo) {
+      return {
+        ...c,
+        contador: resumo.pendentes,
+        aviso: resumo.atrasadas > 0 ? `⏰ ${resumo.atrasadas} atrasada${resumo.atrasadas > 1 ? 's' : ''}` : null,
+      };
+    }
+    if (c.id === 'aniversariantes' && aniversariosHoje > 0) {
+      return { ...c, aviso: `🎂 ${aniversariosHoje} hoje` };
+    }
+    return c;
+  });
+}
+// </ajudantes>
+
+export default function PainelRH() {
   const router = useRouter();
+  const [organizando, setOrganizando] = useState(false);
+  const [ordem, setOrdem] = useState(null);          // null = ordem padrão
+  const [resumo, setResumo] = useState(null);
+  const [aniversariosHoje, setAniversariosHoje] = useState(0);
+  const [nome, setNome] = useState('');
+
+  async function preferencias(acao, novaOrdem) {
+    try {
+      const res = await fetch('/api/preferencias-painel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao, ordem: novaOrdem }),
+      });
+      return res.ok ? await res.json() : null;
+    } catch {
+      return null; // se falhar, a tela continua funcionando com a ordem que já tem
+    }
+  }
+
+  // ordem salva e nome de quem está logado (o nome vem da sessão do login; se faltar, a saudação some)
+  useEffect(() => {
+    preferencias('ler').then((d) => {
+      if (!d) return;
+      if (Array.isArray(d.ordem)) setOrdem(d.ordem);
+      setNome(primeiroNomeSaudacao(d.nome));
+    });
+  }, []);
+
+  // números das bolinhas: ao abrir e a cada 90 segundos (a tela nunca some durante a atualização)
+  useEffect(() => {
+    let vivo = true;
+    async function atualizar() {
+      try {
+        const r = await fetch('/api/solicitacoes');
+        const d = await r.json();
+        if (vivo && r.ok && Array.isArray(d)) setResumo(calcularResumo(d, new Date()));
+      } catch { /* sem internet agora: mantém o número que já tinha */ }
+      try {
+        const r = await fetch('/api/aniversariantes');
+        const d = await r.json();
+        if (vivo && r.ok) setAniversariosHoje(contarAniversariantesHoje(d));
+      } catch { /* idem */ }
+    }
+    atualizar();
+    const t = setInterval(atualizar, 90000);
+    return () => { vivo = false; clearInterval(t); };
+  }, []);
+
+  function reordenar(novaOrdem) {
+    setOrdem(novaOrdem);                 // muda na hora
+    preferencias('salvar', novaOrdem);   // e grava em segundo plano
+  }
+
+  async function restaurar() {
+    setOrdem(null);
+    await preferencias('restaurar');
+  }
 
   async function sair() {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
   }
 
-  useEffect(() => {
-    fetch('/api/solicitacoes').then((r) => r.json()).then(setSolicitacoes);
-  }, []);
+  const cards = aplicarOrdemCaixinhas(montarCaixinhas(CAIXINHAS, resumo, aniversariosHoje), ordem);
 
-  const colaboradoresUnicos = useMemo(
-    () => [...new Map(solicitacoes.map((s) => [s.colaborador.id, s.colaborador])).values()]
-      .sort((a, b) => a.nome.localeCompare(b.nome)),
-    [solicitacoes]
-  );
-  const lojasUnicas = useMemo(
-    () => [...new Set(solicitacoes.map((s) => s.colaborador.loja))].sort(),
-    [solicitacoes]
-  );
-
-  function passaOutrosFiltros(s) {
-    const nomeExibido = (s.colaborador.nomeSocial || s.colaborador.nome).toLowerCase();
-    const bateColaborador = !colaboradorBusca || nomeExibido.includes(colaboradorBusca.toLowerCase());
-    const bateLoja = !lojaBusca || s.colaborador.loja.toLowerCase().includes(lojaBusca.toLowerCase());
-    const dataAbertura = new Date(s.dataAbertura);
-    const bateDataDe = !dataDe || dataAbertura >= new Date(dataDe);
-    const bateDataAte = !dataAte || dataAbertura <= new Date(dataAte + 'T23:59:59');
-    return bateColaborador && bateLoja && bateDataDe && bateDataAte;
+  function abrir(id) {
+    const c = CAIXINHAS.find((x) => x.id === id);
+    if (c) router.push(c.href);
   }
-
-  const contagemPorFiltro = Object.fromEntries(
-    FILTROS.map((f) => [
-      f.chave,
-      solicitacoes.filter((s) => pertenceAoFiltro(s, f.chave) && passaOutrosFiltros(s)).length,
-    ])
-  );
-
-  const filtradas = solicitacoes.filter((s) => pertenceAoFiltro(s, filtro) && passaOutrosFiltros(s));
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2>Painel RH / DP</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Link href="/admin/colaboradores"><button className="secundario">Colaboradores</button></Link>
-          <Link href="/admin/comunicados"><button className="secundario">Enviar comunicado</button></Link>
-          <Link href="/admin/assuntos"><button className="secundario">Assuntos</button></Link>
-          <Link href="/admin/conteudos"><button className="secundario">Conteúdos</button></Link>
-          <Link href="/admin/documentos"><button className="secundario">Documentos</button></Link>
-<Link href="/admin/gorjetas"><button className="secundario">Gorjetas</button></Link>
-<Link href="/admin/aniversariantes"><button className="secundario">Aniversariantes</button></Link>
-          <Link href="/admin/usuarios"><button className="secundario">Usuários</button></Link>
-          <button className="secundario" onClick={sair}>Sair</button>
-        </div>
-      </div>
-
-      <div className="filtros-status">
-        {FILTROS.map((f) => (
-          <button
-            key={f.chave}
-            className={filtro === f.chave ? 'ativo' : ''}
-            onClick={() => setFiltro(f.chave)}
-          >
-            {f.label}
-            {f.chave !== 'encerradas' && contagemPorFiltro[f.chave] > 0 && (
-              <span className="bolinha-notificacao">{contagemPorFiltro[f.chave]}</span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      <div className="card" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div style={{ minWidth: 200 }}>
-          <label>Colaborador</label>
-          <input
-            list="lista-colaboradores"
-            placeholder="Digite para buscar..."
-            value={colaboradorBusca}
-            onChange={(e) => setColaboradorBusca(e.target.value)}
-            style={{ marginBottom: 0 }}
-          />
-          <datalist id="lista-colaboradores">
-            {colaboradoresUnicos.map((c) => (
-              <option key={c.id} value={c.nomeSocial || c.nome} />
-            ))}
-          </datalist>
-        </div>
-        <div style={{ minWidth: 180 }}>
-          <label>Loja</label>
-          <input
-            list="lista-lojas"
-            placeholder="Digite para buscar..."
-            value={lojaBusca}
-            onChange={(e) => setLojaBusca(e.target.value)}
-            style={{ marginBottom: 0 }}
-          />
-          <datalist id="lista-lojas">
-            {lojasUnicas.map((l) => <option key={l} value={l} />)}
-          </datalist>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
         <div>
-          <label>De</label>
-          <input type="date" value={dataDe} onChange={(e) => setDataDe(e.target.value)} style={{ marginBottom: 0 }} />
+          <h2 style={{ margin: 0 }}>Painel RH / DP</h2>
+          <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--muted)' }}>
+            {nome ? `Olá, ${nome}! ` : ''}O que você precisa fazer hoje?
+          </p>
         </div>
-        <div>
-          <label>Até</label>
-          <input type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} style={{ marginBottom: 0 }} />
-        </div>
-        {(colaboradorBusca || lojaBusca || dataDe || dataAte) && (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {organizando && (
+            <button type="button" className="secundario" onClick={restaurar}>Restaurar ordem padrão</button>
+          )}
           <button
             type="button"
-            className="secundario"
-            onClick={() => { setColaboradorBusca(''); setLojaBusca(''); setDataDe(''); setDataAte(''); }}
+            className={organizando ? '' : 'secundario'}
+            onClick={() => setOrganizando((v) => !v)}
           >
-            Limpar filtros
+            {organizando ? '✔ Concluir' : '✋ Organizar caixinhas'}
           </button>
-        )}
+          {!organizando && <button type="button" className="secundario" onClick={sair}>Sair</button>}
+        </div>
       </div>
 
-      {filtradas.length === 0 && <p style={{ color: 'var(--muted)' }}>Nenhuma solicitação nesse filtro.</p>}
+      {organizando && (
+        <p style={{ margin: '8px 0 14px', fontSize: 13, color: 'var(--muted)' }}>
+          Arraste as caixinhas para mudar a ordem (no celular, segure um instante e arraste).
+          A sua ordem fica salva só para você.
+        </p>
+      )}
 
-      {filtradas.map((s) => {
-        const dias = diasRestantes(s.prazo);
-        const atrasada = s.status !== 'encerrada' && dias !== null && dias < 0;
-        return (
-          <Link key={s.id} href={`/admin/solicitacao/${s.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <div>
-                  <span className="numero-solicitacao">#{s.numero} · </span>
-                  <b>{s.assunto.nome}</b>
-                </div>
-                <span
-                  className={`badge ${atrasada ? 'encerrada' : s.status}`}
-                  style={atrasada ? { background: '#fed7d7', color: 'var(--danger)' } : {}}
-                >
-                  {atrasada ? 'Atrasada' : rotulos[s.status]}
-                </span>
-              </div>
-              <p style={{ fontSize: 14, color: 'var(--muted)' }}>
-                {s.colaborador.nomeSocial || s.colaborador.nome} · {s.colaborador.loja}
-              </p>
-              {s.status !== 'encerrada' && dias !== null && (
-                <span style={{ fontSize: 12, color: dias < 0 ? 'var(--danger)' : dias <= 1 ? 'var(--warning)' : 'var(--muted)' }}>
-                  {dias < 0 ? `Atrasada há ${Math.abs(dias)} dia(s)` : dias === 0 ? 'Vence hoje' : `${dias} dias restantes`}
-                </span>
-              )}
-            </div>
-          </Link>
-        );
-      })}
+      <div style={{ marginTop: 16 }}>
+        <GradeCaixinhas cards={cards} organizando={organizando} onAbrir={abrir} onReordenar={reordenar} />
+      </div>
     </div>
   );
 }
