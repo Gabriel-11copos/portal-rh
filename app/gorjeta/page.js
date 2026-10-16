@@ -8,8 +8,14 @@ const dinheiro = (c) => brl.format(c / 100);
 // Datas de calendário são guardadas à meia-noite UTC: ler em UTC evita o "um dia a menos".
 const dataCal = (v) => new Date(v).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 
-function Linha({ rotulo, nota, centavos, sinal, forte, cor }) {
-  const texto = centavos === 0 ? '—' : `${sinal && centavos > 0 ? '+' : ''}${dinheiro(centavos)}`;
+// <extrato>
+// Enquanto o período é parcial, atrasos, faltas e redistribuição mostram EM APURAÇÃO
+// (ainda podem mudar até o fechamento do ciclo).
+function Linha({ rotulo, nota, centavos, sinal, forte, cor, emApuracao }) {
+  const texto = emApuracao ? 'EM APURAÇÃO' : (centavos === 0 ? '—' : `${sinal && centavos > 0 ? '+' : ''}${dinheiro(centavos)}`);
+  const estiloValor = emApuracao
+    ? { color: 'var(--warning)', fontWeight: 700, fontSize: 12, letterSpacing: 0.5, whiteSpace: 'nowrap' }
+    : { color: cor || 'inherit', whiteSpace: 'nowrap' };
   return (
     <div style={{
       display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 0',
@@ -19,12 +25,13 @@ function Linha({ rotulo, nota, centavos, sinal, forte, cor }) {
         {rotulo}
         {nota && <span style={{ color: 'var(--muted)', fontWeight: 400 }}> · {nota}</span>}
       </span>
-      <span style={{ color: cor || 'inherit', whiteSpace: 'nowrap' }}>{texto}</span>
+      <span style={estiloValor}>{texto}</span>
     </div>
   );
 }
 
 function Extrato({ g }) {
+  const parcial = g.situacao !== 'fechado';
   const percentual = g.valorFinal > 0 ? Math.round((g.retencao / g.valorFinal) * 100) : null;
   const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
 
@@ -33,18 +40,26 @@ function Extrato({ g }) {
       <Linha rotulo="Gorjeta apuração" centavos={g.apuracao} />
       <Linha
         rotulo="Atrasos"
-        nota={g.atrasosQtd > 0 ? plural(g.atrasosQtd, 'ocorrência', 'ocorrências') : null}
+        nota={!parcial && g.atrasosQtd > 0 ? plural(g.atrasosQtd, 'ocorrência', 'ocorrências') : null}
         centavos={g.valorAtrasos}
         cor={g.valorAtrasos < 0 ? 'var(--danger)' : null}
+        emApuracao={parcial}
       />
       <Linha
         rotulo="Faltas injustificadas"
-        nota={g.faltasQtd > 0 ? plural(g.faltasQtd, 'falta', 'faltas') : null}
+        nota={!parcial && g.faltasQtd > 0 ? plural(g.faltasQtd, 'falta', 'faltas') : null}
         centavos={g.valorFaltas}
         cor={g.valorFaltas < 0 ? 'var(--danger)' : null}
+        emApuracao={parcial}
       />
-      <Linha rotulo="Redistribuição" centavos={g.redistribuicao} sinal cor={g.redistribuicao > 0 ? 'var(--success)' : null} />
-      {g.devolucao !== 0 && (
+      <Linha
+        rotulo="Redistribuição"
+        centavos={g.redistribuicao}
+        sinal
+        cor={g.redistribuicao > 0 ? 'var(--success)' : null}
+        emApuracao={parcial}
+      />
+      {!parcial && g.devolucao !== 0 && (
         <>
           <Linha rotulo="Gorjeta final bruta" centavos={g.brutaFinal} />
           <Linha rotulo="Devolução (teto 50%)" centavos={g.devolucao} sinal cor="var(--success)" />
@@ -66,6 +81,8 @@ function Extrato({ g }) {
     </div>
   );
 }
+
+// </extrato>
 
 export default function MinhaGorjeta() {
   const [extratos, setExtratos] = useState(null);
@@ -106,7 +123,7 @@ export default function MinhaGorjeta() {
             <div style={{ marginTop: 12 }}>
               {parcial && (
                 <p style={{ fontSize: 13, color: 'var(--warning)', margin: '0 0 8px' }}>
-                  Valores parciais, apurados até {dataCal(g.periodoFim)}. Podem mudar até o fechamento do período.
+                  Valores parciais, apurados até {dataCal(g.periodoFim)}. Atrasos, faltas e redistribuição aparecem como EM APURAÇÃO até o fechamento do ciclo, e os valores podem mudar até lá.
                 </p>
               )}
               <Extrato g={g} />
