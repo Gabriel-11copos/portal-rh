@@ -7,6 +7,7 @@ import CartaoGorjeta from '../components/CartaoGorjeta';
 import CartaoEscala from '../components/CartaoEscala';
 import CartaoAniversario from '../components/CartaoAniversario';
 import CartaoConquistas from '../components/CartaoConquistas';
+import CartaoGuias from '../components/CartaoGuias';
 
 export default function Inicio() {
   const [perfil, setPerfil] = useState(null);
@@ -57,6 +58,7 @@ export default function Inicio() {
 <CartaoEscala />
 <CartaoAniversario />
 <CartaoConquistas />
+<CartaoGuias />
           <div className="card">
             <div
               style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}

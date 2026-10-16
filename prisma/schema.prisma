@@ -214,3 +214,22 @@ model SeloConcedido {
   @@unique([colaboradorId, seloId, periodoRef])
   @@index([colaboradorId])
 }
+model Guia {
+  id           String   @id @default(cuid())
+  titulo       String
+  descricao    String   @default("")
+  categoria    String   @default("Geral")
+  blocos       Json
+  ativo        Boolean  @default(false)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+}
+
+model GuiaMidia {
+  id       String   @id @default(cuid())
+  nome     String
+  tipoMime String
+  tamanho  Int
+  dados    Bytes
+  criadoEm DateTime @default(now())
+}

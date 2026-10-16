@@ -14,6 +14,7 @@ const CAIXINHAS = [
   { id: 'aniversariantes', icon: '🎂', title: 'Aniversariantes', desc: 'Quem faz aniversário no mês e o cartão de parabéns', href: '/admin/aniversariantes' },
   { id: 'selos', icon: '🏅', title: 'Selos', desc: 'Reconhecimentos, presença e tempo de casa', href: '/admin/selos' },
   { id: 'escala', icon: '🗓️', title: 'Escala (prévia)', desc: 'Ver a escala de um colaborador como ele vê', href: '/admin/escala-previa' },
+  { id: 'guias', icon: '📖', title: 'Guias e treinamentos', desc: 'Páginas com texto, imagens, arquivos e links', href: '/admin/guias' },
   { id: 'conteudos', icon: '📚', title: 'Conteúdos', desc: 'Cursos, links, benefícios, regras e manuais', href: '/admin/conteudos' },
   { id: 'assuntos', icon: '🗂️', title: 'Assuntos', desc: 'Tipos de pedido, prazos e respostas automáticas', href: '/admin/assuntos' },
   { id: 'usuarios', icon: '👤', title: 'Usuários', desc: 'Quem acessa o painel do RH', href: '/admin/usuarios' },
