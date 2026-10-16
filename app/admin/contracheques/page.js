@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import BotaoVoltar from '../../components/BotaoVoltar';
 
 // <leitor>
@@ -104,11 +105,24 @@ function identificar(paginas, elenco) {
   return { ...base, status: avisos.length ? 'aviso' : 'ok', colaborador: escolhido, avisos };
 }
 
+const TODAS = 'Todas as lojas';
+
+// Com uma loja escolhida, PDF de outra loja fica de fora (evita misturar envios).
+// A loja do PDF é a da empresa que aparece nele; se não deu para ler, vale a do cadastro.
+function aplicarLoja(lidos, loja) {
+  if (!loja || loja === TODAS) return lidos;
+  return lidos.map((r) => {
+    if (!r.colaborador) return r;
+    const daqui = r.empresaLida || r.colaborador.loja;
+    return daqui === loja ? r : { ...r, status: 'fora', motivo: `É de ${daqui}, não de ${loja}.` };
+  });
+}
+
 // Se dois PDFs do lote são da mesma pessoa, só o primeiro segue; os outros viram "repetido".
 function marcarRepetidos(resultados) {
   const vistos = new Set();
   return resultados.map((r) => {
-    if (!r.colaborador) return r;
+    if (!r.colaborador || (r.status !== 'ok' && r.status !== 'aviso')) return r;
     if (vistos.has(r.colaborador.id)) return { ...r, status: 'repetido', motivo: `Já há outro PDF de ${r.colaborador.nome} neste envio.` };
     vistos.add(r.colaborador.id);
     return r;
@@ -144,7 +158,10 @@ export default function Contracheques() {
   const [tipo, setTipo] = useState('Contracheque');
   const [mes, setMes] = useState('');                 // "2026-08"
   const [elenco, setElenco] = useState(null);
-  const [resultados, setResultados] = useState(null);
+  const [lidos, setLidos] = useState(null);
+  const [loja, setLoja] = useState('');
+  const [lote, setLote] = useState(null);         // código do registro deste envio no histórico
+  const [avisoLote, setAvisoLote] = useState('');
   const [lendo, setLendo] = useState('');
   const [publicando, setPublicando] = useState(null); // { feitos, total }
   const [relatorio, setRelatorio] = useState(null);   // { criados, substituidos, falhas: [...] }
@@ -152,6 +169,8 @@ export default function Contracheques() {
   const [drive, setDrive] = useState(null);
 
   const competencia = mes ? `${mes.slice(5, 7)}/${mes.slice(0, 4)}` : '';
+  const resultados = useMemo(() => (lidos ? marcarRepetidos(aplicarLoja(lidos, loja)) : null), [lidos, loja]);
+  const lojas = useMemo(() => (elenco ? [...new Set(elenco.filter((c) => c.ativo).map((c) => c.loja))].sort((a, b) => a.localeCompare(b, 'pt-BR')) : []), [elenco]);
 
   useEffect(() => {
     fetch('/api/contracheques/elenco')
@@ -176,12 +195,12 @@ export default function Contracheques() {
 
   async function lerArquivos(e) {
     const arquivos = [...e.target.files].filter((f) => /\.pdf$/i.test(f.name));
-    setResultados(null); setRelatorio(null); setErro('');
+    setLidos(null); setRelatorio(null); setErro(''); setLote(null); setAvisoLote('');
     if (arquivos.length === 0) return;
     if (!elenco) { setErro('A lista de colaboradores ainda não carregou. Espere um instante e escolha os arquivos de novo.'); return; }
     try {
       const pdfjs = await carregarPdfJs();
-      const lidos = [];
+      const lista = [];
       for (let i = 0; i < arquivos.length; i++) {
         setLendo(`Lendo ${i + 1} de ${arquivos.length}...`);
         const arq = arquivos[i];
@@ -189,12 +208,12 @@ export default function Contracheques() {
           const dados = new Uint8Array(await arq.arrayBuffer());
           const paginas = await lerTextoPaginas(pdfjs, dados);
           const r = identificar(paginas, elenco);
-          lidos.push({ ...r, arquivo: arq, nome: arq.name, amostra: paginas[0] ? paginas[0].split('\n').slice(0, 12).join('\n') : '' });
+          lista.push({ ...r, arquivo: arq, nome: arq.name, amostra: paginas[0] ? paginas[0].split('\n').slice(0, 12).join('\n') : '' });
         } catch {
-          lidos.push({ status: 'nao', motivo: 'Não consegui ler este PDF (pode estar protegido ou corrompido).', arquivo: arq, nome: arq.name, amostra: '' });
+          lista.push({ status: 'nao', motivo: 'Não consegui ler este PDF (pode estar protegido ou corrompido).', arquivo: arq, nome: arq.name, amostra: '' });
         }
       }
-      setResultados(marcarRepetidos(lidos));
+      setLidos(lista);
     } catch (err) {
       setErro(err.message || 'Não foi possível ler os arquivos.');
     } finally {
@@ -202,12 +221,13 @@ export default function Contracheques() {
     }
   }
 
-  async function enviar(item) {
+  async function enviar(item, loteId) {
     const form = new FormData();
     form.set('arquivo', item.arquivo);
     form.set('colaboradorId', item.colaborador.id);
     form.set('tipo', tipo);
     form.set('competencia', competencia);
+    if (loteId) form.set('loteId', loteId);
     try {
       const r = await fetch('/api/contracheques/publicar', { method: 'POST', body: form });
       const j = await r.json();
@@ -218,15 +238,30 @@ export default function Contracheques() {
   }
 
   async function publicar(itens) {
-    if (!window.confirm(`Publicar ${itens.length} documento(s) de "${tipo}" referentes a ${competencia}? Cada colaborador passa a ver o dele em Documentos.`)) return;
+    if (!window.confirm(`Publicar ${itens.length} documento(s) de "${tipo}" referentes a ${competencia} (${loja})? Cada colaborador passa a ver o dele em Documentos.`)) return;
     setRelatorio(null);
     setPublicando({ feitos: 0, total: itens.length });
+    // registra este envio no histórico (só na primeira vez; "tentar de novo" soma no mesmo registro)
+    let loteId = lote;
+    if (!loteId) {
+      try {
+        const r = await fetch('/api/contracheques/lotes', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo, competencia, loja, total: itens.length }),
+        });
+        const j = await r.json();
+        if (r.ok && j.id) { loteId = j.id; setLote(j.id); setAvisoLote(''); }
+        else setAvisoLote('Os documentos serão enviados, mas não foi possível registrar este envio no histórico.');
+      } catch {
+        setAvisoLote('Os documentos serão enviados, mas não foi possível registrar este envio no histórico.');
+      }
+    }
     const fila = [...itens];
     const feitos = [];
     async function trabalhador() {
       while (fila.length > 0) {
         const item = fila.shift();
-        feitos.push(await enviar(item));
+        feitos.push(await enviar(item, loteId));
         setPublicando({ feitos: feitos.length, total: itens.length });
       }
     }
@@ -242,14 +277,18 @@ export default function Contracheques() {
   const prontos = resultados ? resultados.filter((r) => r.status === 'ok' || r.status === 'aviso') : [];
   const avisos = resultados ? resultados.filter((r) => r.status === 'aviso') : [];
   const naoIdentificados = resultados ? resultados.filter((r) => r.status === 'nao') : [];
+  const fora = resultados ? resultados.filter((r) => r.status === 'fora') : [];
   const repetidos = resultados ? resultados.filter((r) => r.status === 'repetido') : [];
-  const podePublicar = prontos.length > 0 && !!competencia && !!tipo.trim() && !publicando;
+  const podePublicar = prontos.length > 0 && !!competencia && !!loja && !!tipo.trim() && !publicando;
 
   return (
     <div>
       <BotaoVoltar />
-      <h2>Distribuir contracheques</h2>
-      <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <h2 style={{ margin: 0 }}>Distribuir contracheques</h2>
+        <Link href="/admin/contracheques/historico" style={{ fontSize: 13, padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>📋 Histórico e quem falta enviar</Link>
+      </div>
+      <p style={{ fontSize: 13, color: 'var(--muted)' }}>
         Escolha os PDFs (um por colaborador, com qualquer nome de arquivo). O portal lê o nome dentro de cada PDF,
         mostra quem é quem para você conferir e, só depois que você confirmar, guarda cada um na pasta do colaborador.
         Os arquivos ficam privados: só o próprio colaborador e o RH abrem.
@@ -267,12 +306,21 @@ export default function Contracheques() {
 
       <div className="card">
         <label>Tipo do documento</label>
-        <input list="tipos-doc" value={tipo} maxLength={40} onChange={(e) => { setTipo(e.target.value); setRelatorio(null); }} />
+        <input list="tipos-doc" value={tipo} maxLength={40} onChange={(e) => { setTipo(e.target.value); setRelatorio(null); setLote(null); }} />
         <datalist id="tipos-doc">
           <option value="Contracheque" /><option value="Contracheque de 13º salário" /><option value="Adiantamento" /><option value="Férias" /><option value="Informe de rendimentos" />
         </datalist>
         <label>Competência (mês a que o documento se refere)</label>
-        <input type="month" value={mes} onChange={(e) => { setMes(e.target.value); setRelatorio(null); }} style={{ maxWidth: 220 }} />
+        <input type="month" value={mes} onChange={(e) => { setMes(e.target.value); setRelatorio(null); setLote(null); }} style={{ maxWidth: 220 }} />
+        <label>Loja deste envio</label>
+        <select value={loja} onChange={(e) => { setLoja(e.target.value); setRelatorio(null); setLote(null); }} style={{ maxWidth: 320 }}>
+          <option value="">Escolha...</option>
+          <option value={TODAS}>{TODAS} (mistura de lojas)</option>
+          {lojas.map((l) => <option key={l} value={l}>{l}</option>)}
+        </select>
+        <p style={{ fontSize: 12, color: 'var(--muted)', margin: '2px 0 8px' }}>
+          Escolhendo uma loja, os PDFs de outra loja ficam de fora (evita misturar). A loja fica registrada no histórico.
+        </p>
         <label>PDFs (pode escolher vários de uma vez)</label>
         <input type="file" accept=".pdf,application/pdf" multiple onChange={lerArquivos} disabled={!elenco} />
         {!elenco && !erro && <p style={{ fontSize: 13, color: 'var(--muted)' }}>Carregando a lista de colaboradores...</p>}
@@ -286,9 +334,10 @@ export default function Contracheques() {
             <div><b style={{ fontSize: 22, color: 'var(--success)' }}>{prontos.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>prontos para publicar</div></div>
             <div><b style={{ fontSize: 22, color: 'var(--warning)' }}>{avisos.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>com aviso</div></div>
             <div><b style={{ fontSize: 22, color: 'var(--danger)' }}>{naoIdentificados.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>não identificados</div></div>
+            {fora.length > 0 && <div><b style={{ fontSize: 22 }}>{fora.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>de outra loja</div></div>}
             {repetidos.length > 0 && <div><b style={{ fontSize: 22 }}>{repetidos.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>repetidos</div></div>}
           </div>
-          <p style={{ fontSize: 13, color: 'var(--muted)' }}>Nada foi publicado ainda. Os não identificados e os repetidos ficam de fora.</p>
+          <p style={{ fontSize: 13, color: 'var(--muted)' }}>Nada foi publicado ainda. Os não identificados, os de outra loja e os repetidos ficam de fora.</p>
 
           <Lista titulo="Com aviso (serão publicados, confira)" itens={avisos} cor="var(--warning)" aberta
             render={(r) => <span><b>{r.nome}</b> → {r.colaborador.nome}: {r.avisos.join(' ')}</span>} />
@@ -304,13 +353,17 @@ export default function Contracheques() {
                 )}
               </span>
             )} />
+          <Lista titulo={`De outra loja, não de ${loja} (ficam de fora)`} itens={fora} cor="var(--muted)" aberta
+            render={(r) => <span><b>{r.nome}</b> → {r.colaborador.nome}: {r.motivo}</span>} />
           <Lista titulo="Repetidos no envio (ficam de fora)" itens={repetidos} cor="var(--muted)" render={(r) => <span><b>{r.nome}</b>: {r.motivo}</span>} />
           <Lista titulo="Prontos para publicar" itens={prontos} render={(r) => <span>{r.nome} → <b>{r.colaborador.nome}</b> ({r.colaborador.loja})</span>} />
 
           <button type="button" style={{ marginTop: 14 }} disabled={!podePublicar} onClick={() => publicar(prontos)}>
             {publicando ? `Publicando ${publicando.feitos} de ${publicando.total}...` : `Publicar ${prontos.length} documento(s)`}
           </button>
-          {!competencia && prontos.length > 0 && <p style={{ fontSize: 13, color: 'var(--warning)' }}>Escolha a competência (o mês) para poder publicar.</p>}
+          {prontos.length > 0 && (!competencia || !loja) && (
+            <p style={{ fontSize: 13, color: 'var(--warning)' }}>Escolha {!competencia && !loja ? 'a competência (o mês) e a loja' : !competencia ? 'a competência (o mês)' : 'a loja'} para poder publicar.</p>
+          )}
         </div>
       )}
 
@@ -322,6 +375,8 @@ export default function Contracheques() {
           <p style={{ margin: 0 }}>
             <b>{relatorio.criados}</b> publicado(s){relatorio.substituidos > 0 && <span>, <b>{relatorio.substituidos}</b> substituído(s) (já existia este tipo e competência)</span>}.
           </p>
+          {lote && <p style={{ fontSize: 13, margin: '6px 0 0' }}>📋 Envio registrado no histórico ({loja}, {competencia}). <Link href="/admin/contracheques/historico">Ver quem já recebeu e quem falta</Link></p>}
+          {avisoLote && <p style={{ fontSize: 13, color: 'var(--warning)', margin: '6px 0 0' }}>{avisoLote}</p>}
           <Lista titulo="Falharam (nada foi registrado para eles)" itens={relatorio.falhas} cor="var(--danger)" aberta
             render={(f) => <span><b>{f.item.nome}</b> → {f.item.colaborador.nome}: {f.erro}</span>} />
           {relatorio.falhas.length > 0 && (

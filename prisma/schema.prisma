@@ -266,3 +266,16 @@ model MissaoPedido {
   @@index([missaoId])
   @@index([status])
 }
+model ContrachequeLote {
+  id           String   @id @default(cuid())
+  tipo         String
+  competencia  String
+  loja         String
+  total        Int
+  criados      Int      @default(0)
+  substituidos Int      @default(0)
+  enviadoPor   String?
+  criadoEm     DateTime @default(now())
+
+  @@index([criadoEm])
+}

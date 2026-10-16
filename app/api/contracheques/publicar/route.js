@@ -5,6 +5,7 @@ const drive = require('../../../../lib/driveContracheques');
 
 // Só RH. Recebe UM PDF já identificado (de quem é, tipo e competência), guarda no Drive (privado)
 // e registra em "Documentos" do colaborador. Se já existir o mesmo tipo e competência, substitui.
+// Se vier o código de um registro de envio (loteId), soma este documento nele.
 async function POST(req) {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -14,6 +15,7 @@ async function POST(req) {
     const colaboradorId = String(form.get('colaboradorId') || '');
     const tipo = lerTipo(form.get('tipo'));
     const competencia = lerCompetencia(form.get('competencia'));
+    const loteId = String(form.get('loteId') || '');   // registro do envio no histórico (opcional)
 
     if (!tipo) return Response.json({ erro: 'Informe o tipo do documento (ex: Contracheque).' }, { status: 400 });
     if (!competencia) return Response.json({ erro: 'Informe a competência no formato MM/AAAA (ex: 08/2026).' }, { status: 400 });
@@ -43,12 +45,20 @@ async function POST(req) {
 
     const nomeArquivo = nomeDoArquivo(tipo, competencia);
     const url = urlDoArquivo(driveId);
+
+    // soma no registro do envio; se o registro não existir ou der erro, a publicação segue normalmente
+    const somarNoRegistro = async (campo) => {
+      if (!loteId) return;
+      try { await prisma.contrachequeLote.updateMany({ where: { id: loteId }, data: { [campo]: { increment: 1 } } }); }
+      catch (err) { console.error('Não foi possível atualizar o registro do envio:', err); }
+    };
     const existente = await prisma.documento.findFirst({ where: { colaboradorId: colaborador.id, tipo, competencia } });
 
     if (!existente) {
       await prisma.documento.create({
         data: { colaboradorId: colaborador.id, tipo, competencia, url, nomeArquivo, vistoColaborador: false },
       });
+      await somarNoRegistro('criados');
       return Response.json({ ok: true, acao: 'criado' });
     }
 
@@ -58,6 +68,7 @@ async function POST(req) {
     if (antigo && antigo !== driveId) {
       try { await drive.apagarArquivo(antigo); } catch (err) { console.error('Não foi possível apagar o arquivo antigo do Drive:', err); }
     }
+    await somarNoRegistro('substituidos');
     return Response.json({ ok: true, acao: 'substituido' });
   } catch (err) {
     console.error('Erro ao publicar contracheque:', err);
