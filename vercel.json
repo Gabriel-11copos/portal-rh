@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/integracao",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/aniversarios",
+      "schedule": "0 9 * * *"
     }
   ]
 }
