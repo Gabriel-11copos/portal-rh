@@ -5,6 +5,7 @@ import NavColaborador from '../components/NavColaborador';
 import Avatar from '../components/Avatar';
 import CartaoGorjeta from '../components/CartaoGorjeta';
 import CartaoEscala from '../components/CartaoEscala';
+import CartaoAniversario from '../components/CartaoAniversario';
 
 export default function Inicio() {
   const [perfil, setPerfil] = useState(null);
@@ -53,6 +54,7 @@ export default function Inicio() {
         <div style={{ flex: 1, minWidth: 260 }}>
 <CartaoGorjeta />
 <CartaoEscala />
+<CartaoAniversario />
           <div className="card">
             <div
               style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}

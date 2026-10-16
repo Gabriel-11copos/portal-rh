@@ -94,6 +94,7 @@ export default function AdminPainel() {
           <Link href="/admin/conteudos"><button className="secundario">Conteúdos</button></Link>
           <Link href="/admin/documentos"><button className="secundario">Documentos</button></Link>
 <Link href="/admin/gorjetas"><button className="secundario">Gorjetas</button></Link>
+<Link href="/admin/aniversariantes"><button className="secundario">Aniversariantes</button></Link>
           <Link href="/admin/usuarios"><button className="secundario">Usuários</button></Link>
           <button className="secundario" onClick={sair}>Sair</button>
         </div>
