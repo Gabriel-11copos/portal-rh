@@ -1,33 +1,17 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 export default function NavColaborador() {
-  const pathname = usePathname();
   const router = useRouter();
   const [naoLidos, setNaoLidos] = useState([]);
-  const [naoVistasCount, setNaoVistasCount] = useState(0);
-  const [docsNaoVistosCount, setDocsNaoVistosCount] = useState(0);
-  const links = [
-    { href: '/perfil', label: 'Meu perfil' },
-    { href: '/minhas-solicitacoes', label: 'Minhas solicitações' },
-    { href: '/nova-solicitacao', label: 'Nova solicitação' },
-    { href: '/conteudos', label: 'Conteúdos' },
-    { href: '/documentos', label: 'Documentos' },
-    { href: '/comunicados', label: 'Comunicados' },
-  ];
 
   useEffect(() => {
     fetch('/api/comunicados')
       .then((r) => r.json())
-      .then((lista) => setNaoLidos(Array.isArray(lista) ? lista.filter((c) => !c.lido) : []));
-    fetch('/api/solicitacoes/nao-vistas')
-      .then((r) => r.json())
-      .then((d) => setNaoVistasCount(d.count || 0));
-    fetch('/api/documentos/nao-vistas')
-      .then((r) => r.json())
-      .then((d) => setDocsNaoVistosCount(d.count || 0));
+      .then((lista) => setNaoLidos(Array.isArray(lista) ? lista.filter((c) => !c.lido) : []))
+      .catch(() => {});
   }, []);
 
   async function sair() {
@@ -75,24 +59,6 @@ export default function NavColaborador() {
         </Link>
         <div className="titulo-portal">Portal do Colaborador</div>
       </div>
-      {pathname !== '/inicio' && (
-      <div className="nav-colaborador">
-        {links.map((l) => (
-          <Link key={l.href} href={l.href} className={pathname === l.href ? 'ativo' : ''}>
-            {l.label}
-            {l.href === '/minhas-solicitacoes' && naoVistasCount > 0 && (
-              <span className="bolinha-notificacao">{naoVistasCount}</span>
-            )}
-            {l.href === '/documentos' && docsNaoVistosCount > 0 && (
-              <span className="bolinha-notificacao">{docsNaoVistosCount}</span>
-            )}
-            {l.href === '/comunicados' && naoLidos.length > 0 && (
-              <span className="bolinha-notificacao">{naoLidos.length}</span>
-            )}
-          </Link>
-        ))}
-      </div>
-      )}
     </div>
   );
 }
