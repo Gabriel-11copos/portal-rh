@@ -9,7 +9,7 @@ const CAIXINHAS = [
   { id: 'solicitacoes', icon: '📨', title: 'Solicitações', desc: 'Pedidos dos colaboradores ao RH e ao DP', href: '/admin/solicitacoes' },
   { id: 'colaboradores', icon: '👥', title: 'Colaboradores', desc: 'Cadastro, lista de ativos e histórico', href: '/admin/colaboradores' },
   { id: 'comunicados', icon: '📢', title: 'Enviar comunicado', desc: 'Avisos para um, vários ou todos', href: '/admin/comunicados' },
-  { id: 'documentos', icon: '📄', title: 'Documentos', desc: 'Contracheques e documentos por colaborador', href: '/admin/documentos' },
+  { id: 'documentos', icon: '📄', title: 'Enviar documento', desc: 'Envie um documento a um colaborador', href: '/admin/enviar-documento' },
   { id: 'contracheques', icon: '🧾', title: 'Distribuir contracheques', desc: 'Envie os PDFs e cada colaborador recebe o dele', href: '/admin/contracheques' },
   { id: 'gorjetas', icon: '💰', title: 'Gorjetas', desc: 'Extrato de gorjeta por unidade e período', href: '/admin/gorjetas' },
   { id: 'aniversariantes', icon: '🎂', title: 'Aniversariantes', desc: 'Quem faz aniversário no mês e o cartão de parabéns', href: '/admin/aniversariantes' },

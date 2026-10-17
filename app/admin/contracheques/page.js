@@ -47,15 +47,29 @@ async function lerTextoPaginas(pdfjsLib, dados) {
   return paginas;
 }
 
-// O nome do colaborador é a linha que termina com o código de 6 dígitos (ex: "ANA LIMA 000123").
+// O nome do colaborador está numa linha com um código de 6 dígitos, que pode vir ANTES do nome
+// ("000005 ANA BEATRIZ CLEMENTE Coordenador (a) de MKT") ou DEPOIS ("ANA LIMA 000123").
+// Devolve a linha sem o código (pode trazer o cargo junto: o cruzamento com o cadastro resolve).
 function extrairNome(texto) {
-  const linhas = texto.split('\n').map((l) => l.trim()).filter(Boolean);
+  const linhas = texto.split('\n').map((l) => l.trim()).filter(Boolean).filter((l) => !/Demonstrativo de Pagamento/i.test(l));
   for (const linha of linhas) {
-    if (/Demonstrativo de Pagamento/i.test(linha)) continue;
-    const m = linha.match(/^(.+?)\s+(?<!\d)(\d{6})$/);
+    const m = linha.match(/^\d{6}\s+([A-ZÀ-ÖØ-Ý].*)$/);
+    if (m) return m[1].trim();
+  }
+  for (const linha of linhas) {
+    const m = linha.match(/^(.+?)\s+\d{6}$/);
     if (m) return m[1].trim();
   }
   return null;
+}
+
+// As palavras em MAIÚSCULAS do começo da linha (o nome); o cargo costuma vir depois, em minúsculas.
+function nomeProvavel(texto) {
+  const nome = [];
+  for (const t of String(texto || '').trim().split(/\s+/)) {
+    if (/^[A-ZÀ-ÖØ-Ý'’.\-]+$/.test(t)) nome.push(t); else break;
+  }
+  return nome.length ? nome.join(' ') : String(texto || '').trim();
 }
 
 // A empresa é a linha que contém uma das razões sociais conhecidas.
@@ -73,20 +87,29 @@ function extrairEmpresa(texto) {
 // Descobre de quem é o PDF, comparando o nome lido com o cadastro (elenco).
 // Resultado: ok | aviso (publica, mas com ressalva) | nao (não identificado).
 function identificar(paginas, elenco) {
-  let nomeLido = null;
+  let linhaNome = null;
   let empresaLida = null;
   for (const texto of paginas) {
-    if (!nomeLido) nomeLido = extrairNome(texto);
+    if (!linhaNome) linhaNome = extrairNome(texto);
     if (!empresaLida) empresaLida = extrairEmpresa(texto);
   }
+  const nomeLido = linhaNome ? nomeProvavel(linhaNome) : null;
   const base = { nomeLido, empresaLida };
-  if (!nomeLido) return { ...base, status: 'nao', motivo: 'Não encontrei o nome do colaborador dentro do PDF.' };
+  if (!linhaNome) return { ...base, status: 'nao', motivo: 'Não encontrei o nome do colaborador dentro do PDF.' };
 
-  const alvo = normalizar(nomeLido);
+  const alvo = normalizar(linhaNome);
   let candidatos = elenco.filter((c) => c.nomeNorm && (alvo === c.nomeNorm || alvo.startsWith(`${c.nomeNorm} `)));
   if (candidatos.length === 0) return { ...base, status: 'nao', motivo: `Ninguém no cadastro com o nome "${nomeLido}".` };
   const maior = Math.max(...candidatos.map((c) => c.nomeNorm.length));
   candidatos = candidatos.filter((c) => c.nomeNorm.length === maior);
+
+  // Se o PDF tem mais palavras em MAIÚSCULAS depois do nome do cadastro, pode ser um sobrenome que o
+  // cadastro não tem (outra pessoa, ou nome incompleto). Não arrisca: deixa de fora para conferir.
+  const palavras = linhaNome.trim().split(/\s+/);
+  const sobra = palavras.slice(candidatos[0].nomeNorm.split(' ').length);
+  if (sobra.length > 0 && /^[A-ZÀ-ÖØ-Ý'’.\-]+$/.test(sobra[0])) {
+    return { ...base, status: 'nao', motivo: `O nome no PDF ("${nomeLido}") é mais longo que o do cadastro ("${candidatos[0].nome}"). Confira o cadastro.` };
+  }
 
   const daEmpresa = empresaLida ? candidatos.filter((c) => c.loja === empresaLida) : [];
   const avisos = [];
@@ -103,6 +126,39 @@ function identificar(paginas, elenco) {
   }
   if (!escolhido.ativo) avisos.push('Colaborador inativo no cadastro: não consegue entrar no portal para ver.');
   return { ...base, status: avisos.length ? 'aviso' : 'ok', colaborador: escolhido, avisos };
+}
+
+// Um PDF pode trazer o contracheque de VÁRIAS pessoas (um por página, às vezes mais de uma página por pessoa).
+// Agrupa as páginas por pessoa: uma página nova com o nome de outra pessoa começa um grupo novo;
+// uma página sem nome é continuação da pessoa anterior.
+function agruparPaginas(textos) {
+  const grupos = [];
+  textos.forEach((t, i) => {
+    const linha = extrairNome(t);
+    const ultimo = grupos[grupos.length - 1];
+    if (linha && (!ultimo || !ultimo.linha || normalizar(ultimo.linha) !== normalizar(linha))) {
+      grupos.push({ linha, indices: [i], textos: [t] });
+    } else if (ultimo) {
+      ultimo.indices.push(i);
+      ultimo.textos.push(t);
+    } else {
+      grupos.push({ linha: null, indices: [i], textos: [t] });
+    }
+  });
+  return grupos;
+}
+
+// Cria um PDF novo para cada grupo, só com as páginas dele.
+async function separarGrupos(PDFLib, dados, grupos) {
+  const origem = await PDFLib.PDFDocument.load(dados);
+  const partes = [];
+  for (const g of grupos) {
+    const doc = await PDFLib.PDFDocument.create();
+    const paginas = await doc.copyPages(origem, g.indices);
+    paginas.forEach((p) => doc.addPage(p));
+    partes.push(await doc.save());
+  }
+  return partes;
 }
 
 const TODAS = 'Todas as lojas';
@@ -144,6 +200,17 @@ function carregarPdfJs() {
   });
 }
 
+function carregarPdfLib() {
+  if (window.PDFLib) return Promise.resolve(window.PDFLib);
+  return new Promise((ok, falha) => {
+    const sc = document.createElement('script');
+    sc.src = '/pdflib/pdf-lib.min.js';
+    sc.onload = () => ok(window.PDFLib);
+    sc.onerror = () => falha(new Error('Não consegui carregar o separador de PDF. Atualize a página e tente de novo.'));
+    document.head.appendChild(sc);
+  });
+}
+
 function Lista({ titulo, itens, render, cor, aberta }) {
   if (!itens || itens.length === 0) return null;
   return (
@@ -162,6 +229,7 @@ export default function Contracheques() {
   const [loja, setLoja] = useState('');
   const [lote, setLote] = useState(null);         // código do registro deste envio no histórico
   const [avisoLote, setAvisoLote] = useState('');
+  const [notas, setNotas] = useState([]);           // avisos como "este PDF tinha 12 contracheques"
   const [lendo, setLendo] = useState('');
   const [publicando, setPublicando] = useState(null); // { feitos, total }
   const [relatorio, setRelatorio] = useState(null);   // { criados, substituidos, falhas: [...] }
@@ -195,24 +263,50 @@ export default function Contracheques() {
 
   async function lerArquivos(e) {
     const arquivos = [...e.target.files].filter((f) => /\.pdf$/i.test(f.name));
-    setLidos(null); setRelatorio(null); setErro(''); setLote(null); setAvisoLote('');
+    setLidos(null); setRelatorio(null); setErro(''); setLote(null); setAvisoLote(''); setNotas([]);
     if (arquivos.length === 0) return;
     if (!elenco) { setErro('A lista de colaboradores ainda não carregou. Espere um instante e escolha os arquivos de novo.'); return; }
     try {
       const pdfjs = await carregarPdfJs();
       const lista = [];
+      const novasNotas = [];
       for (let i = 0; i < arquivos.length; i++) {
         setLendo(`Lendo ${i + 1} de ${arquivos.length}...`);
         const arq = arquivos[i];
         try {
           const dados = new Uint8Array(await arq.arrayBuffer());
           const paginas = await lerTextoPaginas(pdfjs, dados);
-          const r = identificar(paginas, elenco);
-          lista.push({ ...r, arquivo: arq, nome: arq.name, amostra: paginas[0] ? paginas[0].split('\n').slice(0, 12).join('\n') : '' });
+          const grupos = agruparPaginas(paginas);
+          if (grupos.length <= 1) {
+            // um PDF de uma pessoa só (mesmo com várias páginas)
+            const r = identificar(paginas, elenco);
+            if (r.status === 'ok' && paginas.length > 2) {
+              r.status = 'aviso';
+              r.avisos = [`Este contracheque tem ${paginas.length} páginas. Confira se é só dessa pessoa.`];
+            }
+            lista.push({ ...r, arquivo: arq, nome: arq.name, amostra: paginas[0] ? paginas[0].split('\n').slice(0, 12).join('\n') : '' });
+          } else {
+            // um PDF com várias pessoas: separa em um PDF para cada uma
+            setLendo(`Separando ${arq.name} (${grupos.length} pessoas)...`);
+            const PDFLib = await carregarPdfLib();
+            const partes = await separarGrupos(PDFLib, dados, grupos);
+            novasNotas.push(`📑 ${arq.name} tinha ${paginas.length} páginas e ${grupos.length} contracheques; separei um PDF para cada pessoa.`);
+            grupos.forEach((g, k) => {
+              const r = identificar(g.textos, elenco);
+              if (r.status === 'ok' && g.indices.length > 2) {
+                r.status = 'aviso';
+                r.avisos = [`Este contracheque tem ${g.indices.length} páginas. Confira se é só dessa pessoa.`];
+              }
+              const rotulo = g.indices.length === 1 ? `pág. ${g.indices[0] + 1}` : `págs. ${g.indices[0] + 1} a ${g.indices[g.indices.length - 1] + 1}`;
+              const nomeParte = `${r.nomeLido || 'documento'} (${rotulo}).pdf`;
+              lista.push({ ...r, arquivo: new File([partes[k]], nomeParte, { type: 'application/pdf' }), nome: `${arq.name} (${rotulo})`, amostra: g.textos[0].split('\n').slice(0, 12).join('\n') });
+            });
+          }
         } catch {
-          lista.push({ status: 'nao', motivo: 'Não consegui ler este PDF (pode estar protegido ou corrompido).', arquivo: arq, nome: arq.name, amostra: '' });
+          lista.push({ status: 'nao', motivo: 'Não consegui ler ou separar este PDF (pode estar protegido ou corrompido).', arquivo: arq, nome: arq.name, amostra: '' });
         }
       }
+      setNotas(novasNotas);
       setLidos(lista);
     } catch (err) {
       setErro(err.message || 'Não foi possível ler os arquivos.');
@@ -227,6 +321,8 @@ export default function Contracheques() {
     form.set('colaboradorId', item.colaborador.id);
     form.set('tipo', tipo);
     form.set('competencia', competencia);
+    // loja da pasta no Drive: a escolhida; em "Todas as lojas", a empresa do próprio PDF (ou a do cadastro)
+    form.set('lojaPasta', loja && loja !== TODAS ? loja : (item.empresaLida || item.colaborador.loja));
     if (loteId) form.set('loteId', loteId);
     try {
       const r = await fetch('/api/contracheques/publicar', { method: 'POST', body: form });
@@ -337,6 +433,7 @@ export default function Contracheques() {
             {fora.length > 0 && <div><b style={{ fontSize: 22 }}>{fora.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>de outra loja</div></div>}
             {repetidos.length > 0 && <div><b style={{ fontSize: 22 }}>{repetidos.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>repetidos</div></div>}
           </div>
+          {notas.map((n, i) => <p key={i} style={{ fontSize: 13, margin: '4px 0' }}>{n}</p>)}
           <p style={{ fontSize: 13, color: 'var(--muted)' }}>Nada foi publicado ainda. Os não identificados, os de outra loja e os repetidos ficam de fora.</p>
 
           <Lista titulo="Com aviso (serão publicados, confira)" itens={avisos} cor="var(--warning)" aberta

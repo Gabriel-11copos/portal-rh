@@ -1,6 +1,6 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
-const { MAX_BYTES, ehPdf, lerCompetencia, lerTipo, nomeDoArquivo, urlDoArquivo, idDriveDaUrl } = require('../../../../lib/contracheques');
+const { MAX_BYTES, ehPdf, lerCompetencia, lerTipo, lerLoja, nomeDoArquivo, urlDoArquivo, idDriveDaUrl, partesDaCompetencia } = require('../../../../lib/contracheques');
 const drive = require('../../../../lib/driveContracheques');
 
 // Só RH. Recebe UM PDF já identificado (de quem é, tipo e competência), guarda no Drive (privado)
@@ -16,6 +16,7 @@ async function POST(req) {
     const tipo = lerTipo(form.get('tipo'));
     const competencia = lerCompetencia(form.get('competencia'));
     const loteId = String(form.get('loteId') || '');   // registro do envio no histórico (opcional)
+    const lojaInformada = lerLoja(form.get('lojaPasta')); // loja da pasta no Drive (se não vier, vale a do cadastro)
 
     if (!tipo) return Response.json({ erro: 'Informe o tipo do documento (ex: Contracheque).' }, { status: 400 });
     if (!competencia) return Response.json({ erro: 'Informe a competência no formato MM/AAAA (ex: 08/2026).' }, { status: 400 });
@@ -29,15 +30,24 @@ async function POST(req) {
 
     const colaborador = await prisma.colaborador.findUnique({
       where: { id: colaboradorId },
-      select: { id: true, nome: true, matricula: true, driveFolderId: true },
+      select: { id: true, nome: true, matricula: true, loja: true },
     });
     if (!colaborador) return Response.json({ erro: 'Colaborador não encontrado.' }, { status: 404 });
 
-    // guarda no Drive primeiro: se o Drive falhar, nada é registrado em "Documentos"
+    // guarda no Drive (Loja > Ano > Colaborador > Mês) primeiro: se o Drive falhar, nada é registrado em "Documentos"
+    const { mes, ano } = partesDaCompetencia(competencia);
+    const dadosPasta = { loja: lojaInformada || colaborador.loja, ano, colaborador, mes };
+    const enviarNaPasta = async () => drive.enviarPdf({ pastaId: await drive.garantirCaminho(prisma, dadosPasta), nome: nomeDoArquivo(tipo, competencia), buffer });
     let driveId;
     try {
-      const pastaId = await drive.garantirPasta(prisma, colaborador);
-      driveId = await drive.enviarPdf({ pastaId, nome: nomeDoArquivo(tipo, competencia), buffer });
+      try {
+        driveId = await enviarNaPasta();
+      } catch (err) {
+        // a pasta guardada não existe mais no Drive (alguém apagou): esquece e tenta uma vez de novo
+        if (drive.codigoDoErro(err) !== 404) throw err;
+        await drive.esquecerCaminho(prisma, dadosPasta);
+        driveId = await enviarNaPasta();
+      }
     } catch (err) {
       console.error('Erro ao gravar contracheque no Drive:', err);
       return Response.json({ erro: drive.explicar(err) }, { status: 502 });

@@ -279,3 +279,8 @@ model ContrachequeLote {
 
   @@index([criadoEm])
 }
+model PastaDrive {
+  chave    String   @id
+  driveId  String
+  criadoEm DateTime @default(now())
+}
