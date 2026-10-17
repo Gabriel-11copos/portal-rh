@@ -150,7 +150,8 @@ function agruparPaginas(textos) {
 
 // Cria um PDF novo para cada grupo, só com as páginas dele.
 async function separarGrupos(PDFLib, dados, grupos) {
-  const origem = await PDFLib.PDFDocument.load(dados);
+  // PDFs de folha costumam vir protegidos contra edição (senha de abertura vazia): abre assim mesmo
+  const origem = await PDFLib.PDFDocument.load(dados, { password: '' });
   const partes = [];
   for (const g of grupos) {
     const doc = await PDFLib.PDFDocument.create();
@@ -172,6 +173,16 @@ function aplicarLoja(lidos, loja) {
     const daqui = r.empresaLida || r.colaborador.loja;
     return daqui === loja ? r : { ...r, status: 'fora', motivo: `É de ${daqui}, não de ${loja}.` };
   });
+}
+
+// Diz por que um PDF não pôde ser lido ou separado, em palavras simples (com o detalhe técnico no fim).
+function explicarFalhaPdf(err, etapa) {
+  const msg = String((err && err.message) || err || '').replace(/\s+/g, ' ').trim();
+  if (/carregar o separador/i.test(msg)) return msg;
+  if ((err && err.name === 'PasswordException') || /password|senha/i.test(msg)) return 'O PDF exige senha para abrir. Tire a senha e escolha o arquivo de novo.';
+  if (etapa === 'separar' && /encrypt|criptograf/i.test(msg)) return 'O PDF tem uma proteção que impede separar por pessoa. Tire a proteção e escolha de novo.';
+  const base = etapa === 'separar' ? 'Não consegui separar este PDF por pessoa' : 'Não consegui ler este PDF';
+  return `${base} (${msg.slice(0, 140) || 'erro desconhecido'}).`;
 }
 
 // Se dois PDFs do lote são da mesma pessoa, só o primeiro segue; os outros viram "repetido".
@@ -273,6 +284,7 @@ export default function Contracheques() {
       for (let i = 0; i < arquivos.length; i++) {
         setLendo(`Lendo ${i + 1} de ${arquivos.length}...`);
         const arq = arquivos[i];
+        let etapa = 'ler';
         try {
           const dados = new Uint8Array(await arq.arrayBuffer());
           const paginas = await lerTextoPaginas(pdfjs, dados);
@@ -287,6 +299,7 @@ export default function Contracheques() {
             lista.push({ ...r, arquivo: arq, nome: arq.name, amostra: paginas[0] ? paginas[0].split('\n').slice(0, 12).join('\n') : '' });
           } else {
             // um PDF com várias pessoas: separa em um PDF para cada uma
+            etapa = 'separar';
             setLendo(`Separando ${arq.name} (${grupos.length} pessoas)...`);
             const PDFLib = await carregarPdfLib();
             const partes = await separarGrupos(PDFLib, dados, grupos);
@@ -302,8 +315,8 @@ export default function Contracheques() {
               lista.push({ ...r, arquivo: new File([partes[k]], nomeParte, { type: 'application/pdf' }), nome: `${arq.name} (${rotulo})`, amostra: g.textos[0].split('\n').slice(0, 12).join('\n') });
             });
           }
-        } catch {
-          lista.push({ status: 'nao', motivo: 'Não consegui ler ou separar este PDF (pode estar protegido ou corrompido).', arquivo: arq, nome: arq.name, amostra: '' });
+        } catch (err) {
+          lista.push({ status: 'nao', motivo: explicarFalhaPdf(err, etapa), arquivo: arq, nome: arq.name, amostra: '' });
         }
       }
       setNotas(novasNotas);
