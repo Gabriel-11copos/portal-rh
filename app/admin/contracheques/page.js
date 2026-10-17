@@ -255,7 +255,7 @@ export default function Contracheques() {
     try {
       const r = await fetch('/api/contracheques/teste-drive');
       const j = await r.json();
-      setDrive(r.ok && j.ok ? { ok: true } : { ok: false, erro: j.erro || 'Falhou.' });
+      setDrive({ ok: !!(r.ok && j.ok), erro: j.erro || 'Falhou.', aviso: j.aviso, passos: j.passos, conta: j.conta, pasta: j.pasta });
     } catch (e) {
       setDrive({ ok: false, erro: e.message });
     }
@@ -398,6 +398,17 @@ export default function Contracheques() {
           {drive && drive.ok && <span style={{ fontSize: 13, color: 'var(--success)' }}>✓ Conexão funcionando.</span>}
           {drive && drive.ok === false && <span style={{ fontSize: 13, color: 'var(--danger)' }}>✗ {drive.erro}</span>}
         </div>
+        {drive && drive.ok && drive.aviso && <p style={{ fontSize: 13, color: 'var(--warning)', margin: '8px 0 0' }}>⚠ {drive.aviso}</p>}
+        {drive && !drive.carregando && drive.passos && drive.passos.length > 0 && (drive.ok === false || drive.passos.some((p) => !p.ok)) && (
+          <details open style={{ marginTop: 8, fontSize: 12 }}>
+            <summary style={{ cursor: 'pointer', color: 'var(--muted)' }}>Detalhes do teste (para mostrar ao suporte)</summary>
+            <div style={{ marginTop: 4 }}>Conta do portal: <b>{drive.conta || 'não identificada'}</b></div>
+            <div>Pasta principal (código): <b>{drive.pasta || 'não configurada'}</b></div>
+            <ul style={{ margin: '6px 0 0' }}>
+              {drive.passos.map((p, i) => <li key={i}>{p.ok ? '✓' : '✗'} {p.nome}{p.detalhe ? `: ${p.detalhe}` : ''}</li>)}
+            </ul>
+          </details>
+        )}
       </div>
 
       <div className="card">
