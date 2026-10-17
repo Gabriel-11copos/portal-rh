@@ -26,7 +26,9 @@ const EMPRESAS = {
 
 // Lê o texto de cada página do PDF, linha por linha (de cima para baixo, da esquerda para a direita).
 async function lerTextoPaginas(pdfjsLib, dados) {
-  const pdf = await pdfjsLib.getDocument({ data: dados }).promise;
+  // O leitor de PDF "consome" o arquivo que recebe (no navegador ele passa a memória para um processo à parte e o
+  // original fica vazio). Por isso ele recebe uma CÓPIA: o original precisa continuar inteiro para separar depois.
+  const pdf = await pdfjsLib.getDocument({ data: dados.slice() }).promise;
   const paginas = [];
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
