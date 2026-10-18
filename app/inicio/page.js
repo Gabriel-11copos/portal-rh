@@ -94,7 +94,7 @@ async function preferencias(acao, ordem) {
   }
 }
 
-const VAZIO = { solicitacoes: 0, documentos: 0, comunicadosNaoLidos: 0, gorjeta: null, escala: null, conquistas: null, guias: 0, missoes: null };
+const VAZIO = { solicitacoes: 0, documentos: 0, comunicadosNaoLidos: 0, gorjeta: null, escala: null, conquistas: null, guias: 0, missoes: null, atualizacao: null };
 
 export default function Inicio() {
   const router = useRouter();
@@ -112,13 +112,14 @@ export default function Inicio() {
 
   // números das bolinhas (rápidos, só banco de dados)
   async function carregarNumeros() {
-    const [sol, doc, gor, con, gui, mis] = await Promise.all([
+    const [sol, doc, gor, con, gui, mis, atu] = await Promise.all([
       buscar('/api/solicitacoes/nao-vistas'),
       buscar('/api/documentos/nao-vistas'),
       buscar('/api/gorjetas/nao-vistas'),
       buscar('/api/conquistas'),
       buscar('/api/guias'),
       buscar('/api/missoes'),
+      buscar('/api/dados-pessoais/status'),
     ]);
     setDados((d) => ({
       ...d,
@@ -130,6 +131,7 @@ export default function Inicio() {
       missoes: mis && Array.isArray(mis.missoes)
         ? { total: mis.missoes.length, disponiveis: mis.missoes.filter((m) => m.estado === 'disponivel').length, novos: mis.novos || 0 }
         : null,
+      atualizacao: atu && atu.pendente && atu.campanha ? atu.campanha : null,
     }));
     await carregarComunicados();
   }
@@ -219,6 +221,18 @@ export default function Inicio() {
       )}
 
       <div style={{ marginTop: 14 }}>
+        {dados.atualizacao && (
+          <div className="card" style={{ background: '#fff8e1', borderColor: '#f5d77a', marginBottom: 14 }}>
+            <b>📋 {dados.atualizacao.titulo}</b>
+            <p style={{ fontSize: 14, margin: '6px 0 10px' }}>
+              {dados.atualizacao.mensagem || 'O RH liberou a atualização dos seus dados. Falta você informar telefone, e-mail, endereço e enviar um comprovante de residência.'}
+            </p>
+            {dados.atualizacao.prazo && (
+              <p style={{ fontSize: 13, margin: '0 0 10px' }}>⏳ Faça até {new Date(dados.atualizacao.prazo).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}.</p>
+            )}
+            <button type="button" onClick={() => router.push('/atualizar-dados')}>Atualizar agora</button>
+          </div>
+        )}
         <CartaoAniversario />
         <GradeCaixinhas cards={cards} organizando={organizando} onAbrir={abrir} onReordenar={reordenar} />
       </div>

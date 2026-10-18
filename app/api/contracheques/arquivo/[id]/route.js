@@ -3,7 +3,9 @@ const { getSessaoRH, getSessaoColaborador } = require('../../../../../lib/auth')
 const { urlDoArquivo } = require('../../../../../lib/contracheques');
 const drive = require('../../../../../lib/driveContracheques');
 
-// Entrega o PDF. O colaborador só abre os DELE; o RH abre qualquer um. Sem login, não abre.
+const TIPOS = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' };
+
+// Entrega o arquivo (PDF ou foto do comprovante). O colaborador só abre os DELE; o RH abre qualquer um. Sem login, não abre.
 async function GET(req, { params }) {
   try {
     const rh = getSessaoRH();
@@ -24,7 +26,7 @@ async function GET(req, { params }) {
     return new Response(buffer, {
       status: 200,
       headers: {
-        'Content-Type': 'application/pdf',
+        'Content-Type': TIPOS[String(doc.nomeArquivo || '').split('.').pop().toLowerCase()] || 'application/pdf',
         'Content-Length': String(buffer.length),
         'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(doc.nomeArquivo || 'documento.pdf')}`,
         'X-Content-Type-Options': 'nosniff',

@@ -284,3 +284,38 @@ model PastaDrive {
   driveId  String
   criadoEm DateTime @default(now())
 }
+model CampanhaDados {
+  id          String    @id @default(cuid())
+  titulo      String
+  mensagem    String    @default("")
+  prazo       DateTime?
+  ativa       Boolean   @default(true)
+  criadaPor   String?
+  criadaEm    DateTime  @default(now())
+  encerradaEm DateTime?
+
+  @@index([ativa])
+}
+
+model AtualizacaoDados {
+  id             String   @id @default(cuid())
+  campanhaId     String
+  colaboradorId  String
+  origem         String
+  telefone       String?
+  email          String?
+  cep            String?
+  logradouro     String?
+  numero         String?
+  complemento    String?
+  bairro         String?
+  cidade         String?
+  uf             String?
+  comprovanteUrl String?
+  baixaPor       String?
+  baixaMotivo    String?
+  criadoEm       DateTime @default(now())
+
+  @@unique([campanhaId, colaboradorId])
+  @@index([colaboradorId])
+}
