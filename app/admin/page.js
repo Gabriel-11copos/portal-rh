@@ -7,6 +7,7 @@ import GradeCaixinhas, { aplicarOrdemCaixinhas } from '../components/GradeCaixin
 // Lista das caixinhas (na ordem padrão). Para acrescentar uma nova, é só incluir uma linha aqui.
 const CAIXINHAS = [
   { id: 'solicitacoes', icon: '📨', title: 'Solicitações', desc: 'Pedidos dos colaboradores ao RH e ao DP', href: '/admin/solicitacoes' },
+  { id: 'atendimento', icon: '📥', title: 'Meus atendimentos', desc: 'Solicitações dos assuntos que você atende', href: '/admin/solicitacoes' },
   { id: 'colaboradores', icon: '👥', title: 'Colaboradores', desc: 'Cadastro, lista de ativos e histórico', href: '/admin/colaboradores' },
   { id: 'comunicados', icon: '📢', title: 'Enviar comunicado', desc: 'Avisos para um, vários ou todos', href: '/admin/comunicados' },
   { id: 'documentos', icon: '📄', title: 'Enviar documento', desc: 'Envie um documento a um colaborador', href: '/admin/enviar-documento' },
@@ -21,6 +22,7 @@ const CAIXINHAS = [
   { id: 'conteudos', icon: '📚', title: 'Conteúdos', desc: 'Cursos, links, benefícios, regras e manuais', href: '/admin/conteudos' },
   { id: 'assuntos', icon: '🗂️', title: 'Assuntos', desc: 'Tipos de pedido, prazos e respostas automáticas', href: '/admin/assuntos' },
   { id: 'usuarios', icon: '👤', title: 'Usuários', desc: 'Quem acessa o painel do RH', href: '/admin/usuarios' },
+  { id: 'permissoes', icon: '🔐', title: 'Permissões', desc: 'Defina o que cada usuário pode fazer', href: '/admin/permissoes' },
 ];
 
 // Números do menu. A bolinha mostra só o que está ESPERANDO o RH (pendentes de resposta).
@@ -52,7 +54,7 @@ function primeiroNomeSaudacao(nome) {
 // Monta a lista final: soma bolinha e aviso às caixinhas certas.
 function montarCaixinhas(base, resumo, aniversariosHoje, missoes = null, atualizacao = null) {
   return base.map((c) => {
-    if (c.id === 'solicitacoes' && resumo) {
+    if ((c.id === 'solicitacoes' || c.id === 'atendimento') && resumo) {
       return {
         ...c,
         contador: resumo.pendentes,
@@ -71,6 +73,17 @@ function montarCaixinhas(base, resumo, aniversariosHoje, missoes = null, atualiz
     return c;
   });
 }
+// Só as caixinhas que a pessoa pode abrir. Sem a informação de acesso (deu erro ao consultar), mostra todas:
+// quem não pode abrir uma tela é barrado pelo servidor de qualquer jeito. Enquanto carrega (null), não mostra nenhuma.
+function caixinhasVisiveis(base, acesso) {
+  if (acesso === null || acesso === undefined) return [];
+  if (acesso === false || !Array.isArray(acesso.paginas)) return base;
+  return base.filter((c) => {
+    if (c.id === 'atendimento') return acesso.escopoSolicitacoes === 'meus';
+    if (c.id === 'solicitacoes') return acesso.escopoSolicitacoes === 'todas';
+    return acesso.paginas.includes(c.href);
+  });
+}
 // </ajudantes>
 
 export default function PainelRH() {
@@ -82,6 +95,7 @@ export default function PainelRH() {
   const [missoes, setMissoes] = useState(null);
   const [atualizacao, setAtualizacao] = useState(null);
   const [nome, setNome] = useState('');
+  const [acesso, setAcesso] = useState(null);       // null = carregando; false = não deu para consultar
 
   async function preferencias(acao, novaOrdem) {
     try {
@@ -105,26 +119,56 @@ export default function PainelRH() {
     });
   }, []);
 
+  // o que esta pessoa pode fazer (e renova a sessão dela se o master mudou as permissões): ao abrir e a cada 90 segundos
+  useEffect(() => {
+    let vivo = true;
+    async function consultar() {
+      try {
+        const r = await fetch('/api/acesso');
+        const d = await r.json();
+        if (!vivo) return;
+        if (r.ok) setAcesso(d);
+        else if (r.status === 401 || r.status === 403) router.push('/login');   // sessão encerrada ou sem acesso
+        else setAcesso((anterior) => anterior || false);
+      } catch {
+        if (vivo) setAcesso((anterior) => anterior || false);
+      }
+    }
+    consultar();
+    const t = setInterval(consultar, 90000);
+    return () => { vivo = false; clearInterval(t); };
+  }, []);
+
+  // só busca os números das telas a que a pessoa tem acesso
+  const chaveDoAcesso = acesso === null ? null : acesso === false ? 'erro' : JSON.stringify([acesso.paginas, acesso.escopoSolicitacoes]);
+
   // números das bolinhas: ao abrir e a cada 90 segundos (a tela nunca some durante a atualização)
   useEffect(() => {
+    if (chaveDoAcesso === null) return undefined;   // espera saber o que a pessoa pode ver
+    const pode = (pagina) => acesso === false || (acesso.paginas || []).includes(pagina);
+    const veSolicitacoes = acesso === false || acesso.escopoSolicitacoes !== 'nenhum';
     let vivo = true;
     async function atualizar() {
       try {
+        if (!veSolicitacoes) throw new Error('sem acesso a solicitações');
         const r = await fetch('/api/solicitacoes');
         const d = await r.json();
         if (vivo && r.ok && Array.isArray(d)) setResumo(calcularResumo(d, new Date()));
       } catch { /* sem internet agora: mantém o número que já tinha */ }
       try {
+        if (!pode('/admin/aniversariantes')) throw new Error('sem acesso');
         const r = await fetch('/api/aniversariantes');
         const d = await r.json();
         if (vivo && r.ok) setAniversariosHoje(contarAniversariantesHoje(d));
       } catch { /* idem */ }
       try {
+        if (!pode('/admin/missoes')) throw new Error('sem acesso');
         const r = await fetch('/api/missoes-admin');
         const d = await r.json();
         if (vivo && r.ok) setMissoes({ pendentes: (d.pendentes || []).length, aEntregar: (d.aEntregar || []).length });
       } catch { /* idem */ }
       try {
+        if (!pode('/admin/atualizacao-dados')) throw new Error('sem acesso');
         const r = await fetch('/api/atualizacao-dados-admin?resumo=1');
         const d = await r.json();
         if (vivo && r.ok) setAtualizacao({ ativa: !!d.ativa, pendentes: d.pendentes || 0 });
@@ -133,7 +177,7 @@ export default function PainelRH() {
     atualizar();
     const t = setInterval(atualizar, 90000);
     return () => { vivo = false; clearInterval(t); };
-  }, []);
+  }, [chaveDoAcesso]);
 
   function reordenar(novaOrdem) {
     setOrdem(novaOrdem);                 // muda na hora
@@ -150,7 +194,7 @@ export default function PainelRH() {
     router.push('/login');
   }
 
-  const cards = aplicarOrdemCaixinhas(montarCaixinhas(CAIXINHAS, resumo, aniversariosHoje, missoes, atualizacao), ordem);
+  const cards = aplicarOrdemCaixinhas(montarCaixinhas(caixinhasVisiveis(CAIXINHAS, acesso), resumo, aniversariosHoje, missoes, atualizacao), ordem);
 
   function abrir(id) {
     const c = CAIXINHAS.find((x) => x.id === id);

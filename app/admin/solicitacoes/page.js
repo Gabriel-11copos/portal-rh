@@ -43,9 +43,13 @@ export default function AdminSolicitacoes() {
   const [lojaBusca, setLojaBusca] = useState('');
   const [dataDe, setDataDe] = useState('');
   const [dataAte, setDataAte] = useState('');
+  const [acesso, setAcesso] = useState(null);                 // o que esta pessoa vê (todas, só os assuntos que atende...)
+  const [incluirSetores, setIncluirSetores] = useState(true);  // quem vê tudo pode esconder os assuntos atendidos por setores
   useEffect(() => {
-    fetch('/api/solicitacoes').then((r) => r.json()).then(setSolicitacoes);
+    fetch('/api/solicitacoes').then((r) => r.json()).then((d) => setSolicitacoes(Array.isArray(d) ? d : []));
+    fetch('/api/acesso').then((r) => r.json()).then((d) => setAcesso(d && d.perfil ? d : null)).catch(() => {});
   }, []);
+  const setoresIds = (acesso && acesso.assuntosDeSetor) || [];
 
   const colaboradoresUnicos = useMemo(
     () => [...new Map(solicitacoes.map((s) => [s.colaborador.id, s.colaborador])).values()]
@@ -64,7 +68,8 @@ export default function AdminSolicitacoes() {
     const dataAbertura = new Date(s.dataAbertura);
     const bateDataDe = !dataDe || dataAbertura >= new Date(dataDe);
     const bateDataAte = !dataAte || dataAbertura <= new Date(dataAte + 'T23:59:59');
-    return bateColaborador && bateLoja && bateDataDe && bateDataAte;
+    const bateSetor = incluirSetores || !setoresIds.includes(s.assunto.id);
+    return bateColaborador && bateLoja && bateDataDe && bateDataAte && bateSetor;
   }
 
   const contagemPorFiltro = Object.fromEntries(
@@ -79,7 +84,18 @@ export default function AdminSolicitacoes() {
   return (
     <div>
       <BotaoVoltar />
-      <h2>Solicitações</h2>
+      <h2>{acesso && acesso.escopoSolicitacoes === 'meus' ? 'Meus atendimentos' : 'Solicitações'}</h2>
+      {acesso && acesso.escopoSolicitacoes === 'meus' && (
+        <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 0 }}>
+          Você vê só os assuntos que atende: {(acesso.assuntos || []).map((a) => a.nome).join(', ')}.
+        </p>
+      )}
+      {acesso && acesso.escopoSolicitacoes === 'todas' && setoresIds.length > 0 && (
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, margin: '0 0 8px' }}>
+          <input type="checkbox" checked={incluirSetores} onChange={(e) => setIncluirSetores(e.target.checked)} style={{ width: 'auto', margin: 0 }} />
+          Incluir os assuntos atendidos por setores (Treinamento, Recrutamento...)
+        </label>
+      )}
 
       <div className="filtros-status">
         {FILTROS.map((f) => (

@@ -1,5 +1,6 @@
 const { prisma } = require('../../../../../lib/db');
 const { getSessaoRH } = require('../../../../../lib/auth');
+const { conferirAtendimento } = require('../../../../../lib/acesso');
 
 // RH define um novo prazo (ex: para evitar que uma solicitação fique marcada como
 // atrasada). Isso também move a solicitação para "em andamento", sinalizando que
@@ -7,6 +8,9 @@ const { getSessaoRH } = require('../../../../../lib/auth');
 async function POST(req, { params }) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
+
+  const bloqueio = await conferirAtendimento(prisma, sessao, params.id);
+  if (bloqueio) return Response.json({ erro: bloqueio.erro }, { status: bloqueio.status });
 
   const { novoPrazo } = await req.json();
   const { id } = params;

@@ -321,3 +321,20 @@ model AtualizacaoDados {
   @@unique([campanhaId, colaboradorId])
   @@index([colaboradorId])
 }
+model PermissaoAdmin {
+  usuarioId     String   @id
+  perfil        String   @default("personalizado")
+  permissoes    Json     @default("[]")
+  atualizadoPor String?
+  atualizadoEm  DateTime @default(now())
+}
+
+model AssuntoResponsavel {
+  id        String   @id @default(cuid())
+  assuntoId String
+  usuarioId String
+  criadoEm  DateTime @default(now())
+
+  @@unique([assuntoId, usuarioId])
+  @@index([usuarioId])
+}
