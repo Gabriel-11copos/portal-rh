@@ -5,13 +5,13 @@ import UploadAnexo from '../../components/UploadAnexo';
 import Avatar from '../../components/Avatar';
 
 export default function UsuariosRH() {
-  const [usuarios, setUsuarios] = useState([]);
+  const [usuarios, setUsuarios] = useState(null);   // null = quem está logado não pode gerenciar usuários (só o master pode)
   const [meuPerfil, setMeuPerfil] = useState(null);
   const [form, setForm] = useState({ nome: '', email: '', senha: '' });
   const [msg, setMsg] = useState('');
 
   function carregar() {
-    fetch('/api/admin-usuarios').then((r) => r.json()).then(setUsuarios);
+    fetch('/api/admin-usuarios').then((r) => r.json()).then((d) => setUsuarios(Array.isArray(d) ? d : null)).catch(() => setUsuarios(null));
     fetch('/api/admin-usuarios/perfil').then((r) => r.json()).then(setMeuPerfil);
   }
   useEffect(carregar, []);
@@ -33,6 +33,15 @@ export default function UsuariosRH() {
     }
   }
 
+  async function excluir(u) {
+    if (!window.confirm(`Excluir o usuário ${u.nome}? Ele deixa de poder entrar no painel e sai dos assuntos que atendia. O nome dele continua nas respostas que já deu.`)) return;
+    setMsg('');
+    const res = await fetch(`/api/admin-usuarios/${u.id}`, { method: 'DELETE' });
+    const data = await res.json().catch(() => ({}));
+    setMsg(res.ok ? `Usuário ${u.nome} excluído.` : (data.erro || 'Não foi possível excluir.'));
+    carregar();
+  }
+
   async function trocarMinhaFoto(anexo) {
     await fetch('/api/admin-usuarios/perfil', {
       method: 'PATCH',
@@ -45,7 +54,7 @@ export default function UsuariosRH() {
   return (
     <div>
       <BotaoVoltar />
-      <h2>Meu perfil e usuários do RH/DP</h2>
+      <h2>{usuarios ? 'Meu perfil e usuários do RH/DP' : 'Meu perfil'}</h2>
 
       {meuPerfil && (
         <div className="card" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -60,6 +69,7 @@ export default function UsuariosRH() {
         </div>
       )}
 
+      {usuarios && (<>
       <div className="card">
         <h3>Novo usuário do RH/DP</h3>
         <p style={{ fontSize: 13, color: 'var(--muted)' }}>
@@ -82,13 +92,17 @@ export default function UsuariosRH() {
         {usuarios.map((u) => (
           <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: '1px solid var(--border)' }}>
             <Avatar fotoUrl={u.fotoUrl} nome={u.nome} size={32} />
-            <div>
-              <div style={{ fontWeight: 600, fontSize: 14 }}>{u.nome}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>{u.nome}{meuPerfil && u.id === meuPerfil.id && <span style={{ color: 'var(--muted)', fontWeight: 400 }}> (você)</span>}</div>
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>{u.email}</div>
             </div>
+            {!(meuPerfil && u.id === meuPerfil.id) && (
+              <button type="button" className="secundario" style={{ padding: '4px 12px', fontSize: 12, color: 'var(--danger)' }} onClick={() => excluir(u)}>Excluir</button>
+            )}
           </div>
         ))}
       </div>
+      </>)}
     </div>
   );
 }

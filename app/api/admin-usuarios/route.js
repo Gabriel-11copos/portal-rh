@@ -1,5 +1,6 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH, gerarHash } = require('../../../lib/auth');
+const { conferirMaster } = require('../../../lib/acesso');
 
 // Lista os usuários do RH/DP (sem expor a senha).
 async function GET() {
@@ -17,6 +18,10 @@ async function GET() {
 async function POST(req) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
+
+  // só o master cria usuários (conferido no banco)
+  const bloqueio = await conferirMaster(prisma, sessao);
+  if (bloqueio) return Response.json({ erro: bloqueio.erro }, { status: bloqueio.status });
 
   const { nome, email, senha } = await req.json();
   const senhaHash = await gerarHash(senha);

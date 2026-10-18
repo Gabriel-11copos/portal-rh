@@ -1,6 +1,6 @@
 const { prisma } = require('../../../../../lib/db');
 const { getSessaoRH } = require('../../../../../lib/auth');
-const { tabelaNaoExiste, modelosInstalados } = require('../../../../../lib/acesso');
+const { tabelaNaoExiste, modelosInstalados, conferirMaster } = require('../../../../../lib/acesso');
 
 // Só master. Quem atende este assunto (as solicitações dele chegam para essas pessoas).
 async function GET(req, { params }) {
@@ -21,7 +21,10 @@ async function GET(req, { params }) {
 // Define quem atende o assunto (substitui a lista toda). Lista vazia = ninguém em particular (continua só no painel geral).
 async function PUT(req, { params }) {
   try {
-    if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
+    const sessao = getSessaoRH();
+    if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
+    const bloqueio = await conferirMaster(prisma, sessao);
+    if (bloqueio) return Response.json({ erro: bloqueio.erro }, { status: bloqueio.status });
 
     if (!modelosInstalados(prisma)) return Response.json({ erro: 'As tabelas de permissões ainda não foram criadas no banco.' }, { status: 409 });
     const assunto = await prisma.assunto.findUnique({ where: { id: params.id }, select: { id: true } });

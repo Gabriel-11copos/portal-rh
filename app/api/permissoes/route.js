@@ -2,7 +2,7 @@ const { headers } = require('next/headers');
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH } = require('../../../lib/auth');
 const { PERMISSOES, lerPermissoes } = require('../../../lib/permissoes');
-const { tabelaNaoExiste, modelosInstalados } = require('../../../lib/acesso');
+const { tabelaNaoExiste, modelosInstalados, conferirMaster } = require('../../../lib/acesso');
 
 // Só master. Lista os usuários do painel com o que cada um pode fazer e os assuntos que atende.
 async function GET() {
@@ -54,6 +54,8 @@ async function POST(req) {
   try {
     const sessao = getSessaoRH();
     if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
+    const bloqueio = await conferirMaster(prisma, sessao);
+    if (bloqueio) return Response.json({ erro: bloqueio.erro }, { status: bloqueio.status });
     const corpo = await req.json();
     if (corpo.acao !== 'ativar') return Response.json({ erro: 'Ação inválida.' }, { status: 400 });
 

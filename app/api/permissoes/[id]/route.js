@@ -1,7 +1,7 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { PERFIS, lerPermissoes } = require('../../../../lib/permissoes');
-const { tabelaNaoExiste, modelosInstalados } = require('../../../../lib/acesso');
+const { tabelaNaoExiste, modelosInstalados, conferirMaster } = require('../../../../lib/acesso');
 
 // Só master. Define o perfil (master, personalizado ou sem acesso) e as permissões de um usuário.
 async function PUT(req, { params }) {
@@ -9,6 +9,8 @@ async function PUT(req, { params }) {
     const sessao = getSessaoRH();
     if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
+    const bloqueio = await conferirMaster(prisma, sessao);
+    if (bloqueio) return Response.json({ erro: bloqueio.erro }, { status: bloqueio.status });
     const corpo = await req.json();
     const perfil = corpo.perfil;
     if (!PERFIS.includes(perfil)) return Response.json({ erro: 'Perfil inválido.' }, { status: 400 });
