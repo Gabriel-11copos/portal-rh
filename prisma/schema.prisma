@@ -284,7 +284,6 @@ model PastaDrive {
   driveId  String
   criadoEm DateTime @default(now())
 }
-}
 model CampanhaDados {
   id          String    @id @default(cuid())
   titulo      String
