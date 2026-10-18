@@ -284,19 +284,7 @@ model PastaDrive {
   driveId  String
   criadoEm DateTime @default(now())
 }
-model CampanhaDados {
-  id          String    @id @default(cuid())
-  titulo      String
-  mensagem    String    @default("")
-  prazo       DateTime?
-  ativa       Boolean   @default(true)
-  criadaPor   String?
-  criadaEm    DateTime  @default(now())
-  encerradaEm DateTime?
-
-  @@index([ativa])
 }
-
 model CampanhaDados {
   id          String    @id @default(cuid())
   titulo      String
