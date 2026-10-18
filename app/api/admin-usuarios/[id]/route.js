@@ -1,6 +1,7 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH, gerarHash } = require('../../../../lib/auth');
 const { conferirMaster } = require('../../../../lib/acesso');
+const { validarSenha } = require('../../../../lib/senhas');
 
 // Edita um usuário do RH/DP (nome, e-mail, foto, e opcionalmente redefine a senha). Só o master.
 async function PATCH(req, { params }) {
@@ -9,18 +10,29 @@ async function PATCH(req, { params }) {
   const bloqueio = await conferirMaster(prisma, sessao);
   if (bloqueio) return Response.json({ erro: bloqueio.erro }, { status: bloqueio.status });
 
-  const { id } = params;
-  const { nome, email, fotoUrl, novaSenha } = await req.json();
+  try {
+    const { id } = params;
+    const { nome, email, fotoUrl, novaSenha } = await req.json();
 
-  const dados = {};
-  if (nome !== undefined) dados.nome = nome;
-  if (email !== undefined) dados.email = email.toLowerCase().trim();
-  if (fotoUrl !== undefined) dados.fotoUrl = fotoUrl;
-  if (novaSenha) dados.senhaHash = await gerarHash(novaSenha);
+    const dados = {};
+    if (nome !== undefined) dados.nome = nome;
+    if (email !== undefined) dados.email = email.toLowerCase().trim();
+    if (fotoUrl !== undefined) dados.fotoUrl = fotoUrl;
+    if (novaSenha !== undefined && novaSenha !== null && novaSenha !== '') {   // esqueceu a senha: o master define uma nova
+      const erroSenha = validarSenha(novaSenha);
+      if (erroSenha) return Response.json({ erro: erroSenha }, { status: 400 });
+      dados.senhaHash = await gerarHash(novaSenha);
+    }
 
-  const usuario = await prisma.adminUsuario.update({ where: { id }, data: dados });
-  const { senhaHash, ...dadosPublicos } = usuario;
-  return Response.json(dadosPublicos);
+    const usuario = await prisma.adminUsuario.update({ where: { id }, data: dados });
+    const { senhaHash, ...dadosPublicos } = usuario;
+    return Response.json(dadosPublicos);
+  } catch (err) {
+    if (err && err.code === 'P2025') return Response.json({ erro: 'Usuário não encontrado.' }, { status: 404 });
+    if (err && err.code === 'P2002') return Response.json({ erro: 'Já existe um usuário com este e-mail.' }, { status: 409 });
+    console.error('Erro ao editar usuário:', err);
+    return Response.json({ erro: 'Não foi possível salvar agora.' }, { status: 500 });
+  }
 }
 
 // Exclui um usuário do RH/DP. Só o master, e nunca o próprio usuário.
