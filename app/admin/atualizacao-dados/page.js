@@ -25,6 +25,11 @@ function textoEndereco(e) {
   return [rua, e.complemento, e.bairro, [e.cidade, e.uf].filter(Boolean).join('/'), e.cep ? `CEP ${formatarCep(e.cep)}` : ''].filter(Boolean).join(' · ');
 }
 
+// Para buscar nomes sem se importar com acento ou maiúsculas.
+function normalizar(t) {
+  return String(t == null ? '' : t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
 // Uma célula da planilha: protege contra "fórmulas" digitadas por alguém (=, +, -, @) e escapa aspas e ponto e vírgula.
 function celulaCsv(v) {
   let s = String(v == null ? '' : v);
@@ -54,6 +59,47 @@ function Barra({ feitos, total }) {
   );
 }
 
+// Escolher colaboradores: busca pelo nome, filtro por loja e atalho para marcar todos os que aparecem.
+function SeletorColaboradores({ elenco, escolhidos, onMudar }) {
+  const [busca, setBusca] = useState('');
+  const [loja, setLoja] = useState('');
+  const lojas = useMemo(() => [...new Set(elenco.map((c) => c.loja))].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR')), [elenco]);
+  const visiveis = useMemo(() => {
+    const q = normalizar(busca);
+    return elenco.filter((c) => (!loja || c.loja === loja) && (!q || normalizar(c.nome).includes(q)));
+  }, [elenco, busca, loja]);
+  const marcados = new Set(escolhidos);
+  const alternar = (id) => onMudar(marcados.has(id) ? escolhidos.filter((x) => x !== id) : [...escolhidos, id]);
+  const marcarVisiveis = () => onMudar([...new Set([...escolhidos, ...visiveis.map((c) => c.id)])]);
+  const desmarcarVisiveis = () => { const v = new Set(visiveis.map((c) => c.id)); onMudar(escolhidos.filter((id) => !v.has(id))); };
+
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 10, margin: '8px 0' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar colaborador pelo nome..." style={{ flex: '2 1 180px' }} />
+        <select value={loja} onChange={(e) => setLoja(e.target.value)} style={{ flex: '1 1 160px' }}>
+          <option value="">Todas as lojas</option>
+          {lojas.map((l) => <option key={l} value={l}>{l}</option>)}
+        </select>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', margin: '8px 0' }}>
+        <button type="button" className="secundario" style={{ padding: '3px 10px', fontSize: 12 }} onClick={marcarVisiveis}>Marcar os {visiveis.length} da lista</button>
+        <button type="button" className="secundario" style={{ padding: '3px 10px', fontSize: 12 }} onClick={desmarcarVisiveis}>Desmarcar os da lista</button>
+        <b style={{ fontSize: 13 }}>{escolhidos.length} escolhido{escolhidos.length === 1 ? '' : 's'}</b>
+      </div>
+      <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+        {visiveis.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>Ninguém encontrado.</p>}
+        {visiveis.map((c) => (
+          <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 14 }}>
+            <input type="checkbox" checked={marcados.has(c.id)} onChange={() => alternar(c.id)} style={{ width: 'auto', margin: 0 }} />
+            <span>{c.nome} <span style={{ color: 'var(--muted)', fontSize: 12 }}>· {c.loja}</span></span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AtualizacaoDadosAdmin() {
   const [dados, setDados] = useState(null);
   const [erro, setErro] = useState('');
@@ -62,6 +108,10 @@ export default function AtualizacaoDadosAdmin() {
   const [busca, setBusca] = useState('');
   const [baixando, setBaixando] = useState(null);     // { id, motivo }
   const [abertos, setAbertos] = useState({});
+  const [publico, setPublico] = useState('todos');       // para quem liberar: todos | selecionados
+  const [escolhidos, setEscolhidos] = useState([]);
+  const [incluindo, setIncluindo] = useState(false);       // painel de "incluir mais colaboradores"
+  const [novos, setNovos] = useState([]);
 
   async function carregar() {
     try {
@@ -85,9 +135,28 @@ export default function AtualizacaoDadosAdmin() {
 
   async function liberar(e) {
     e.preventDefault();
-    if (!window.confirm('Liberar a atualização de dados para TODOS os colaboradores? Quem ainda não fez será avisado toda vez que entrar no portal.')) return;
-    const ok = await enviar('/api/atualizacao-dados-admin', form);
-    if (ok) { setForm({ titulo: '', mensagem: '', prazo: '' }); setMsg('Atualização liberada. Os colaboradores já estão sendo avisados.'); carregar(); }
+    const paraAlguns = publico === 'selecionados';
+    if (paraAlguns && escolhidos.length === 0) { setErro('Escolha pelo menos um colaborador.'); return; }
+    const quem = paraAlguns ? `${escolhidos.length} colaborador${escolhidos.length === 1 ? '' : 'es'} escolhido${escolhidos.length === 1 ? '' : 's'}` : 'TODOS os colaboradores';
+    if (!window.confirm(`Liberar a atualização de dados para ${quem}? Quem ainda não fez será avisado toda vez que entrar no portal.`)) return;
+    const ok = await enviar('/api/atualizacao-dados-admin', { ...form, publico, colaboradorIds: paraAlguns ? escolhidos : [] });
+    if (ok) {
+      setForm({ titulo: '', mensagem: '', prazo: '' }); setPublico('todos'); setEscolhidos([]);
+      setMsg('Atualização liberada. Os colaboradores já estão sendo avisados.'); carregar();
+    }
+  }
+
+  async function incluirNovos() {
+    const ok = await enviar('/api/atualizacao-dados-admin/publico', { acao: 'incluir', colaboradorIds: novos });
+    if (ok) { setIncluindo(false); setNovos([]); setMsg(`${ok.incluidos} colaborador${ok.incluidos === 1 ? '' : 'es'} incluído${ok.incluidos === 1 ? '' : 's'}. Já estão sendo avisados.`); }
+    carregar();
+  }
+
+  async function estenderParaTodos() {
+    if (!window.confirm('Passar esta atualização para TODOS os colaboradores ativos? Quem ainda não fez passa a ser avisado.')) return;
+    const ok = await enviar('/api/atualizacao-dados-admin/publico', { acao: 'todos' });
+    if (ok) { setIncluindo(false); setMsg('Agora a atualização vale para todos os colaboradores ativos.'); }
+    carregar();
   }
 
   async function encerrar() {
@@ -149,7 +218,21 @@ export default function AtualizacaoDadosAdmin() {
             <textarea rows={3} value={form.mensagem} maxLength={400} placeholder="Ex: Precisamos atualizar seus dados para o cadastro do benefício." onChange={(e) => setForm({ ...form, mensagem: e.target.value })} />
             <label>Prazo (opcional, só informativo)</label>
             <input type="date" value={form.prazo} onChange={(e) => setForm({ ...form, prazo: e.target.value })} style={{ maxWidth: 200 }} />
-            <button type="submit">Liberar para todos</button>
+            <label>Para quem</label>
+            <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', margin: '4px 0 6px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input type="radio" name="publico" checked={publico === 'todos'} onChange={() => setPublico('todos')} style={{ width: 'auto', margin: 0 }} />
+                Todos os colaboradores ativos
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input type="radio" name="publico" checked={publico === 'selecionados'} onChange={() => setPublico('selecionados')} style={{ width: 'auto', margin: 0 }} />
+                Só alguns colaboradores
+              </label>
+            </div>
+            {publico === 'selecionados' && <SeletorColaboradores elenco={dados.elenco || []} escolhidos={escolhidos} onMudar={setEscolhidos} />}
+            <button type="submit" disabled={publico === 'selecionados' && escolhidos.length === 0}>
+              {publico === 'todos' ? 'Liberar para todos' : `Liberar para ${escolhidos.length} colaborador${escolhidos.length === 1 ? '' : 'es'}`}
+            </button>
           </form>
         </div>
       )}
@@ -163,8 +246,19 @@ export default function AtualizacaoDadosAdmin() {
                 <div style={{ fontSize: 12, color: 'var(--muted)' }}>
                   Liberada em {dataHora(ativa.criadaEm)}{ativa.criadaPor ? ` por ${ativa.criadaPor}` : ''}{ativa.prazo ? ` · prazo ${dataCal(ativa.prazo)}` : ''}
                 </div>
+                <div style={{ fontSize: 13, marginTop: 2 }}>
+                  👥 {ativa.publico === 'selecionados'
+                    ? `Enviada para ${t.ativos} colaborador${t.ativos === 1 ? '' : 'es'} escolhido${t.ativos === 1 ? '' : 's'}`
+                    : 'Enviada para todos os colaboradores ativos'}
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {ativa.publico === 'selecionados' && (
+                  <>
+                    <button type="button" className="secundario" onClick={() => { setIncluindo((v) => !v); setNovos([]); }}>➕ Incluir mais colaboradores</button>
+                    <button type="button" className="secundario" onClick={estenderParaTodos}>Enviar para todos</button>
+                  </>
+                )}
                 <button type="button" className="secundario" onClick={baixarPlanilha}>⬇ Baixar planilha</button>
                 <button type="button" className="secundario" onClick={encerrar}>Encerrar atualização</button>
               </div>
@@ -176,6 +270,18 @@ export default function AtualizacaoDadosAdmin() {
             <Barra feitos={t.atualizaram + t.baixas} total={t.ativos} />
             <div style={{ fontSize: 13, color: 'var(--muted)' }}>{t.atualizaram} atualizaram sozinhos · {t.baixas} com baixa do RH · {t.pendentes} pendentes</div>
           </div>
+
+          {incluindo && ativa.publico === 'selecionados' && (
+            <div className="card">
+              <h3 style={{ marginTop: 0 }}>Incluir mais colaboradores</h3>
+              <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 0 }}>Aparecem só quem ainda não foi incluído.</p>
+              <SeletorColaboradores elenco={(dados.elenco || []).filter((c) => !(ativa.alvosIds || []).includes(c.id))} escolhidos={novos} onMudar={setNovos} />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" disabled={novos.length === 0} onClick={incluirNovos}>Incluir {novos.length} colaborador{novos.length === 1 ? '' : 'es'}</button>
+                <button type="button" className="secundario" onClick={() => { setIncluindo(false); setNovos([]); }}>Cancelar</button>
+              </div>
+            </div>
+          )}
 
           <h3>Pendentes {t.pendentes > 0 && <span className="bolinha-notificacao">{t.pendentes}</span>}</h3>
           {dados.pendentes.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 14 }}>Ninguém pendente. 🎉</p>}
@@ -252,7 +358,7 @@ export default function AtualizacaoDadosAdmin() {
             <div key={h.id} className="card">
               <b>{h.titulo}</b>
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                {dataHora(h.criadaEm)}{h.encerradaEm ? ` até ${dataHora(h.encerradaEm)}` : ''} · {h.atualizaram} atualizaram · {h.baixas} com baixa
+                {dataHora(h.criadaEm)}{h.encerradaEm ? ` até ${dataHora(h.encerradaEm)}` : ''} · {h.publico === 'selecionados' ? `só ${h.qtdAlvos} escolhido${h.qtdAlvos === 1 ? '' : 's'}` : 'para todos'} · {h.atualizaram} atualizaram · {h.baixas} com baixa
               </div>
             </div>
           ))}

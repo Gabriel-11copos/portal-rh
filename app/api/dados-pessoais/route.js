@@ -1,6 +1,6 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoColaborador } = require('../../../lib/auth');
-const { MAX_COMPROVANTE, TIPO_COMPROVANTE, lerAtualizacao, tipoDeArquivo, competenciaAtual } = require('../../../lib/dadosPessoais');
+const { MAX_COMPROVANTE, TIPO_COMPROVANTE, lerAtualizacao, tipoDeArquivo, competenciaAtual, fazParte } = require('../../../lib/dadosPessoais');
 const { guardarDocumento } = require('../../../lib/guardarDocumento');
 
 // O colaborador envia os dados pessoais e o comprovante de residência da atualização liberada pelo RH.
@@ -11,7 +11,7 @@ async function POST(req) {
     if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
     const campanha = await prisma.campanhaDados.findFirst({ where: { ativa: true }, orderBy: { criadaEm: 'desc' } });
-    if (!campanha) return Response.json({ erro: 'Não há atualização de dados liberada no momento.' }, { status: 409 });
+    if (!campanha || !fazParte(campanha, sessao.id)) return Response.json({ erro: 'Não há atualização de dados liberada para você no momento.' }, { status: 409 });
 
     const form = await req.formData();
     const { erros, dados } = lerAtualizacao(Object.fromEntries([...form.entries()].filter(([, v]) => typeof v === 'string')));

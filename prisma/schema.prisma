@@ -297,6 +297,21 @@ model CampanhaDados {
   @@index([ativa])
 }
 
+model CampanhaDados {
+  id          String    @id @default(cuid())
+  titulo      String
+  mensagem    String    @default("")
+  prazo       DateTime?
+  ativa       Boolean   @default(true)
+  publico     String    @default("todos")
+  alvos       Json?
+  criadaPor   String?
+  criadaEm    DateTime  @default(now())
+  encerradaEm DateTime?
+
+  @@index([ativa])
+}
+
 model AtualizacaoDados {
   id             String   @id @default(cuid())
   campanhaId     String

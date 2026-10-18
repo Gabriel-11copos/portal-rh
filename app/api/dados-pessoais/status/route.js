@@ -1,5 +1,6 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoColaborador } = require('../../../../lib/auth');
+const { fazParte } = require('../../../../lib/dadosPessoais');
 
 // O colaborador vê se há uma atualização de dados liberada pelo RH e se ainda falta ele fazer.
 // Também devolve os dados da última vez, para a tela já vir preenchida.
@@ -16,7 +17,8 @@ async function GET() {
       console.error('Não foi possível ler a atualização de dados:', err);
       return Response.json({ campanha: null, pendente: false, concluido: false });
     }
-    if (!campanha) return Response.json({ campanha: null, pendente: false, concluido: false });
+    // sem atualização liberada, ou liberada só para outras pessoas: não há nada a avisar para ele
+    if (!campanha || !fazParte(campanha, sessao.id)) return Response.json({ campanha: null, pendente: false, concluido: false });
 
     const registro = await prisma.atualizacaoDados.findFirst({ where: { campanhaId: campanha.id, colaboradorId: sessao.id } });
     const ultima = await prisma.atualizacaoDados.findFirst({ where: { colaboradorId: sessao.id, origem: 'colaborador' }, orderBy: { criadoEm: 'desc' } });

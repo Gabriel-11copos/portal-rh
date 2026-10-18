@@ -1,5 +1,6 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
+const { fazParte } = require('../../../../lib/dadosPessoais');
 
 // Só RH. Dá baixa na atualização de um colaborador (por exemplo, ele falou com o RH): o sistema para de avisar.
 // Também desfaz uma baixa dada por engano. Não mexe em quem já atualizou os dados sozinho.
@@ -16,6 +17,7 @@ async function POST(req) {
 
     const colaborador = await prisma.colaborador.findUnique({ where: { id: String(colaboradorId || '') }, select: { id: true } });
     if (!colaborador) return Response.json({ erro: 'Colaborador não encontrado.' }, { status: 404 });
+    if (!fazParte(campanha, colaborador.id)) return Response.json({ erro: 'Este colaborador não faz parte desta atualização.' }, { status: 409 });
 
     const existente = await prisma.atualizacaoDados.findFirst({ where: { campanhaId: campanha.id, colaboradorId: colaborador.id } });
 

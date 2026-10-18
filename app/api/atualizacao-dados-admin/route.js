@@ -1,6 +1,6 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH } = require('../../../lib/auth');
-const { lerCampanha } = require('../../../lib/dadosPessoais');
+const { lerCampanha, lerPublico, alvosDe, fazParte } = require('../../../lib/dadosPessoais');
 
 // Só RH. Acompanha a atualização de dados: quem já fez, quem falta e o histórico das anteriores.
 // Com ?resumo=1 devolve só os números (usado pela bolinha do menu).
@@ -18,7 +18,9 @@ async function GET(req) {
       return Response.json({ ativa: null, historico: [], pendentes: [], concluidos: [], totais: null, semTabela: true });
     }
 
-    const ativos = await prisma.colaborador.findMany({ where: { ativo: true }, select: { id: true, nome: true, loja: true, matricula: true } });
+    const todosAtivos = await prisma.colaborador.findMany({ where: { ativo: true }, select: { id: true, nome: true, loja: true, matricula: true } });
+    // quem faz parte desta atualização: todos os ativos, ou só os escolhidos (que continuem ativos)
+    const ativos = ativa ? todosAtivos.filter((c) => fazParte(ativa, c.id)) : todosAtivos;
     const registros = ativa ? await prisma.atualizacaoDados.findMany({ where: { campanhaId: ativa.id } }) : [];
     const porColab = new Map(registros.map((r) => [r.colaboradorId, r]));
     const pendentes = ativos.filter((c) => !porColab.has(c.id));
@@ -43,12 +45,19 @@ async function GET(req) {
     }
     const historico = anteriores.map((c) => ({
       id: c.id, titulo: c.titulo, criadaEm: c.criadaEm, encerradaEm: c.encerradaEm,
+      publico: c.publico === 'selecionados' ? 'selecionados' : 'todos', qtdAlvos: c.publico === 'selecionados' ? alvosDe(c).length : null,
       atualizaram: contagens.filter((x) => x.campanhaId === c.id && x.origem === 'colaborador').reduce((n, x) => n + x._count._all, 0),
       baixas: contagens.filter((x) => x.campanhaId === c.id && x.origem === 'baixa_rh').reduce((n, x) => n + x._count._all, 0),
     }));
 
     return Response.json({
-      ativa: ativa ? { id: ativa.id, titulo: ativa.titulo, mensagem: ativa.mensagem, prazo: ativa.prazo, criadaEm: ativa.criadaEm, criadaPor: ativa.criadaPor } : null,
+      ativa: ativa ? {
+        id: ativa.id, titulo: ativa.titulo, mensagem: ativa.mensagem, prazo: ativa.prazo, criadaEm: ativa.criadaEm, criadaPor: ativa.criadaPor,
+        publico: ativa.publico === 'selecionados' ? 'selecionados' : 'todos',
+        alvosIds: ativa.publico === 'selecionados' ? alvosDe(ativa) : null,
+      } : null,
+      // lista de todos os colaboradores ativos, para escolher quem recebe (ao liberar ou ao incluir mais gente)
+      elenco: todosAtivos.map((c) => ({ id: c.id, nome: c.nome, loja: c.loja })).sort(porNome),
       totais: ativa ? {
         ativos: ativos.length,
         atualizaram: concluidos.filter((c) => c.origem === 'colaborador').length,
@@ -71,15 +80,26 @@ async function POST(req) {
     const sessao = getSessaoRH();
     if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-    const { erros, campanha } = lerCampanha(await req.json());
+    const corpo = await req.json();
+    const { erros, campanha } = lerCampanha(corpo);
     if (erros.length > 0) return Response.json({ erro: erros.join(' ') }, { status: 400 });
 
     const jaAtiva = await prisma.campanhaDados.findFirst({ where: { ativa: true } });
     if (jaAtiva) return Response.json({ erro: 'Já existe uma atualização liberada. Encerre a atual antes de liberar outra.' }, { status: 409 });
 
+    // para quem: todos, ou só os escolhidos (só valem colaboradores que existem e estão ativos)
+    const { erros: errosPublico, publico, ids } = lerPublico(corpo);
+    if (errosPublico.length > 0) return Response.json({ erro: errosPublico.join(' ') }, { status: 400 });
+    let alvos = null;
+    if (publico === 'selecionados') {
+      const validos = await prisma.colaborador.findMany({ where: { id: { in: ids }, ativo: true }, select: { id: true } });
+      alvos = validos.map((c) => c.id);
+      if (alvos.length === 0) return Response.json({ erro: 'Nenhum dos colaboradores escolhidos está ativo.' }, { status: 400 });
+    }
+
     let criada;
     try {
-      criada = await prisma.campanhaDados.create({ data: { ...campanha, criadaPor: typeof sessao.nome === 'string' ? sessao.nome : null } });
+      criada = await prisma.campanhaDados.create({ data: { ...campanha, publico, alvos, criadaPor: typeof sessao.nome === 'string' ? sessao.nome : null } });
     } catch (err) {
       // dois usuários do RH liberaram ao mesmo tempo: o banco só aceita uma liberada por vez
       if (err && err.code === 'P2002') return Response.json({ erro: 'Já existe uma atualização liberada. Encerre a atual antes de liberar outra.' }, { status: 409 });
