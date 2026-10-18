@@ -32,7 +32,8 @@ async function GET() {
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
   const colaboradores = await prisma.colaborador.findMany({ orderBy: { nome: 'asc' } });
-  return Response.json(colaboradores);
+  // a senha (criptografada) nunca sai do servidor
+  return Response.json(colaboradores.map(({ senhaHash, ...publico }) => publico));
 }
 
 module.exports = { POST, GET };
