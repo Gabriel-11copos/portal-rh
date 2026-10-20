@@ -3,6 +3,7 @@ const { getSessaoColaborador, getSessaoRH } = require('../../../lib/auth');
 const { enviarEmail } = require('../../../lib/email');
 const { somarDiasUteis } = require('../../../lib/feriados');
 const { escopoSolicitacoes } = require('../../../lib/acesso');
+const { modoDeAcesso } = require('../../../lib/contexto');
 
 // Cria uma nova solicitação e aplica a triagem automática com base no assunto:
 // define prazo, responsável, e devolve resposta automática se o assunto tiver uma cadastrada.
@@ -64,8 +65,10 @@ async function GET(req) {
   const url = new URL(req.url);
   const sessaoColaborador = getSessaoColaborador();
   const sessaoRH = getSessaoRH();
+  // quem tem os dois logins no mesmo navegador: nas telas do painel vale o RH, nas do colaborador vale o colaborador
+  const modo = modoDeAcesso(req, { rh: sessaoRH, colaborador: sessaoColaborador });
 
-  if (sessaoRH) {
+  if (modo === 'rh') {
     // quem vê tudo (master, ou com a permissão "Ver todas as solicitações") e quem vê só os assuntos que atende
     const escopo = await escopoSolicitacoes(prisma, sessaoRH);
     if (!escopo.todas && escopo.assuntoIds.length === 0) return Response.json([]);
@@ -86,7 +89,7 @@ async function GET(req) {
     }));
   }
 
-  if (sessaoColaborador) {
+  if (modo === 'colaborador') {
     const solicitacoes = await prisma.solicitacao.findMany({
       where: { colaboradorId: sessaoColaborador.id },
       include: { assunto: true, respostas: true, anexos: true },

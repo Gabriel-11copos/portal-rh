@@ -1,15 +1,16 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH, getSessaoColaborador } = require('../../../lib/auth');
 const { lerGuia, idsDeMidia } = require('../../../lib/guias');
+const { modoDeAcesso } = require('../../../lib/contexto');
 
 // Lista os guias. O RH vê todos (inclusive rascunhos); o colaborador vê só os publicados.
-async function GET() {
+async function GET(req) {
   try {
-    const rh = getSessaoRH();
-    if (!rh && !getSessaoColaborador()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
+    const modo = modoDeAcesso(req, { rh: getSessaoRH(), colaborador: getSessaoColaborador() });
+    if (!modo) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
     const guias = await prisma.guia.findMany({
-      where: rh ? {} : { ativo: true },
+      where: modo === 'rh' ? {} : { ativo: true },
       orderBy: [{ categoria: 'asc' }, { titulo: 'asc' }],
     });
     return Response.json(

@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH, getSessaoColaborador } = require('../../../lib/auth');
 const { enviarEmail } = require('../../../lib/email');
+const { modoDeAcesso } = require('../../../lib/contexto');
 
 async function POST(req) {
   const sessao = getSessaoRH();
@@ -43,21 +44,27 @@ async function POST(req) {
   return Response.json({ ok: true, enviados: destinatarios.length });
 }
 
-async function GET() {
-  const sessaoColaborador = getSessaoColaborador();
-  const sessaoRH = getSessaoRH();
+// Lista comunicados. Telas do painel (RH): todos. Telas do colaborador: só os do colaborador logado,
+// mesmo que a pessoa também tenha o login do RH aberto no mesmo navegador.
+async function GET(req) {
+  const modo = modoDeAcesso(req, { rh: getSessaoRH(), colaborador: getSessaoColaborador() });
 
-  if (sessaoRH) {
+  if (modo === 'rh') {
     const comunicados = await prisma.comunicado.findMany({
       include: { colaborador: true, anexos: true },
       orderBy: { data: 'desc' },
     });
-    return Response.json(comunicados);
+    // a senha (criptografada) do colaborador nunca sai do servidor
+    return Response.json(comunicados.map((c) => {
+      if (!c.colaborador) return c;
+      const { senhaHash, ...colaborador } = c.colaborador;
+      return { ...c, colaborador };
+    }));
   }
 
-  if (sessaoColaborador) {
+  if (modo === 'colaborador') {
     const comunicados = await prisma.comunicado.findMany({
-      where: { colaboradorId: sessaoColaborador.id },
+      where: { colaboradorId: getSessaoColaborador().id },
       include: { anexos: true },
       orderBy: { data: 'desc' },
     });
