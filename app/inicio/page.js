@@ -52,7 +52,10 @@ function montarCaixinhas(d) {
     if (c.id === 'solicitacoes') c.contador = d.solicitacoes;
     if (c.id === 'documentos') c.contador = d.documentos;
     if (c.id === 'comunicados') c.contador = d.comunicadosNaoLidos;
-    if (c.id === 'gorjeta') c.contador = d.gorjeta.naoVistas;
+    if (c.id === 'gorjeta') {
+      c.contador = d.gorjeta.naoVistas;
+      if (d.gorjeta.parcial) c.desc = 'Valores PARCIAIS: podem mudar até o fechamento do ciclo';
+    }
     if (c.id === 'escala') c.desc = resumoEscala(d.escala) || c.desc;
     if (c.id === 'conquistas' && d.conquistas) {
       c.contador = d.conquistas.novos;
