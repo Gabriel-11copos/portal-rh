@@ -431,7 +431,7 @@ export default function Contracheques() {
       <BotaoVoltar />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0 }}>Distribuir contracheques</h2>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><Link href="/admin/contracheques/historico" style={{ fontSize: 13, padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>📋 Histórico e quem falta enviar</Link><Link href="/admin/contracheques/auditoria" style={{ fontSize: 13, padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>🔎 Auditar envios</Link></div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><Link href="/admin/contracheques/historico" style={{ fontSize: 13, padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>📋 Histórico e quem falta enviar</Link><Link href="/admin/contracheques/auditoria" style={{ fontSize: 13, padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>🔎 Auditar envios</Link><Link href="/admin/contracheques/documentos" style={{ fontSize: 13, padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>🗂 Documentos enviados</Link></div>
       </div>
       <p style={{ fontSize: 13, color: 'var(--muted)' }}>
         Escolha os PDFs (um por colaborador, com qualquer nome de arquivo). O portal lê o nome dentro de cada PDF,

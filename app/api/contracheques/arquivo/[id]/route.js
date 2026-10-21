@@ -12,7 +12,12 @@ async function GET(req, { params }) {
     const colab = rh ? null : getSessaoColaborador();
     if (!rh && !colab) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 
-    const doc = await prisma.documento.findFirst({ where: { url: urlDoArquivo(params.id) } });
+    // o id vai para uma consulta no banco: só aceita o formato de um id do Drive
+    if (!/^[A-Za-z0-9_-]{10,100}$/.test(String(params.id))) return Response.json({ erro: 'Documento não encontrado.' }, { status: 404 });
+    // documentos novos (endereço do portal) e antigos (link do Drive guardado pelo envio de antes)
+    const doc = await prisma.documento.findFirst({
+      where: { OR: [{ url: urlDoArquivo(params.id) }, { url: { startsWith: `https://drive.google.com/file/d/${params.id}` } }, { url: { startsWith: `https://drive.google.com/open?id=${params.id}` } }] },
+    });
     if (!doc || (!rh && doc.colaboradorId !== colab.id)) return Response.json({ erro: 'Documento não encontrado.' }, { status: 404 });
 
     let buffer;

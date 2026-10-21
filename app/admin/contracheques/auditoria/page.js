@@ -300,12 +300,13 @@ export default function AuditoriaContracheques() {
           const i = proximo++;
           const d = lista[i];
           try {
-            const res = await fetch(d.url);
+            if (!d.arquivoUrl) throw new Error('SEM_ARQUIVO');
+            const res = await fetch(d.arquivoUrl);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const dados = new Uint8Array(await res.arrayBuffer());
             d.resultado = analisarDocumento(await lerTextoPaginas(pdfjs, dados), d.colaborador);
           } catch (e) {
-            d.resultado = { veredito: 'erro', paginas: 0, nomes: [], empresas: [], motivos: [`Não foi possível abrir o arquivo (${String(e && e.message ? e.message : e).slice(0, 80)}).`] };
+            d.resultado = { veredito: 'erro', paginas: 0, nomes: [], empresas: [], motivos: [e && e.message === 'SEM_ARQUIVO' ? 'Este documento não tem um arquivo que o portal consiga abrir (endereço antigo). Você pode excluí-lo e enviar de novo.' : `Não foi possível abrir o arquivo (${String(e && e.message ? e.message : e).slice(0, 80)}).`] };
           }
           feitos += 1;
           setProgresso(`Verificando ${feitos} de ${lista.length}...`);
@@ -358,6 +359,7 @@ export default function AuditoriaContracheques() {
         <span style={{ fontSize: 12, color: 'var(--muted)' }}>{d.colaborador.loja}</span>
         <span style={{ fontSize: 12, color: CORES[d.resultado.veredito] }}>{ROTULOS[d.resultado.veredito]}</span>
         <span style={{ fontSize: 12, color: 'var(--muted)' }}>{d.resultado.paginas} pág. · {d.visto ? 'o colaborador JÁ abriu' : 'ainda não aberto pelo colaborador'}</span>
+        {d.origem === 'drive-antigo' && <span style={{ fontSize: 12, color: 'var(--danger)' }}>envio antigo (link aberto no Drive)</span>}
         {d.resultado.veredito !== 'removido' && d.resultado.veredito !== 'ok' && <button type="button" className="secundario" style={{ padding: '2px 10px', fontSize: 12 }} onClick={() => removerUm(d)}>Remover este envio</button>}
       </div>
       {d.resultado.motivos.map((m) => <div key={m} style={{ fontSize: 13 }}>• {m}</div>)}
@@ -390,6 +392,9 @@ export default function AuditoriaContracheques() {
             <div><b style={{ fontSize: 22, color: 'var(--success)' }}>{oks.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>em ordem</div></div>
             {falhas.length > 0 && <div><b style={{ fontSize: 22 }}>{falhas.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>não consegui abrir</div></div>}
           </div>
+          <p style={{ fontSize: 13, margin: '4px 0' }}>
+            {itens.length} documento(s) encontrado(s): {Object.entries(itens.reduce((m, d) => ({ ...m, [d.colaborador.loja]: (m[d.colaborador.loja] || 0) + 1 }), {})).sort(([a], [b]) => a.localeCompare(b, 'pt-BR')).map(([l, n]) => `${l} (${n})`).join(' · ')}.
+          </p>
           {aviso && <p style={{ fontSize: 13 }}>{aviso}</p>}
           {suspeitos.length > 0 && !verificando && <button type="button" onClick={removerSuspeitos}>Remover os {suspeitos.length} suspeitos</button>}
           {suspeitos.length > 0 && <h3 style={{ marginBottom: 0, color: 'var(--danger)' }}>Suspeitos</h3>}
