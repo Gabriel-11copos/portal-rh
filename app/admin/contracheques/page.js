@@ -86,8 +86,12 @@ function extrairEmpresa(texto) {
   return null;
 }
 
+// Quantas páginas, no máximo, um contracheque de UMA pessoa pode ter. Acima disso o arquivo não é publicado
+// (provavelmente são várias pessoas juntas).
+const MAX_PAGINAS_PESSOA = 3;
+
 // Descobre de quem é o PDF, comparando o nome lido com o cadastro (elenco).
-// Resultado: ok | aviso (publica, mas com ressalva) | nao (não identificado).
+// Resultado: ok | aviso (publica, com ressalva sem risco) | conferir (só publica se o RH confirmar) | nao (não identificado).
 function identificar(paginas, elenco) {
   let linhaNome = null;
   let empresaLida = null;
@@ -98,6 +102,13 @@ function identificar(paginas, elenco) {
   const nomeLido = linhaNome ? nomeProvavel(linhaNome) : null;
   const base = { nomeLido, empresaLida };
   if (!linhaNome) return { ...base, status: 'nao', motivo: 'Não encontrei o nome do colaborador dentro do PDF.' };
+
+  // Proteção: um arquivo é de UMA pessoa só. Se tem páginas de pessoas ou empresas diferentes, ou páginas demais, não vai.
+  const nomesNoArquivo = [...new Set(paginas.map(extrairNome).filter(Boolean).map(normalizar))];
+  if (nomesNoArquivo.length > 1) return { ...base, status: 'nao', motivo: `O arquivo tem páginas de ${nomesNoArquivo.length} pessoas diferentes. Separe por pessoa antes de enviar.` };
+  const empresasNoArquivo = [...new Set(paginas.map(extrairEmpresa).filter(Boolean))];
+  if (empresasNoArquivo.length > 1) return { ...base, status: 'nao', motivo: `O arquivo mistura contracheques de mais de uma empresa (${empresasNoArquivo.join(', ')}).` };
+  if (paginas.length > MAX_PAGINAS_PESSOA) return { ...base, status: 'nao', motivo: `O arquivo tem ${paginas.length} páginas, mais do que o normal para uma pessoa. Confira se não são várias pessoas juntas.` };
 
   const alvo = normalizar(linhaNome);
   let candidatos = elenco.filter((c) => c.nomeNorm && (alvo === c.nomeNorm || alvo.startsWith(`${c.nomeNorm} `)));
@@ -115,6 +126,7 @@ function identificar(paginas, elenco) {
 
   const daEmpresa = empresaLida ? candidatos.filter((c) => c.loja === empresaLida) : [];
   const avisos = [];
+  let precisaConferir = false;
   let escolhido;
   if (daEmpresa.length === 1) {
     escolhido = daEmpresa[0];
@@ -125,29 +137,49 @@ function identificar(paginas, elenco) {
     avisos.push(empresaLida
       ? `A empresa do contracheque (${empresaLida}) é diferente da do cadastro (${escolhido.loja}).`
       : 'Não reconheci a empresa no PDF; conferi só pelo nome.');
+    precisaConferir = true;
+  }
+  if (paginas.length > 2) {
+    avisos.push(`Este contracheque tem ${paginas.length} páginas. Confira se é só dessa pessoa.`);
+    precisaConferir = true;
   }
   if (!escolhido.ativo) avisos.push('Colaborador inativo no cadastro: não consegue entrar no portal para ver.');
-  return { ...base, status: avisos.length ? 'aviso' : 'ok', colaborador: escolhido, avisos };
+  const status = precisaConferir ? 'conferir' : avisos.length ? 'aviso' : 'ok';
+  return { ...base, status, colaborador: escolhido, avisos };
 }
 
 // Um PDF pode trazer o contracheque de VÁRIAS pessoas (um por página, às vezes mais de uma página por pessoa).
-// Agrupa as páginas por pessoa: uma página nova com o nome de outra pessoa começa um grupo novo;
-// uma página sem nome é continuação da pessoa anterior.
+// Agrupa as páginas por pessoa: páginas seguidas com o MESMO nome são da mesma pessoa; outro nome começa um grupo novo.
+// Uma página em que não deu para ler o nome NUNCA é grudada na pessoa anterior (foi assim que contracheques de outras
+// pessoas foram parar no arquivo de uma só): ela fica separada, como "não identificada", para o RH conferir.
 function agruparPaginas(textos) {
   const grupos = [];
   textos.forEach((t, i) => {
     const linha = extrairNome(t);
     const ultimo = grupos[grupos.length - 1];
-    if (linha && (!ultimo || !ultimo.linha || normalizar(ultimo.linha) !== normalizar(linha))) {
-      grupos.push({ linha, indices: [i], textos: [t] });
-    } else if (ultimo) {
+    if (linha && ultimo && ultimo.linha && normalizar(ultimo.linha) === normalizar(linha)) {
       ultimo.indices.push(i);
       ultimo.textos.push(t);
     } else {
-      grupos.push({ linha: null, indices: [i], textos: [t] });
+      grupos.push({ linha: linha || null, indices: [i], textos: [t] });
     }
   });
   return grupos;
+}
+
+// Confere o arquivo JÁ SEPARADO (o que de fato será enviado): tem o número de páginas esperado e todas são da pessoa esperada.
+// Devolve o motivo do problema, ou null se está certo.
+function conferirParte(textosDaParte, grupo) {
+  if (textosDaParte.length !== grupo.indices.length) {
+    return `O arquivo separado tem ${textosDaParte.length} página(s), mas eram ${grupo.indices.length}.`;
+  }
+  const esperado = grupo.linha ? normalizar(grupo.linha) : null;
+  for (const t of textosDaParte) {
+    const nome = extrairNome(t);
+    if (!nome) return 'Uma página do arquivo separado não tem nome legível.';
+    if (esperado && normalizar(nome) !== esperado) return 'Uma página do arquivo separado é de outra pessoa.';
+  }
+  return null;
 }
 
 // Cria um PDF novo para cada grupo, só com as páginas dele.
@@ -191,7 +223,7 @@ function explicarFalhaPdf(err, etapa) {
 function marcarRepetidos(resultados) {
   const vistos = new Set();
   return resultados.map((r) => {
-    if (!r.colaborador || (r.status !== 'ok' && r.status !== 'aviso')) return r;
+    if (!r.colaborador || (r.status !== 'ok' && r.status !== 'aviso' && r.status !== 'conferir')) return r;
     if (vistos.has(r.colaborador.id)) return { ...r, status: 'repetido', motivo: `Já há outro PDF de ${r.colaborador.nome} neste envio.` };
     vistos.add(r.colaborador.id);
     return r;
@@ -243,6 +275,7 @@ export default function Contracheques() {
   const [lote, setLote] = useState(null);         // código do registro deste envio no histórico
   const [avisoLote, setAvisoLote] = useState('');
   const [notas, setNotas] = useState([]);           // avisos como "este PDF tinha 12 contracheques"
+  const [liberados, setLiberados] = useState({});     // itens "para conferir" que o RH marcou como conferidos
   const [lendo, setLendo] = useState('');
   const [publicando, setPublicando] = useState(null); // { feitos, total }
   const [relatorio, setRelatorio] = useState(null);   // { criados, substituidos, falhas: [...] }
@@ -276,7 +309,7 @@ export default function Contracheques() {
 
   async function lerArquivos(e) {
     const arquivos = [...e.target.files].filter((f) => /\.pdf$/i.test(f.name));
-    setLidos(null); setRelatorio(null); setErro(''); setLote(null); setAvisoLote(''); setNotas([]);
+    setLidos(null); setRelatorio(null); setErro(''); setLote(null); setAvisoLote(''); setNotas([]); setLiberados({});
     if (arquivos.length === 0) return;
     if (!elenco) { setErro('A lista de colaboradores ainda não carregou. Espere um instante e escolha os arquivos de novo.'); return; }
     try {
@@ -294,10 +327,6 @@ export default function Contracheques() {
           if (grupos.length <= 1) {
             // um PDF de uma pessoa só (mesmo com várias páginas)
             const r = identificar(paginas, elenco);
-            if (r.status === 'ok' && paginas.length > 2) {
-              r.status = 'aviso';
-              r.avisos = [`Este contracheque tem ${paginas.length} páginas. Confira se é só dessa pessoa.`];
-            }
             lista.push({ ...r, arquivo: arq, nome: arq.name, amostra: paginas[0] ? paginas[0].split('\n').slice(0, 12).join('\n') : '' });
           } else {
             // um PDF com várias pessoas: separa em um PDF para cada uma
@@ -306,16 +335,19 @@ export default function Contracheques() {
             const PDFLib = await carregarPdfLib();
             const partes = await separarGrupos(PDFLib, dados, grupos);
             novasNotas.push(`📑 ${arq.name} tinha ${paginas.length} páginas e ${grupos.length} contracheques; separei um PDF para cada pessoa.`);
-            grupos.forEach((g, k) => {
+            for (let k = 0; k < grupos.length; k++) {
+              const g = grupos[k];
               const r = identificar(g.textos, elenco);
-              if (r.status === 'ok' && g.indices.length > 2) {
-                r.status = 'aviso';
-                r.avisos = [`Este contracheque tem ${g.indices.length} páginas. Confira se é só dessa pessoa.`];
+              // conferência final: lê de novo o arquivo separado, exatamente o que será enviado
+              if (r.status === 'ok' || r.status === 'aviso' || r.status === 'conferir') {
+                const lidoDeNovo = await lerTextoPaginas(pdfjs, new Uint8Array(partes[k]));
+                const problema = conferirParte(lidoDeNovo, g);
+                if (problema) { r.status = 'nao'; r.motivo = `Conferência final do arquivo separado falhou: ${problema}`; delete r.colaborador; }
               }
               const rotulo = g.indices.length === 1 ? `pág. ${g.indices[0] + 1}` : `págs. ${g.indices[0] + 1} a ${g.indices[g.indices.length - 1] + 1}`;
               const nomeParte = `${r.nomeLido || 'documento'} (${rotulo}).pdf`;
               lista.push({ ...r, arquivo: new File([partes[k]], nomeParte, { type: 'application/pdf' }), nome: `${arq.name} (${rotulo})`, amostra: g.textos[0].split('\n').slice(0, 12).join('\n') });
-            });
+            }
           }
         } catch (err) {
           lista.push({ status: 'nao', motivo: explicarFalhaPdf(err, etapa), arquivo: arq, nome: arq.name, amostra: '' });
@@ -385,7 +417,9 @@ export default function Contracheques() {
     });
   }
 
-  const prontos = resultados ? resultados.filter((r) => r.status === 'ok' || r.status === 'aviso') : [];
+  const chaveDe = (r) => `${r.nome}|${r.colaborador ? r.colaborador.id : ''}`;
+  const paraConferir = resultados ? resultados.filter((r) => r.status === 'conferir') : [];
+  const prontos = resultados ? resultados.filter((r) => r.status === 'ok' || r.status === 'aviso' || (r.status === 'conferir' && liberados[chaveDe(r)])) : [];
   const avisos = resultados ? resultados.filter((r) => r.status === 'aviso') : [];
   const naoIdentificados = resultados ? resultados.filter((r) => r.status === 'nao') : [];
   const fora = resultados ? resultados.filter((r) => r.status === 'fora') : [];
@@ -397,7 +431,7 @@ export default function Contracheques() {
       <BotaoVoltar />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0 }}>Distribuir contracheques</h2>
-        <Link href="/admin/contracheques/historico" style={{ fontSize: 13, padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>📋 Histórico e quem falta enviar</Link>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}><Link href="/admin/contracheques/historico" style={{ fontSize: 13, padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>📋 Histórico e quem falta enviar</Link><Link href="/admin/contracheques/auditoria" style={{ fontSize: 13, padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 8, textDecoration: 'none', whiteSpace: 'nowrap' }}>🔎 Auditar envios</Link></div>
       </div>
       <p style={{ fontSize: 13, color: 'var(--muted)' }}>
         Escolha os PDFs (um por colaborador, com qualquer nome de arquivo). O portal lê o nome dentro de cada PDF,
@@ -455,12 +489,24 @@ export default function Contracheques() {
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', margin: '6px 0 4px' }}>
             <div><b style={{ fontSize: 22, color: 'var(--success)' }}>{prontos.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>prontos para publicar</div></div>
             <div><b style={{ fontSize: 22, color: 'var(--warning)' }}>{avisos.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>com aviso</div></div>
+            <div><b style={{ fontSize: 22, color: 'var(--warning)' }}>{paraConferir.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>para você conferir</div></div>
             <div><b style={{ fontSize: 22, color: 'var(--danger)' }}>{naoIdentificados.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>não identificados</div></div>
             {fora.length > 0 && <div><b style={{ fontSize: 22 }}>{fora.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>de outra loja</div></div>}
             {repetidos.length > 0 && <div><b style={{ fontSize: 22 }}>{repetidos.length}</b><div style={{ fontSize: 12, color: 'var(--muted)' }}>repetidos</div></div>}
           </div>
           {notas.map((n, i) => <p key={i} style={{ fontSize: 13, margin: '4px 0' }}>{n}</p>)}
-          <p style={{ fontSize: 13, color: 'var(--muted)' }}>Nada foi publicado ainda. Os não identificados, os de outra loja e os repetidos ficam de fora.</p>
+          <p style={{ fontSize: 13, color: 'var(--muted)' }}>Nada foi publicado ainda. Os não identificados, os de outra loja e os repetidos ficam de fora. Os que pedem conferência só entram se você marcar.</p>
+
+          <Lista titulo="Para você conferir (só serão publicados se você marcar)" itens={paraConferir} cor="var(--warning)" aberta
+            render={(r) => (
+              <span>
+                <b>{r.nome}</b> → {r.colaborador.nome}: {r.avisos.join(' ')}
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 13 }}>
+                  <input type="checkbox" checked={!!liberados[chaveDe(r)]} onChange={(e) => setLiberados({ ...liberados, [chaveDe(r)]: e.target.checked })} style={{ width: 'auto', margin: 0 }} />
+                  Conferi: é desta pessoa, pode publicar
+                </label>
+              </span>
+            )} />
 
           <Lista titulo="Com aviso (serão publicados, confira)" itens={avisos} cor="var(--warning)" aberta
             render={(r) => <span><b>{r.nome}</b> → {r.colaborador.nome}: {r.avisos.join(' ')}</span>} />

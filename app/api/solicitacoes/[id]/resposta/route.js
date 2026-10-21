@@ -2,6 +2,7 @@ const { prisma } = require('../../../../../lib/db');
 const { getSessaoRH } = require('../../../../../lib/auth');
 const { conferirAtendimento } = require('../../../../../lib/acesso');
 const { enviarEmail } = require('../../../../../lib/email');
+const { avisarGestor } = require('../../../../../lib/integracao');
 
 async function POST(req, { params }) {
   const sessao = getSessaoRH();
@@ -14,7 +15,7 @@ async function POST(req, { params }) {
   const { texto, anexos } = await req.json();
   const { id } = params;
 
-  await prisma.resposta.create({
+  const respostaCriada = await prisma.resposta.create({
     data: {
       solicitacaoId: id,
       texto,
@@ -48,6 +49,19 @@ async function POST(req, { params }) {
     `<p>Olá ${solicitacao.colaborador.nome}, ${admin?.nome || 'a equipe de RH/DP'} respondeu sua solicitação:</p><p>${texto}</p>
      <p>Acesse o portal para ver os detalhes${anexos?.length ? ' e baixar os documentos anexados' : ''}, e responder se precisar.</p>`
   );
+
+  {
+    await avisarGestor('solicitacao.mensagem', id, {
+      mensagem: {
+        id: respostaCriada.id,
+        texto: respostaCriada.texto,
+        autor: 'rh',
+        nomeAutor: respostaCriada.nomeAutor,
+        data: new Date().toISOString(),
+        anexos: (anexos || []).map((a) => ({ nome: a.nomeArquivo, link: a.link })),
+      },
+    });
+  }
 
   return Response.json({ ok: true });
 }

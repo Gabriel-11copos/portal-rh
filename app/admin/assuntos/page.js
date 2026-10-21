@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import BotaoVoltar from '../../components/BotaoVoltar';
 
-const VAZIO = { nome: '', prazoPadraoDias: 5, responsavelPadrao: '', respostaAutomatica: '', ativo: true };
+const VAZIO = { nome: '', prazoPadraoDias: 5, responsavelPadrao: '', respostaAutomatica: '', destino: 'rh', fluxo: 'padrao', ativo: true };
 
 export default function GerenciarAssuntos() {
   const [assuntos, setAssuntos] = useState([]);
@@ -42,6 +42,8 @@ export default function GerenciarAssuntos() {
       prazoPadraoDias: a.prazoPadraoDias,
       responsavelPadrao: a.responsavelPadrao || '',
       respostaAutomatica: a.respostaAutomatica || '',
+      destino: a.destino || 'rh',
+      fluxo: a.fluxo || 'padrao',
       ativo: a.ativo,
     });
     setEscolhidos(atendentes[a.id] || []);
@@ -109,6 +111,19 @@ export default function GerenciarAssuntos() {
           <label>Responsável padrão (ex: RH, DP, Financeiro)</label>
           <input value={form.responsavelPadrao} onChange={(e) => setForm({ ...form, responsavelPadrao: e.target.value })} />
 
+          <label>Para onde vai o pedido</label>
+          <select value={form.destino} onChange={(e) => setForm({ ...form, destino: e.target.value })}>
+            <option value="rh">RH/DP (só o RH vê; também aparece no painel, só pro RH)</option>
+            <option value="gestor">Gestor da loja (aparece no Portal do Gestor)</option>
+          </select>
+
+          <label>Tipo de pedido</label>
+          <select value={form.fluxo} onChange={(e) => setForm({ ...form, fluxo: e.target.value })}>
+            <option value="padrao">Comum</option>
+            <option value="atestado">Atestado médico (pede data e dias, e exige o arquivo)</option>
+            <option value="uniforme">Uniforme e EPI (mostra o kit do cargo; só tamanho e quantidade)</option>
+          </select>
+
           <label>Resposta automática (opcional — se preenchido, responde sozinho na hora)</label>
           <textarea rows={3} value={form.respostaAutomatica} onChange={(e) => setForm({ ...form, respostaAutomatica: e.target.value })} />
 
@@ -154,7 +169,7 @@ export default function GerenciarAssuntos() {
 
       {assuntos.map((a) => (
         <div key={a.id} className="card" style={{ cursor: 'pointer', opacity: a.ativo ? 1 : 0.5 }} onClick={() => editar(a)}>
-          <b>{a.nome}</b> {!a.ativo && <span className="badge encerrada">Inativo</span>} · prazo: {a.prazoPadraoDias} dias úteis · responsável: {a.responsavelPadrao || '-'}
+          <b>{a.nome}</b> {!a.ativo && <span className="badge encerrada">Inativo</span>} · prazo: {a.prazoPadraoDias} dias úteis · responsável: {a.responsavelPadrao || '-'} · destino: {a.destino === 'gestor' ? 'gestor da loja' : 'RH/DP'}{a.fluxo === 'atestado' && ' · tipo: atestado médico'}{a.fluxo === 'uniforme' && ' · tipo: uniforme e EPI'}
           {a.respostaAutomatica && <p style={{ fontSize: 13, color: 'var(--success)' }}>✓ Resposta automática configurada</p>}
           {ehMaster && (atendentes[a.id] || []).length > 0 && (
             <p style={{ fontSize: 13, margin: '4px 0 0' }}>
