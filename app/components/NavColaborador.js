@@ -9,6 +9,7 @@ export default function NavColaborador() {
   const [naoLidos, setNaoLidos] = useState([]);
   const [atualizacao, setAtualizacao] = useState(null);   // a atualização de dados que o RH liberou e ele ainda não fez
   const [avisoAberto, setAvisoAberto] = useState(false);
+  const [moeda, setMoeda] = useState(null);   // saldo de moedas (só aparece com o programa ligado)
 
   useEffect(() => {
     fetch('/api/comunicados')
@@ -28,6 +29,14 @@ export default function NavColaborador() {
         if (!jaVisto) setAvisoAberto(true);
       })
       .catch(() => {});
+  }, []);
+
+  // o saldo no cantinho de cima; a carteira avisa (evento) quando ele muda, para atualizar na hora
+  useEffect(() => {
+    const ler = () => fetch('/api/moedas/saldo').then((r) => (r.ok ? r.json() : null)).then((s) => setMoeda(s && s.habilitada ? s : null)).catch(() => {});
+    ler();
+    window.addEventListener('moedas-atualizadas', ler);
+    return () => window.removeEventListener('moedas-atualizadas', ler);
   }, []);
 
   async function sair() {
@@ -99,6 +108,16 @@ export default function NavColaborador() {
       )}
 
       <div className="topo-marca">
+        {moeda && (
+          <Link
+            href="/missoes/carteira"
+            title={`Seu saldo de ${moeda.nomePlural}`}
+            aria-label={`Seu saldo: ${moeda.saldo} ${moeda.saldo === 1 ? moeda.nomeSingular : moeda.nomePlural}`}
+            style={{ position: 'absolute', left: 0, top: 0, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', border: '1px solid var(--border)', borderRadius: 999, fontSize: 13, textDecoration: 'none', color: 'inherit', background: 'var(--verde-pastel)' }}
+          >
+            <span aria-hidden="true">{moeda.simbolo}</span> <b>{moeda.saldo}</b>
+          </Link>
+        )}
         <button className="secundario botao-sair" onClick={sair} style={{ padding: '4px 12px', fontSize: 13 }}>Sair</button>
         <Link href="/inicio">
           <img src="/logo.png" alt="Logo" />

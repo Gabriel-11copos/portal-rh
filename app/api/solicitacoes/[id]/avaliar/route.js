@@ -1,6 +1,7 @@
 const { prisma } = require('../../../../../lib/db');
 const { getSessaoColaborador } = require('../../../../../lib/auth');
 const { avisarGestor } = require('../../../../../lib/integracao');
+const { creditar } = require('../../../../../lib/moedas');
 
 async function POST(req, { params }) {
   const sessao = getSessaoColaborador();
@@ -22,6 +23,9 @@ async function POST(req, { params }) {
       avaliacaoNota: nota || null,
     },
   });
+
+  // moedas: quem dá a nota ao atendimento ganha (uma vez por pedido; só vale com o programa ligado e um valor definido)
+  if (nota) await creditar(prisma, { colaboradorId: sessao.id, origem: 'avaliou_atendimento', referencia: id, descricao: 'Avaliou um atendimento do RH' });
 
   {
     await avisarGestor('solicitacao.encerrada', id);

@@ -338,3 +338,62 @@ model AssuntoResponsavel {
   @@unique([assuntoId, usuarioId])
   @@index([usuarioId])
 }
+model MoedaConfig {
+  id           String   @id @default("unico")
+  ativo        Boolean  @default(false)
+  nomeSingular String   @default("Tampinha")
+  nomePlural   String   @default("Tampinhas")
+  simbolo      String   @default("🪙")
+  atualizadoEm DateTime @default(now()) @updatedAt
+}
+
+model MoedaRegra {
+  chave        String   @id
+  valor        Int      @default(0)
+  atualizadoEm DateTime @default(now()) @updatedAt
+}
+
+model MoedaLancamento {
+  id            String   @id @default(cuid())
+  colaboradorId String
+  valor         Int
+  tipo          String
+  origem        String
+  referencia    String?
+  descricao     String
+  criadoPor     String?
+  criadoEm      DateTime @default(now())
+
+  @@unique([colaboradorId, origem, referencia])
+  @@index([colaboradorId, criadoEm])
+}
+
+model MoedaPremio {
+  id            String   @id @default(cuid())
+  nome          String
+  descricao     String?
+  custo         Int
+  tipo          String
+  valorCentavos Int?
+  estoque       Int?
+  ativo         Boolean  @default(true)
+  criadoEm      DateTime @default(now())
+}
+
+model MoedaResgate {
+  id            String    @id @default(cuid())
+  colaboradorId String
+  premioId      String
+  premioNome    String
+  custo         Int
+  tipo          String
+  valorCentavos Int?
+  status        String    @default("pendente")
+  motivoRecusa  String?
+  decididoPor   String?
+  decididoEm    DateTime?
+  criadoEm      DateTime  @default(now())
+
+  @@index([status, criadoEm])
+  @@index([colaboradorId, criadoEm])
+}

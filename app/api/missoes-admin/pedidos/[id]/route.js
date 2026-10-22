@@ -1,6 +1,7 @@
 const { prisma } = require('../../../../../lib/db');
 const { getSessaoRH } = require('../../../../../lib/auth');
 const { hojeBrasilia } = require('../../../../../lib/missoes');
+const { creditar } = require('../../../../../lib/moedas');
 
 // Só RH: decide um pedido de missão.
 //  - aprovar: dá o selo da missão (se houver) e, se houver recompensa em texto, deixa "a entregar";
@@ -71,6 +72,8 @@ async function POST(req, { params }) {
         return Response.json({ erro: 'Não foi possível conceder o selo. O pedido continua na fila, tente de novo.' }, { status: 500 });
       }
     }
+    // moedas: missão aprovada rende (cada pedido aprovado paga uma vez; só vale com o programa ligado e um valor definido)
+    await creditar(prisma, { colaboradorId: pedido.colaboradorId, origem: `missao:${missao.id}`, referencia: pedido.id, descricao: `Missão: ${missao.titulo}` });
     return Response.json({ ok: true });
   } catch (err) {
     console.error('Erro ao decidir pedido de missão:', err);

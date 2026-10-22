@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import NavColaborador from '../components/NavColaborador';
 import BotaoVoltar from '../components/BotaoVoltar';
 import IconeSelo from '../components/IconeSelo';
@@ -79,6 +80,14 @@ export default function Missoes() {
         Cumpra missões e ganhe selos e recompensas. Os selos aparecem em "Minhas conquistas".
       </p>
 
+      {dados && dados.moeda && (
+        <Link href="/missoes/carteira">
+          <button type="button" className="secundario" style={{ marginBottom: 12 }}>
+            {dados.moeda.simbolo} Minha carteira: {dados.moeda.saldo} {dados.moeda.saldo === 1 ? dados.moeda.nomeSingular : dados.moeda.nomePlural}
+          </button>
+        </Link>
+      )}
+
       {!dados && !erro && <p style={{ color: 'var(--muted)' }}>Carregando...</p>}
       {erro && <div className="erro">{erro}</div>}
       {aviso && <p style={{ fontSize: 13, color: 'var(--success)' }}>{aviso}</p>}
@@ -98,6 +107,7 @@ export default function Missoes() {
               {m.prazo && <span>⏳ Até {dataCal(m.prazo)}</span>}
               {m.selo && <span><IconeSelo icone={m.selo.icone} tamanho={18} /> Selo: <b>{m.selo.nome}</b></span>}
               {m.recompensaTexto && <span>🎁 {m.recompensaTexto}</span>}
+              {m.moedas > 0 && dados.moeda && <span>{dados.moeda.simbolo} +{m.moedas} {m.moedas === 1 ? dados.moeda.nomeSingular : dados.moeda.nomePlural}</span>}
             </div>
             {m.modo === 'selo' && m.estado !== 'concluida' && m.selo && (
               <p style={{ fontSize: 13, margin: '8px 0 0' }}>Esta missão se cumpre sozinha quando você ganhar o selo <b>{m.selo.nome}</b>.</p>

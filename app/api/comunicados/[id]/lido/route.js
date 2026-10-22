@@ -1,5 +1,6 @@
 const { prisma } = require('../../../../../lib/db');
 const { getSessaoColaborador } = require('../../../../../lib/auth');
+const { creditar } = require('../../../../../lib/moedas');
 
 async function POST(req, { params }) {
   const sessao = getSessaoColaborador();
@@ -15,6 +16,9 @@ async function POST(req, { params }) {
     where: { id },
     data: { lido: true, lidoEm: new Date() },
   });
+
+  // moedas: ler o comunicado rende (uma vez por comunicado; só vale com o programa ligado e um valor definido)
+  await creditar(prisma, { colaboradorId: sessao.id, origem: 'leu_comunicado', referencia: id, descricao: 'Leu um comunicado' });
 
   return Response.json({ ok: true });
 }

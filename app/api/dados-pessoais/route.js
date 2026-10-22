@@ -2,6 +2,7 @@ const { prisma } = require('../../../lib/db');
 const { getSessaoColaborador } = require('../../../lib/auth');
 const { MAX_COMPROVANTE, TIPO_COMPROVANTE, lerAtualizacao, tipoDeArquivo, competenciaAtual, fazParte } = require('../../../lib/dadosPessoais');
 const { guardarDocumento } = require('../../../lib/guardarDocumento');
+const { creditar } = require('../../../lib/moedas');
 
 // O colaborador envia os dados pessoais e o comprovante de residência da atualização liberada pelo RH.
 // O comprovante vai para o Drive (Loja > Ano > Colaborador > Mês), privado, e aparece também em "Documentos".
@@ -58,6 +59,9 @@ async function POST(req) {
     // o e-mail do cadastro acompanha o que ele informou (se falhar, os dados da atualização já estão salvos)
     try { await prisma.colaborador.update({ where: { id: sessao.id }, data: { email: dados.email } }); }
     catch (err) { console.error('Não foi possível atualizar o e-mail do cadastro:', err); }
+
+    // moedas: concluir a atualização de dados rende (uma vez por campanha; só vale com o programa ligado e um valor definido)
+    await creditar(prisma, { colaboradorId: sessao.id, origem: 'atualizou_dados', referencia: campanha.id, descricao: 'Atualizou os dados pessoais' });
 
     return Response.json({ ok: true });
   } catch (err) {

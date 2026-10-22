@@ -1,6 +1,7 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoColaborador } = require('../../../lib/auth');
 const { hojeBrasilia, estadoDaMissao } = require('../../../lib/missoes');
+const { creditar, lerConfig, saldoDe } = require('../../../lib/moedas');
 
 // As missões abertas, com a situação de cada uma para quem está logado (só os dados dele).
 async function GET() {
@@ -28,6 +29,17 @@ async function GET() {
     }
 
     const hoje = hojeBrasilia();
+    // moedas (só com o programa ligado): quanto cada missão rende
+    let moedasAtivas = false;
+    let cfgMoeda = null;
+    const valorMoedas = new Map();
+    try {
+      cfgMoeda = await lerConfig(prisma);
+      if (cfgMoeda.instalada && cfgMoeda.ativo) {
+        moedasAtivas = true;
+        (await prisma.moedaRegra.findMany()).forEach((r) => valorMoedas.set(r.chave, r.valor));
+      }
+    } catch (err) { console.error('Moedas: não foi possível ler (missões)', err && err.code); }
     const seloPorId = new Map(selos.map((s) => [s.id, s]));
     const lista = missoes.map((m) => {
       const meus = pedidos.filter((p) => p.missaoId === m.id);
@@ -37,6 +49,7 @@ async function GET() {
         id: m.id, titulo: m.titulo, descricao: m.descricao, modo: m.modo,
         rotuloReferencia: m.rotuloReferencia, recompensaTexto: m.recompensaTexto,
         repetivel: m.repetivel, prazo: m.prazo,
+        moedas: moedasAtivas ? valorMoedas.get(`missao:${m.id}`) || 0 : 0,
         selo: selo ? { nome: selo.nome, icone: selo.icone } : null,
         estado, podeEnviar,
         pedidos: meus.map((p) => ({
@@ -47,7 +60,16 @@ async function GET() {
       };
     });
     const novos = lista.reduce((n, m) => n + m.pedidos.filter((p) => p.novo).length, 0);
-    return Response.json({ missoes: lista, novos });
+    // moedas: a missão que se cumpre sozinha (por selo) paga uma vez, na primeira vez que a pessoa a vê concluída
+    let moeda = null;
+    if (moedasAtivas) {
+      for (const m of lista) {
+        if (m.modo === 'selo' && m.estado === 'concluida') await creditar(prisma, { colaboradorId: sessao.id, origem: `missao:${m.id}`, referencia: 'selo', descricao: `Missão: ${m.titulo}` });
+      }
+      try { moeda = { simbolo: cfgMoeda.simbolo, nomeSingular: cfgMoeda.nomeSingular, nomePlural: cfgMoeda.nomePlural, saldo: await saldoDe(prisma, sessao.id) }; }
+      catch (err) { console.error('Moedas: não foi possível ler o saldo (missões)', err && err.code); }
+    }
+    return Response.json({ missoes: lista, novos, moeda });
   } catch (err) {
     console.error('Erro ao carregar as missões:', err);
     return Response.json({ erro: 'Não foi possível carregar as missões agora.' }, { status: 500 });
