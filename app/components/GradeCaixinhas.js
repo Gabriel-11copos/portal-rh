@@ -6,6 +6,7 @@ import {
   SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import IconeMoeda from './IconeMoeda';
 
 // Estilos das caixinhas (com prefixo "cx-" para não misturar com o resto do sistema).
 // Usam as mesmas cores do portal: --verde, --verde-pastel, --border, --muted.
@@ -71,7 +72,7 @@ function CartaoOrdenavel({ c, organizando, onAbrir }) {
         : { role: 'button', tabIndex: 0, onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(); } } })}
     >
       {organizando && <div className="cx-alca">⠿</div>}
-      <div className="cx-icone">{c.icon}</div>
+      <div className="cx-icone">{c.icon === 'moeda' ? <IconeMoeda tamanho={34} /> : c.icon}</div>
       <div className="cx-titulo">{c.title}</div>
       <div className="cx-desc">{c.desc}</div>
       {c.aviso && <div className="cx-aviso">{c.aviso}</div>}

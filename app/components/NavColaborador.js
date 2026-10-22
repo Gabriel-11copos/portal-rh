@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import IconeMoeda from './IconeMoeda';
 
 export default function NavColaborador() {
   const router = useRouter();
@@ -115,7 +116,7 @@ export default function NavColaborador() {
             aria-label={`Seu saldo: ${moeda.saldo} ${moeda.saldo === 1 ? moeda.nomeSingular : moeda.nomePlural}`}
             style={{ position: 'absolute', left: 0, top: 0, display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', border: '1px solid var(--border)', borderRadius: 999, fontSize: 13, textDecoration: 'none', color: 'inherit', background: 'var(--verde-pastel)' }}
           >
-            <span aria-hidden="true">{moeda.simbolo}</span> <b>{moeda.saldo}</b>
+            <IconeMoeda simbolo={moeda.simbolo} tamanho={18} /> <b>{moeda.saldo}</b>
           </Link>
         )}
         <button className="secundario botao-sair" onClick={sair} style={{ padding: '4px 12px', fontSize: 13 }}>Sair</button>

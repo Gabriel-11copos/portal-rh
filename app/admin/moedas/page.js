@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import BotaoVoltar from '../../components/BotaoVoltar';
+import IconeMoeda, { usaDesenho } from '../../components/IconeMoeda';
 
 // <regras>
 // "20", "20,5", "20.50", "R$ 20,00" -> centavos (2000, 2050, 2050, 2000). Inválido: null.
@@ -154,7 +155,7 @@ export default function MoedasAdmin() {
   return (
     <div>
       <BotaoVoltar />
-      <h2>🪙 Moedas</h2>
+      <h2><IconeMoeda tamanho={30} /> Moedas</h2>
       {erro && <div className="erro">{erro}</div>}
       {aviso && <p style={{ fontSize: 13, color: 'var(--success)' }}>{aviso}</p>}
       {!dados && !erro && <p style={{ color: 'var(--muted)' }}>Carregando...</p>}
@@ -171,7 +172,8 @@ export default function MoedasAdmin() {
             <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={cfg.ativo} onChange={(e) => setCfg({ ...cfg, ativo: e.target.checked })} style={{ width: 'auto', margin: 0 }} /> Programa ligado</label>
             <label>Nome da moeda (singular)</label><input value={cfg.nomeSingular} maxLength={20} onChange={(e) => setCfg({ ...cfg, nomeSingular: e.target.value })} />
             <label>Nome da moeda (plural)</label><input value={cfg.nomePlural} maxLength={20} onChange={(e) => setCfg({ ...cfg, nomePlural: e.target.value })} />
-            <label>Símbolo (um emoji)</label><input value={cfg.simbolo} maxLength={8} onChange={(e) => setCfg({ ...cfg, simbolo: e.target.value })} style={{ maxWidth: 120 }} />
+            <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}><input type="checkbox" checked={usaDesenho(cfg.simbolo)} onChange={(e) => setCfg({ ...cfg, simbolo: e.target.checked ? 'moeda' : '⭐' })} style={{ width: 'auto', margin: 0 }} /> Usar o desenho da moeda do Brew <IconeMoeda tamanho={22} /></label>
+            {!usaDesenho(cfg.simbolo) && (<><label>Símbolo (um emoji)</label><input value={cfg.simbolo} maxLength={8} onChange={(e) => setCfg({ ...cfg, simbolo: e.target.value })} style={{ maxWidth: 120 }} /></>)}
             <button type="button" onClick={salvarConfig}>Salvar configuração</button>
           </div>
 
@@ -190,7 +192,7 @@ export default function MoedasAdmin() {
             {dados.resgatesPendentes.map((t) => (
               <div key={t.id} style={{ padding: '8px 0', borderTop: '1px solid var(--border)' }}>
                 <b>{t.colaborador.nome}</b> <span style={{ fontSize: 12, color: 'var(--muted)' }}>{t.colaborador.loja} · {dataHora(t.criadoEm)}</span>
-                <div style={{ fontSize: 14 }}>{t.premioNome} ({t.custo} {cfg.simbolo}){t.tipo === 'zig' && t.valorCentavos ? ` · creditar R$ ${centavosParaTexto(t.valorCentavos)} no Zig` : ''}</div>
+                <div style={{ fontSize: 14 }}>{t.premioNome} ({t.custo} <IconeMoeda simbolo={cfg.simbolo} tamanho={16} />){t.tipo === 'zig' && t.valorCentavos ? ` · creditar R$ ${centavosParaTexto(t.valorCentavos)} no Zig` : ''}</div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                   <button type="button" onClick={() => decidir(t, 'entregar')}>Marcar como entregue</button>
                   <button type="button" className="secundario" onClick={() => decidir(t, 'recusar')}>Recusar</button>
@@ -221,7 +223,7 @@ export default function MoedasAdmin() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
                     <div>
                       <b>{p.nome}</b> {!p.ativo && <span style={{ fontSize: 12 }}>(inativo)</span>}
-                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{p.tipoRotulo}{p.tipo === 'zig' && p.valorCentavos ? ` · R$ ${centavosParaTexto(p.valorCentavos)}` : ''} · custa {p.custo} {cfg.simbolo} · {p.estoque === null ? 'sem limite de estoque' : `estoque: ${p.estoque}`}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{p.tipoRotulo}{p.tipo === 'zig' && p.valorCentavos ? ` · R$ ${centavosParaTexto(p.valorCentavos)}` : ''} · custa {p.custo} <IconeMoeda simbolo={cfg.simbolo} tamanho={14} /> · {p.estoque === null ? 'sem limite de estoque' : `estoque: ${p.estoque}`}</div>
                     </div>
                     <button type="button" className="secundario" style={{ padding: '4px 12px', fontSize: 13 }} onClick={() => { setEditando(p.id); setEdicao(formDoPremio(p)); }}>Editar</button>
                   </div>
@@ -243,7 +245,7 @@ export default function MoedasAdmin() {
             {pessoa && (
               <div style={{ marginTop: 10 }}>
                 <b>{pessoa.colaborador.nome}</b> <span style={{ fontSize: 12, color: 'var(--muted)' }}>{pessoa.colaborador.loja}</span>
-                <div>Saldo: <b>{cfg.simbolo} {pessoa.saldo}</b></div>
+                <div>Saldo: <b><IconeMoeda simbolo={cfg.simbolo} tamanho={18} /> {pessoa.saldo}</b></div>
                 <label>Quantas moedas (positivo dá, negativo tira)</label>
                 <input value={ajusteValor} inputMode="numeric" onChange={(e) => setAjusteValor(e.target.value)} style={{ maxWidth: 160 }} />
                 <label>Motivo (fica no extrato dela)</label>

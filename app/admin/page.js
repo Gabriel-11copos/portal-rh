@@ -17,7 +17,7 @@ const CAIXINHAS = [
   { id: 'selos', icon: '🏅', title: 'Selos', desc: 'Reconhecimentos, presença e tempo de casa', href: '/admin/selos' },
   { id: 'dados', icon: '📋', title: 'Atualização de dados', desc: 'Libere a atualização cadastral e acompanhe', href: '/admin/atualizacao-dados' },
   { id: 'missoes', icon: '🎯', title: 'Missões', desc: 'Missões, aprovações e recompensas', href: '/admin/missoes' },
-  { id: 'moedas', icon: '🪙', title: 'Moedas', desc: 'Regras, prêmios e trocas', href: '/admin/moedas' },
+  { id: 'moedas', icon: 'moeda', title: 'Moedas', desc: 'Regras, prêmios e trocas', href: '/admin/moedas' },
   { id: 'escala', icon: '🗓️', title: 'Escala (prévia)', desc: 'Ver a escala de um colaborador como ele vê', href: '/admin/escala-previa' },
   { id: 'guias', icon: '📖', title: 'Guias e treinamentos', desc: 'Páginas com texto, imagens, arquivos e links', href: '/admin/guias' },
   { id: 'conteudos', icon: '📚', title: 'Conteúdos', desc: 'Cursos, links, benefícios, regras e manuais', href: '/admin/conteudos' },

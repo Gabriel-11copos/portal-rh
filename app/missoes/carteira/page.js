@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import NavColaborador from '../../components/NavColaborador';
 import BotaoVoltar from '../../components/BotaoVoltar';
+import IconeMoeda from '../../components/IconeMoeda';
 
 // <regras>
 const POR_PAGINA = 15;
@@ -81,7 +82,7 @@ export default function Carteira() {
         <>
           <div className="card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 13, color: 'var(--muted)' }}>Seu saldo</div>
-            <div style={{ fontSize: 40, fontWeight: 800, color: 'var(--verde)' }}><span aria-hidden="true">{cfg.simbolo}</span> {dados.saldo}</div>
+            <div style={{ fontSize: 40, fontWeight: 800, color: 'var(--verde)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}><IconeMoeda simbolo={cfg.simbolo} tamanho={48} /> {dados.saldo}</div>
             <div style={{ fontSize: 14 }}>{dados.saldo === 1 ? cfg.nomeSingular : cfg.nomePlural}</div>
           </div>
 
@@ -112,7 +113,7 @@ export default function Carteira() {
                     {p.descricao && <div style={{ fontSize: 13 }}>{p.descricao}</div>}
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontWeight: 700 }}>{cfg.simbolo} {p.custo}</div>
+                    <div style={{ fontWeight: 700 }}><IconeMoeda simbolo={cfg.simbolo} tamanho={18} /> {p.custo}</div>
                     <button type="button" disabled={!!motivo || trocando === p.id} onClick={() => trocar(p)} style={{ padding: '4px 12px', fontSize: 13, opacity: motivo ? 0.4 : 1, cursor: motivo ? 'not-allowed' : 'pointer' }}>
                       {trocando === p.id ? 'Trocando...' : 'Trocar'}
                     </button>
