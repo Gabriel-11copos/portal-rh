@@ -1,0 +1,413 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+model Colaborador {
+  id            String   @id @default(cuid())
+  nome          String
+  nomeSocial    String?
+  fotoUrl       String?
+  matricula     String   @unique
+  email         String
+  loja          String
+  cargo         String?
+  dataAdmissao  DateTime?
+  driveFolderId String?
+  dataNascimento DateTime?
+  ativo          Boolean   @default(true)
+  senhaHash     String
+  createdAt     DateTime @default(now())
+  solicitacoes  Solicitacao[]
+  comunicados   Comunicado[]
+  documentos    Documento[]
+}
+
+model Assunto {
+  fluxo              String  @default("padrao") // padrao | atestado (pede data e dias)
+  destino            String  @default("rh") // rh | gestor: pra onde vai o pedido
+  id                 String  @id @default(cuid())
+  nome               String  @unique
+  prazoPadraoDias    Int     @default(5)
+  responsavelPadrao  String?
+  respostaAutomatica String?
+  ativo              Boolean @default(true)
+  solicitacoes       Solicitacao[]
+}
+
+model Solicitacao {
+  dadosExtras      String?   // JSON com dados extras do pedido (ex.: data e dias do atestado)
+  destino          String    @default("rh") // rh | gestor
+  id               String    @id @default(cuid())
+  numero           Int?      @unique @default(autoincrement())
+  colaboradorId    String
+  colaborador      Colaborador @relation(fields: [colaboradorId], references: [id])
+  assuntoId        String
+  assunto          Assunto   @relation(fields: [assuntoId], references: [id])
+  descricao        String
+  emailContato     String?
+  whatsapp         String?
+  status           String    @default("aberta") // aberta | em_analise | respondida | encerrada
+  prazo            DateTime?
+  dataAbertura     DateTime  @default(now())
+  dataEncerramento DateTime?
+  vistoColaborador Boolean   @default(true)
+  avaliacaoNota       Int?
+  avaliacaoComentario String?
+  anexos           Anexo[]
+  respostas        Resposta[]
+}
+
+model Anexo {
+  id            String       @id @default(cuid())
+  solicitacaoId String?
+  solicitacao   Solicitacao? @relation(fields: [solicitacaoId], references: [id])
+  comunicadoId  String?
+  comunicado    Comunicado?  @relation(fields: [comunicadoId], references: [id])
+  linkDrive     String
+  nomeArquivo   String
+  enviadoPor    String       // colaborador | rh
+  data          DateTime     @default(now())
+}
+
+model Resposta {
+  idExterno     String?     // id da mensagem quando veio do Portal do Gestor (evita duplicar)
+  @@unique([solicitacaoId, idExterno])
+  id            String      @id @default(cuid())
+  solicitacaoId String
+  solicitacao   Solicitacao @relation(fields: [solicitacaoId], references: [id])
+  texto         String
+  autor         String      @default("rh") // rh | colaborador
+  nomeAutor     String?
+  autorFotoUrl  String?
+  automatica    Boolean     @default(false)
+  data          DateTime    @default(now())
+}
+
+model Comunicado {
+  id            String       @id @default(cuid())
+  loteId        String?
+  colaboradorId String?
+  colaborador   Colaborador? @relation(fields: [colaboradorId], references: [id])
+  loja          String?
+  assunto       String
+  texto         String
+  lido          Boolean      @default(false)
+  lidoEm        DateTime?
+  data          DateTime     @default(now())
+  anexos        Anexo[]
+}
+
+model Conteudo {
+  id          String   @id @default(cuid())
+  categoria   String
+  titulo      String
+  descricao   String?
+  tipo        String   // arquivo | link | texto
+  url         String?
+  nomeArquivo String?
+  ativo       Boolean  @default(true)
+  criadoEm    DateTime @default(now())
+}
+
+model AdminUsuario {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  fotoUrl   String?
+  senhaHash String
+  criadoEm  DateTime @default(now())
+}
+
+model Documento {
+  id               String   @id @default(cuid())
+  colaboradorId    String
+  colaborador      Colaborador @relation(fields: [colaboradorId], references: [id])
+  tipo             String   // Contracheque, Informe de rendimentos, etc.
+  competencia      String   // ex: "08/2026"
+  url              String
+  nomeArquivo      String
+  vistoColaborador Boolean  @default(false)
+  criadoEm         DateTime @default(now())
+}
+
+model EventoPendente {
+  id               String    @id @default(cuid())
+  evento           String
+  corpo            String
+  tentativas       Int       @default(0)
+  proximaTentativa DateTime  @default(now())
+  enviadoEm        DateTime?
+  desistiu         Boolean   @default(false)
+  erro             String?
+  criadoEm         DateTime  @default(now())
+}
+model HistoricoColaborador {
+  id            String   @id @default(cuid())
+  colaboradorId String
+  tipo          String
+  de            String?
+  para          String?
+  origem        String
+  data          DateTime @default(now())
+
+  @@index([colaboradorId])
+}
+model Gorjeta {
+  id               String   @id @default(cuid())
+  colaboradorId    String
+  unidade          String
+  periodoInicio    DateTime
+  periodoFim       DateTime
+  situacao         String
+  cargo            String?
+  atrasosQtd       Int      @default(0)
+  faltasQtd        Int      @default(0)
+  apuracao         Int      @default(0)
+  valorAtrasos     Int      @default(0)
+  valorFaltas      Int      @default(0)
+  redistribuicao   Int      @default(0)
+  brutaFinal       Int      @default(0)
+  devolucao        Int      @default(0)
+  valorFinal       Int      @default(0)
+  retencao         Int      @default(0)
+  liquida          Int      @default(0)
+  vistoColaborador Boolean  @default(false)
+  criadoEm         DateTime @default(now())
+  atualizadoEm     DateTime @default(now()) @updatedAt
+
+  @@unique([colaboradorId, unidade, periodoInicio])
+  @@index([colaboradorId])
+}
+
+model PreferenciaPainel {
+  owner        String   @id
+  ordemCards   Json?
+  atualizadoEm DateTime @default(now()) @updatedAt
+}
+model Selo {
+  id        String   @id @default(cuid())
+  codigo    String   @unique
+  nome      String
+  descricao String   @default("")
+  icone     String
+  grupo     String
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+}
+
+model SeloConcedido {
+  id               String   @id @default(cuid())
+  colaboradorId    String
+  seloId           String
+  data             DateTime
+  periodoRef       String?
+  mensagem         String?
+  concedidoPor     String?
+  vistoColaborador Boolean  @default(false)
+  criadoEm         DateTime @default(now())
+
+  @@unique([colaboradorId, seloId, periodoRef])
+  @@index([colaboradorId])
+}
+model Guia {
+  id           String   @id @default(cuid())
+  titulo       String
+  descricao    String   @default("")
+  categoria    String   @default("Geral")
+  blocos       Json
+  ativo        Boolean  @default(false)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @default(now()) @updatedAt
+}
+
+model GuiaMidia {
+  id       String   @id @default(cuid())
+  nome     String
+  tipoMime String
+  tamanho  Int
+  dados    Bytes
+  criadoEm DateTime @default(now())
+}
+model Missao {
+  id               String    @id @default(cuid())
+  titulo           String
+  descricao        String    @default("")
+  modo             String
+  seloId           String?
+  recompensaTexto  String    @default("")
+  rotuloReferencia String    @default("")
+  repetivel        Boolean   @default(false)
+  prazo            DateTime?
+  ativo            Boolean   @default(true)
+  criadoEm         DateTime  @default(now())
+}
+
+model MissaoPedido {
+  id                   String    @id @default(cuid())
+  missaoId             String
+  colaboradorId        String
+  referencia           String?
+  mensagem             String?
+  status               String    @default("pendente")
+  motivoRecusa         String?
+  decididoPor          String?
+  decididoEm           DateTime?
+  recompensaPendente   Boolean   @default(false)
+  recompensaEntregueEm DateTime?
+  vistoColaborador     Boolean   @default(true)
+  criadoEm             DateTime  @default(now())
+
+  @@index([colaboradorId])
+  @@index([missaoId])
+  @@index([status])
+}
+model ContrachequeLote {
+  id           String   @id @default(cuid())
+  tipo         String
+  competencia  String
+  loja         String
+  total        Int
+  criados      Int      @default(0)
+  substituidos Int      @default(0)
+  enviadoPor   String?
+  criadoEm     DateTime @default(now())
+
+  @@index([criadoEm])
+}
+model PastaDrive {
+  chave    String   @id
+  driveId  String
+  criadoEm DateTime @default(now())
+}
+model CampanhaDados {
+  id          String    @id @default(cuid())
+  titulo      String
+  mensagem    String    @default("")
+  prazo       DateTime?
+  ativa       Boolean   @default(true)
+  publico     String    @default("todos")
+  alvos       Json?
+  criadaPor   String?
+  criadaEm    DateTime  @default(now())
+  encerradaEm DateTime?
+
+  @@index([ativa])
+}
+
+model AtualizacaoDados {
+  id             String   @id @default(cuid())
+  campanhaId     String
+  colaboradorId  String
+  origem         String
+  telefone       String?
+  email          String?
+  cep            String?
+  logradouro     String?
+  numero         String?
+  complemento    String?
+  bairro         String?
+  cidade         String?
+  uf             String?
+  comprovanteUrl String?
+  baixaPor       String?
+  baixaMotivo    String?
+  criadoEm       DateTime @default(now())
+
+  @@unique([campanhaId, colaboradorId])
+  @@index([colaboradorId])
+}
+model PermissaoAdmin {
+  usuarioId     String   @id
+  perfil        String   @default("personalizado")
+  permissoes    Json     @default("[]")
+  atualizadoPor String?
+  atualizadoEm  DateTime @default(now())
+}
+
+model AssuntoResponsavel {
+  id        String   @id @default(cuid())
+  assuntoId String
+  usuarioId String
+  criadoEm  DateTime @default(now())
+
+  @@unique([assuntoId, usuarioId])
+  @@index([usuarioId])
+}
+model MoedaConfig {
+  id           String   @id @default("unico")
+  ativo        Boolean  @default(false)
+  nomeSingular String   @default("Tampinha")
+  nomePlural   String   @default("Tampinhas")
+  simbolo      String   @default("moeda")
+  atualizadoEm DateTime @default(now()) @updatedAt
+}
+
+model MoedaRegra {
+  chave        String   @id
+  valor        Int      @default(0)
+  atualizadoEm DateTime @default(now()) @updatedAt
+}
+
+model MoedaLancamento {
+  id            String   @id @default(cuid())
+  colaboradorId String
+  valor         Int
+  tipo          String
+  origem        String
+  referencia    String?
+  descricao     String
+  criadoPor     String?
+  criadoEm      DateTime @default(now())
+
+  @@unique([colaboradorId, origem, referencia])
+  @@index([colaboradorId, criadoEm])
+}
+
+model MoedaPremio {
+  id            String   @id @default(cuid())
+  nome          String
+  descricao     String?
+  custo         Int
+  tipo          String
+  valorCentavos Int?
+  estoque       Int?
+  ativo         Boolean  @default(true)
+  criadoEm      DateTime @default(now())
+}
+
+model MoedaResgate {
+  id            String    @id @default(cuid())
+  colaboradorId String
+  premioId      String
+  premioNome    String
+  custo         Int
+  tipo          String
+  valorCentavos Int?
+  status        String    @default("pendente")
+  motivoRecusa  String?
+  decididoPor   String?
+  decididoEm    DateTime?
+  criadoEm      DateTime  @default(now())
+
+  @@index([status, criadoEm])
+  @@index([colaboradorId, criadoEm])
+}
+model WhatsappEnvio {
+  id               String    @id @default(cuid())
+  evento           String
+  chave            String?   @unique
+  corpo            String
+  tentativas       Int       @default(0)
+  proximaTentativa DateTime  @default(now())
+  enviadoEm        DateTime?
+  desistiu         Boolean   @default(false)
+  erro             String?
+  criadoEm         DateTime  @default(now())
+
+  @@index([enviadoEm, desistiu, proximaTentativa])
+}
