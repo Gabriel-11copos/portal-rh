@@ -2,6 +2,7 @@ const { prisma } = require('../../../../../lib/db');
 const { getSessaoRH } = require('../../../../../lib/auth');
 const { hojeBrasilia } = require('../../../../../lib/missoes');
 const { creditar } = require('../../../../../lib/moedas');
+const { notificar } = require('../../../../../lib/whatsapp');
 
 // Só RH: decide um pedido de missão.
 //  - aprovar: dá o selo da missão (se houver) e, se houver recompensa em texto, deixa "a entregar";
@@ -40,6 +41,7 @@ async function POST(req, { params }) {
         data: { status: 'recusada', motivoRecusa: texto || null, decididoPor: nomeRH, decididoEm: agora, vistoColaborador: false },
       });
       if (r.count === 0) return Response.json({ erro: 'Este pedido já foi decidido.' }, { status: 409 });
+      await notificar(prisma, { evento: 'missao.recusada', chave: `missao:${pedido.id}:recusada`, colaboradorId: pedido.colaboradorId, dados: { titulo: missao.titulo } });
       return Response.json({ ok: true });
     }
 
@@ -74,6 +76,7 @@ async function POST(req, { params }) {
     }
     // moedas: missão aprovada rende (cada pedido aprovado paga uma vez; só vale com o programa ligado e um valor definido)
     await creditar(prisma, { colaboradorId: pedido.colaboradorId, origem: `missao:${missao.id}`, referencia: pedido.id, descricao: `Missão: ${missao.titulo}` });
+    await notificar(prisma, { evento: 'missao.aprovada', chave: `missao:${pedido.id}:aprovada`, colaboradorId: pedido.colaboradorId, dados: { titulo: missao.titulo } });
     return Response.json({ ok: true });
   } catch (err) {
     console.error('Erro ao decidir pedido de missão:', err);

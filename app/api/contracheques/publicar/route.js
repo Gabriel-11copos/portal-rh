@@ -2,6 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { MAX_BYTES, ehPdf, lerCompetencia, lerTipo, lerLoja } = require('../../../../lib/contracheques');
 const { guardarDocumento } = require('../../../../lib/guardarDocumento');
+const { notificar } = require('../../../../lib/whatsapp');
 
 // Só RH. Recebe UM PDF já identificado (de quem é, tipo e competência), guarda no Drive (privado)
 // e registra em "Documentos" do colaborador. Se já existir o mesmo tipo e competência, substitui.
@@ -41,6 +42,10 @@ async function POST(req) {
     if (loteId) {
       try { await prisma.contrachequeLote.updateMany({ where: { id: loteId }, data: { [r.acao === 'criado' ? 'criados' : 'substituidos']: { increment: 1 } } }); }
       catch (err) { console.error('Não foi possível atualizar o registro do envio:', err); }
+    }
+    // WhatsApp: avisa só quando o documento é NOVO (corrigir ou substituir um que já existia não manda outro aviso)
+    if (r.acao === 'criado') {
+      await notificar(prisma, { evento: 'documento.disponivel', chave: `documento:${colaborador.id}:${tipo}:${competencia}:${new Date().toISOString().slice(0, 10)}`, colaboradorId: colaborador.id, dados: { documento: `${tipo} ${competencia}` } });
     }
     return Response.json({ ok: true, acao: r.acao });
   } catch (err) {

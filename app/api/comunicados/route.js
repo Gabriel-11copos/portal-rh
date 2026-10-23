@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH, getSessaoColaborador } = require('../../../lib/auth');
 const { enviarEmail } = require('../../../lib/email');
+const { notificarLote } = require('../../../lib/whatsapp');
 const { modoDeAcesso } = require('../../../lib/contexto');
 
 async function POST(req) {
@@ -17,8 +18,9 @@ async function POST(req) {
   const loteId = crypto.randomUUID();
   const destinatarios = await prisma.colaborador.findMany({ where: { id: { in: colaboradorIds } } });
 
+  const avisosWhatsapp = [];
   for (const colaborador of destinatarios) {
-    await prisma.comunicado.create({
+    const comunicadoCriado = await prisma.comunicado.create({
       data: {
         loteId,
         colaboradorId: colaborador.id,
@@ -39,7 +41,10 @@ async function POST(req) {
       `Comunicado do RH: ${assunto}`,
       `<p>Olá ${colaborador.nome},</p><p>${texto}</p><p>Acesse o portal para ver os detalhes.</p>`
     );
+    avisosWhatsapp.push({ evento: 'comunicado.novo', chave: `comunicado:${comunicadoCriado.id}`, colaborador, dados: { assunto } });
   }
+  // WhatsApp: um aviso curto para cada destinatário (o que não couber agora fica na fila e sai em seguida)
+  await notificarLote(prisma, avisosWhatsapp);
 
   return Response.json({ ok: true, enviados: destinatarios.length });
 }

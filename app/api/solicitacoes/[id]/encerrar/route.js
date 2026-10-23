@@ -3,6 +3,7 @@ const { getSessaoRH } = require('../../../../../lib/auth');
 const { conferirAtendimento } = require('../../../../../lib/acesso');
 const { enviarEmail } = require('../../../../../lib/email');
 const { avisarGestor } = require('../../../../../lib/integracao');
+const { notificar } = require('../../../../../lib/whatsapp');
 
 async function POST(req, { params }) {
   const sessao = getSessaoRH();
@@ -24,6 +25,9 @@ async function POST(req, { params }) {
     `Solicitação encerrada: ${solicitacao.assunto.nome}`,
     `<p>Olá ${solicitacao.colaborador.nome}, sua solicitação sobre <b>${solicitacao.assunto.nome}</b> foi encerrada.</p>`
   );
+
+  // WhatsApp: avisa que o pedido foi encerrado (e convida a avaliar)
+  await notificar(prisma, { evento: 'solicitacao.encerrada', chave: `encerrada:${id}`, colaborador: solicitacao.colaborador });
 
   await avisarGestor('solicitacao.encerrada', id);
 

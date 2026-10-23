@@ -1,6 +1,7 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { planejarGorjetas } = require('../../../../lib/gorjetas');
+const { notificarLote, periodoBR } = require('../../../../lib/whatsapp');
 
 function dataUTC(s) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(s || ''))) return null;
@@ -61,11 +62,23 @@ async function POST(req) {
         data: plano.criar.map((c) => ({ ...c, unidade: nomeUnidade, periodoInicio: inicio })),
       });
     }
+    // WhatsApp: quem está tendo o extrato FECHADO agora (lido antes de atualizar, para saber como estava)
+    const aFechar = plano.atualizar.filter((u) => u.data && u.data.situacao === 'fechado').map((u) => u.id);
+    const eraAberto = aFechar.length > 0
+      ? await prisma.gorjeta.findMany({ where: { id: { in: aFechar }, NOT: { situacao: 'fechado' } }, select: { colaboradorId: true } }).catch(() => [])
+      : [];
     await emLotes(plano.atualizar, 20, (u) => prisma.gorjeta.update({ where: { id: u.id }, data: u.data }));
     if (plano.remover.length > 0) {
       await prisma.gorjeta.deleteMany({ where: { id: { in: plano.remover.map((r) => r.id) } } });
     }
 
+    // WhatsApp: extrato novo (a mensagem avisa quando é parcial) e extrato que acabou de ser fechado; atualizar valores não avisa de novo
+    const periodoTexto = periodoBR(inicio, fim);
+    const diaInicio = inicio.toISOString().slice(0, 10);
+    await notificarLote(prisma, [
+      ...plano.criar.map((c) => ({ evento: 'gorjeta.disponivel', chave: `gorjeta:${c.colaboradorId}:${nomeUnidade}:${diaInicio}:${situacao}`, colaboradorId: c.colaboradorId, dados: { periodo: periodoTexto, parcial: situacao !== 'fechado' } })),
+      ...eraAberto.map((g) => ({ evento: 'gorjeta.fechada', chave: `gorjeta:${g.colaboradorId}:${nomeUnidade}:${diaInicio}:fechada`, colaboradorId: g.colaboradorId, dados: { periodo: periodoTexto } })),
+    ]);
     return Response.json({ ok: true, simulacao: false, ...plano.relatorio });
   } catch (err) {
     console.error('Erro ao publicar gorjetas:', err);

@@ -3,6 +3,7 @@ const { getSessaoRH } = require('../../../../../lib/auth');
 const { conferirAtendimento } = require('../../../../../lib/acesso');
 const { enviarEmail } = require('../../../../../lib/email');
 const { avisarGestor } = require('../../../../../lib/integracao');
+const { notificar } = require('../../../../../lib/whatsapp');
 
 async function POST(req, { params }) {
   const sessao = getSessaoRH();
@@ -49,6 +50,9 @@ async function POST(req, { params }) {
     `<p>Olá ${solicitacao.colaborador.nome}, ${admin?.nome || 'a equipe de RH/DP'} respondeu sua solicitação:</p><p>${texto}</p>
      <p>Acesse o portal para ver os detalhes${anexos?.length ? ' e baixar os documentos anexados' : ''}, e responder se precisar.</p>`
   );
+
+  // WhatsApp: só um aviso genérico + link (o texto da resposta fica no portal, com login)
+  await notificar(prisma, { evento: 'solicitacao.respondida', chave: `resposta:${respostaCriada.id}`, colaborador: solicitacao.colaborador });
 
   {
     await avisarGestor('solicitacao.mensagem', id, {
