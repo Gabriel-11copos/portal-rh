@@ -4,6 +4,7 @@ import NavColaborador from '../components/NavColaborador';
 import UploadAnexo from '../components/UploadAnexo';
 import Avatar from '../components/Avatar';
 import BotaoVoltar from '../components/BotaoVoltar';
+import CartaoContato from '../components/CartaoContato';
 
 export default function MeuPerfil() {
   const [perfil, setPerfil] = useState(null);
@@ -92,6 +93,8 @@ export default function MeuPerfil() {
         </form>
         {msg && <p style={{ fontSize: 13, color: 'var(--success)' }}>{msg}</p>}
       </div>
+
+      <CartaoContato />
     </div>
   );
 }

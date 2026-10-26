@@ -343,7 +343,7 @@ model MoedaConfig {
   ativo        Boolean  @default(false)
   nomeSingular String   @default("Tampinha")
   nomePlural   String   @default("Tampinhas")
-  simbolo      String   @default("🪙")
+  simbolo      String   @default("moeda")
   atualizadoEm DateTime @default(now()) @updatedAt
 }
 
@@ -396,4 +396,29 @@ model MoedaResgate {
 
   @@index([status, criadoEm])
   @@index([colaboradorId, criadoEm])
+}
+model WhatsappEnvio {
+  id               String    @id @default(cuid())
+  evento           String
+  chave            String?   @unique
+  corpo            String
+  tentativas       Int       @default(0)
+  proximaTentativa DateTime  @default(now())
+  enviadoEm        DateTime?
+  desistiu         Boolean   @default(false)
+  erro             String?
+  criadoEm         DateTime  @default(now())
+
+  @@index([enviadoEm, desistiu, proximaTentativa])
+}
+
+model ContatoColaborador {
+  colaboradorId String    @id
+  telefone      String?
+  origem        String
+  confirmadoEm  DateTime?
+  whatsappAtivo Boolean   @default(true)
+  atualizadoEm  DateTime  @default(now()) @updatedAt
+
+  @@index([telefone])
 }

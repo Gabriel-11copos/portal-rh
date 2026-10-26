@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import IconeMoeda from './IconeMoeda';
+import ModalContato from './ModalContato';
 
 export default function NavColaborador() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function NavColaborador() {
 
   async function sair() {
     // ao sair, esquece que o aviso da atualização de dados já foi mostrado: na próxima entrada ele aparece de novo
-    try { Object.keys(sessionStorage).filter((k) => k.startsWith('aviso-dados:')).forEach((k) => sessionStorage.removeItem(k)); } catch { /* ok */ }
+    try { Object.keys(sessionStorage).filter((k) => k.startsWith('aviso-dados:')).forEach((k) => sessionStorage.removeItem(k)); sessionStorage.removeItem('aviso-contato'); } catch { /* ok */ }
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
   }
@@ -107,6 +108,8 @@ export default function NavColaborador() {
           </div>
         </div>
       )}
+
+      <ModalContato adiar={naoLidos.length > 0 || (avisoAberto && !!atualizacao && !naPaginaDeAtualizar) || naPaginaDeAtualizar} />
 
       <div className="topo-marca">
         {moeda && (

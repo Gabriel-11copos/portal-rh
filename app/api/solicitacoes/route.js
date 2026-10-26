@@ -5,6 +5,7 @@ const { somarDiasUteis } = require('../../../lib/feriados');
 const { destinoFinal, avisarGestor, kitDoGestor } = require('../../../lib/integracao');
 const { escopoSolicitacoes } = require('../../../lib/acesso');
 const { modoDeAcesso } = require('../../../lib/contexto');
+const { abrirSolicitacao } = require('../../../lib/pedidos');
 
 // Cria uma nova solicitação e aplica a triagem automática com base no assunto:
 // define prazo, responsável, e devolve resposta automática se o assunto tiver uma cadastrada.
@@ -59,54 +60,10 @@ async function POST(req) {
     }
   }
 
-  const prazo = somarDiasUteis(new Date(), assunto.prazoPadraoDias);
-
-  // Pra onde vai o pedido: o assunto manda pro gestor da loja (o Administrativo vai pro RH).
-  const colabDestino = await prisma.colaborador.findUnique({ where: { id: sessao.id } });
-  const destino = destinoFinal(assunto, colabDestino && colabDestino.loja);
-
-  const solicitacao = await prisma.solicitacao.create({
-    data: {
-      colaboradorId: sessao.id,
-      destino,
-      dadosExtras: extrasJson,
-      assuntoId,
-      descricao,
-      emailContato,
-      whatsapp,
-      prazo,
-      status: assunto.respostaAutomatica ? 'respondida' : 'aberta',
-      vistoColaborador: !assunto.respostaAutomatica,
-      anexos: {
-        create: (anexos || []).map((a) => ({
-          linkDrive: a.link,
-          nomeArquivo: a.nomeArquivo,
-          enviadoPor: 'colaborador',
-        })),
-      },
-    },
-  });
-
-  // Triagem automática: se o assunto já tem resposta padrão configurada, responde na hora.
-  if (assunto.respostaAutomatica) {
-    await prisma.resposta.create({
-      data: {
-        solicitacaoId: solicitacao.id,
-        texto: assunto.respostaAutomatica,
-        automatica: true,
-      },
-    });
-  }
-
+  // a triagem e a criação do pedido são as mesmas do WhatsApp (lib/pedidos.js)
   const colaborador = await prisma.colaborador.findUnique({ where: { id: sessao.id } });
-  await enviarEmail(
-    colaborador.email,
-    `Solicitação recebida: ${assunto.nome}`,
-    `<p>Olá ${colaborador.nome}, recebemos sua solicitação sobre <b>${assunto.nome}</b>.</p>
-     ${assunto.respostaAutomatica ? `<p>${assunto.respostaAutomatica}</p>` : '<p>Ela será analisada pela nossa equipe em breve.</p>'}`
-  );
-
-  await avisarGestor('solicitacao.criada', solicitacao.id);
+  if (!colaborador) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
+  const solicitacao = await abrirSolicitacao(prisma, { colaborador, assunto, descricao, anexos, emailContato, whatsapp, extrasJson });
 
   return Response.json({ ok: true, id: solicitacao.id });
 }

@@ -1,6 +1,7 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH, gerarHash } = require('../../../../lib/auth');
 const { planejarSincronizacao } = require('../../../../lib/sincronizacao');
+const { registrarDaLista } = require('../../../../lib/contatos');
 
 async function emLotes(itens, tamanho, fn) {
   for (let i = 0; i < itens.length; i += tamanho) {
@@ -34,6 +35,21 @@ async function POST(req) {
       },
     });
 
+    // Os celulares que vieram na lista viram contato de WhatsApp (quem já confirmou o próprio número no portal não é trocado).
+    // Na prévia só conta o que aconteceria. Nunca derruba a sincronização.
+    async function contatosDaLista(simulando) {
+      try {
+        const comCelular = colaboradores.filter((c) => c && c.telefone && c.cpf).map((c) => ({ cpf: String(c.cpf).replace(/\D/g, '').padStart(11, '0'), telefone: c.telefone }));
+        if (comCelular.length === 0) return null;
+        const pessoas = await prisma.colaborador.findMany({ where: { matricula: { in: comCelular.map((c) => c.cpf) } }, select: { id: true, matricula: true } });
+        const idPorCpf = new Map(pessoas.map((p) => [p.matricula, p.id]));
+        return await registrarDaLista(prisma, comCelular.map((c) => ({ colaboradorId: idPorCpf.get(c.cpf), telefone: c.telefone })), { simular: simulando });
+      } catch (err) {
+        console.error('Contatos: não foi possível tratar os celulares da lista:', err && err.code);
+        return null;
+      }
+    }
+
     const plano = planejarSincronizacao(colaboradores, existentes);
     const base = {
       ...plano.relatorio,
@@ -43,7 +59,7 @@ async function POST(req) {
       totalNaLista: plano.totalNaLista,
     };
 
-    if (simular) return Response.json({ ok: true, simulacao: true, ...base });
+    if (simular) return Response.json({ ok: true, simulacao: true, ...base, contatos: await contatosDaLista(true) });
 
     if (plano.alerta && !forcar) {
       return Response.json({ erro: plano.motivoAlerta, ...base }, { status: 409 });
@@ -89,7 +105,10 @@ async function POST(req) {
       });
     }
 
-    return Response.json({ ok: true, simulacao: false, ...base });
+    // WhatsApp: o celular que veio na lista vira o contato "pré-programado" de cada pessoa. Se isto falhar, a sincronização (feita acima) continua valendo.
+    const contatos = await contatosDaLista(false);
+
+    return Response.json({ ok: true, simulacao: false, ...base, contatos });
   } catch (err) {
     console.error('Erro ao sincronizar colaboradores:', err);
     return Response.json({ erro: `Erro ao sincronizar: ${err.message || 'erro desconhecido'}` }, { status: 500 });

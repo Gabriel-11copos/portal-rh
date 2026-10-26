@@ -80,6 +80,7 @@ export default function CadastrarColaboradores() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2>Colaboradores</h2>
         <Link href="/admin/colaboradores/importar"><button className="secundario">Importar lista de ativos</button></Link>
+        <a href="/api/colaboradores/exportar" download><button type="button" className="secundario">⬇ Exportar base de ativos (com celular)</button></a>
       </div>
 
       <div className="card">

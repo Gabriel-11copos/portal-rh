@@ -108,6 +108,18 @@ export default function WhatsappAdmin() {
             <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 0 }}>Cada aviso leva só um texto curto e o link do portal (sem valores nem o conteúdo das respostas). O corpo é sempre: nome, telefone, unidade, mensagem e link.</p>
           </div>
 
+          <div className="card">
+            <h3 style={{ marginTop: 0 }}>Contatos e conversa</h3>
+            {dados.contatos ? (
+              <>
+                <p style={{ margin: '0 0 6px' }}>📱 <b>{dados.contatos.comTelefone}</b> de {dados.contatos.totalAtivos} colaboradores ativos têm celular cadastrado · <b>{dados.contatos.confirmados}</b> confirmaram o número no portal · <b>{dados.contatos.naoQuerReceber}</b> pediram para não receber avisos.</p>
+                {dados.contatos.semTelefone > 0 && <p style={{ fontSize: 13, color: 'var(--warning)', margin: '0 0 6px' }}>{dados.contatos.semTelefone} sem celular: importe a lista de ativos com a coluna de celular, ou eles informam na janela do primeiro acesso.</p>}
+              </>
+            ) : <p style={{ margin: '0 0 6px', color: 'var(--muted)' }}>Os contatos ainda não foram instalados (falta rodar o SQL dos contatos).</p>}
+            <p style={{ margin: 0 }}>💬 Conversa pelo WhatsApp (abrir e acompanhar pedidos): {dados.entrada ? <b style={{ color: 'var(--success)' }}>ligada</b> : <b style={{ color: 'var(--muted)' }}>desligada</b>}.
+              {!dados.entrada && <span style={{ fontSize: 13, color: 'var(--muted)' }}> Para ligar, crie no Vercel a variável <b>WHATSAPP_ENTRADA_CHAVE</b> (uma senha longa, com pelo menos 24 caracteres) e passe a mesma chave para o time do WhatsApp.</span>}</p>
+          </div>
+
           {dados.instalada === false && <div className="card"><p style={{ margin: 0 }}>As tabelas do WhatsApp ainda não foram instaladas. Rode o arquivo <b>whatsapp.sql</b> no Neon e atualize o <b>schema.prisma</b>.</p></div>}
 
           {dados.instalada && (

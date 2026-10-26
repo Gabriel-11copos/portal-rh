@@ -1,6 +1,7 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH } = require('../../../lib/auth');
 const { lerCampanha, lerPublico, alvosDe, fazParte } = require('../../../lib/dadosPessoais');
+const { notificarLote } = require('../../../lib/whatsapp');
 
 // Só RH. Acompanha a atualização de dados: quem já fez, quem falta e o histórico das anteriores.
 // Com ?resumo=1 devolve só os números (usado pela bolinha do menu).
@@ -104,6 +105,13 @@ async function POST(req) {
       // dois usuários do RH liberaram ao mesmo tempo: o banco só aceita uma liberada por vez
       if (err && err.code === 'P2002') return Response.json({ erro: 'Já existe uma atualização liberada. Encerre a atual antes de liberar outra.' }, { status: 409 });
       throw err;
+    }
+    // WhatsApp: avisa quem precisa atualizar (todos os ativos, ou só os escolhidos). Se falhar, a atualização já está liberada.
+    try {
+      const destinatarios = publico === 'selecionados' ? alvos : (await prisma.colaborador.findMany({ where: { ativo: true }, select: { id: true } })).map((c) => c.id);
+      await notificarLote(prisma, destinatarios.map((id) => ({ evento: 'atualizacao.liberada', chave: `atualizacao:${criada.id}:${id}`, colaboradorId: id })));
+    } catch (err) {
+      console.error('Não foi possível avisar por WhatsApp sobre a atualização de dados:', err && err.code);
     }
     return Response.json({ ok: true, id: criada.id });
   } catch (err) {

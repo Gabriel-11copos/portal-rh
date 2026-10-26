@@ -411,3 +411,14 @@ model WhatsappEnvio {
 
   @@index([enviadoEm, desistiu, proximaTentativa])
 }
+
+model ContatoColaborador {
+  colaboradorId String    @id
+  telefone      String?
+  origem        String
+  confirmadoEm  DateTime?
+  whatsappAtivo Boolean   @default(true)
+  atualizadoEm  DateTime  @default(now()) @updatedAt
+
+  @@index([telefone])
+}

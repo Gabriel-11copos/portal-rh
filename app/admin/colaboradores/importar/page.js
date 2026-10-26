@@ -54,6 +54,41 @@ function Contador({ n, rotulo, cor }) {
   );
 }
 
+// <celular>
+function normaliza(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
+
+// Acha, no cabeçalho da planilha, a coluna do celular: "Celular" primeiro, depois "WhatsApp", depois "Telefone" (menos fixo/residencial/comercial).
+function acharColunaCelular(cabecalhos) {
+  const lista = cabecalhos.map((c) => ({ c, n: normaliza(c) }));
+  const regras = [
+    (n) => /celular/.test(n),
+    (n) => /whats/.test(n),
+    (n) => /(telefone|fone|\btel\b)/.test(n) && !/(resid|fixo|comerc|recado|emerg)/.test(n),
+    (n) => /contato/.test(n) && !/(emerg|nome)/.test(n),
+  ];
+  for (const regra of regras) { const achou = lista.find(({ n }) => regra(n) && !/ddd/.test(n)); if (achou) return achou.c; }
+  return null;
+}
+const acharColunaDDD = (cabecalhos) => cabecalhos.find((c) => /^ddd/.test(normaliza(c))) || null;
+
+// O celular da linha, só com números (o servidor confere e padroniza). Se a célula tiver mais de um número, pega o primeiro que parece completo.
+function lerCelular(linha, colunaCelular, colunaDDD) {
+  if (!colunaCelular) return null;
+  const bruto = linha[colunaCelular];
+  if (bruto === null || bruto === undefined || bruto === '') return null;
+  const partes = String(bruto).split(/[\/;,|]| e | ou /i).map((p) => p.replace(/\D/g, '')).filter(Boolean);
+  let numero = partes.find((p) => p.length >= 10) || partes[0] || '';
+  if (numero.length <= 9 && colunaDDD && linha[colunaDDD] !== null && linha[colunaDDD] !== undefined) numero = String(linha[colunaDDD]).replace(/\D/g, '') + numero;
+  return numero || null;
+}
+// </celular>
+
+function InfoCelulares({ info, contatos }) {
+  if (!info) return null;
+  if (!info.coluna) return <p style={{ fontSize: 13, color: 'var(--warning)' }}>📱 Não achei a coluna do celular na planilha. Os avisos por WhatsApp vão depender do número que cada pessoa informar no portal.</p>;
+  return <p style={{ fontSize: 13 }}>📱 Celular lido da coluna <b>"{info.coluna}"</b>: {info.comCelular} de {info.total} pessoas. {contatos ? ` Vai gravar ${contatos.novos} contato(s) novo(s) e atualizar ${contatos.atualizados}.` : ''} Esses números viram o contato de WhatsApp de cada um (quem já confirmou o próprio número no portal não é trocado).</p>;
+}
+
 function Lista({ titulo, itens, render, cor }) {
   if (!itens || itens.length === 0) return null;
   return (
@@ -95,6 +130,7 @@ export default function ImportarColaboradores() {
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [aceitaRisco, setAceitaRisco] = useState(false);
+  const [infoCelular, setInfoCelular] = useState(null);
 
   async function chamar(corpo) {
     const res = await fetch('/api/colaboradores/sincronizar', {
@@ -119,6 +155,7 @@ export default function ImportarColaboradores() {
     setErro('');
     setAceitaRisco(false);
     setLinhas([]);
+    setInfoCelular(null);
     if (!file) return;
 
     const reader = new FileReader();
@@ -126,6 +163,9 @@ export default function ImportarColaboradores() {
       try {
         const wb = XLSX.read(evt.target.result, { type: 'array', cellDates: true });
         const dados = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: null });
+        const cabecalhos = Object.keys(dados[0] || {});
+        const colunaCelular = acharColunaCelular(cabecalhos);
+        const colunaDDD = acharColunaDDD(cabecalhos);
 
         const processadas = dados
           .filter((r) => r['CPF'])
@@ -137,6 +177,7 @@ export default function ImportarColaboradores() {
             email: r['Email'] || null,
             dataAdmissao: paraDataISO(r['Admissão']),
             dataNascimento: paraDataISO(r['Nascimento']),
+            telefone: lerCelular(r, colunaCelular, colunaDDD),
           }));
 
         if (processadas.length === 0) {
@@ -145,6 +186,7 @@ export default function ImportarColaboradores() {
         }
 
         setLinhas(processadas);
+        setInfoCelular({ coluna: colunaCelular, comCelular: processadas.filter((l) => l.telefone).length, total: processadas.length });
         setCarregando(true);
         const { ok, data } = await chamar({ colaboradores: processadas, simular: true });
         if (ok) setPrevia(data);
@@ -179,7 +221,8 @@ export default function ImportarColaboradores() {
   const semMudancas =
     previa &&
     previa.admitidos.length + previa.transferidos.length + previa.mudancasCargo.length +
-      previa.reativados.length + previa.inativados.length + previa.atualizados.length === 0;
+      previa.reativados.length + previa.inativados.length + previa.atualizados.length === 0 &&
+    !(previa.contatos && previa.contatos.novos + previa.contatos.atualizados > 0);   // só celulares novos também vale aplicar
 
   return (
     <div>
@@ -206,6 +249,7 @@ export default function ImportarColaboradores() {
             {previa.totalNaLista} pessoas na planilha · {previa.ativosAntes} ativas hoje no sistema.
             Nada foi gravado ainda.
           </p>
+          <InfoCelulares info={infoCelular} contatos={previa.contatos} />
 
           {previa.alerta && (
             <div style={{ background: '#fff3cd', border: '1px solid #ffe69c', borderRadius: 10, padding: 12, fontSize: 13, marginBottom: 12 }}>
@@ -255,6 +299,7 @@ export default function ImportarColaboradores() {
         <div className="card">
           <h3 style={{ color: 'var(--success)' }}>✓ Importação concluída</h3>
           <Relatorio r={resultado} />
+          {resultado.contatos && <p style={{ fontSize: 13 }}>📱 Celulares da lista: {resultado.contatos.novos} novos, {resultado.contatos.atualizados} atualizados, {resultado.contatos.mantidos} mantidos{resultado.contatos.invalidos ? `, ${resultado.contatos.invalidos} inválidos (ignorados)` : ''}.</p>}
           <Lista titulo="Linhas ignoradas da planilha" itens={resultado.ignoradas} render={(t) => t} cor="var(--danger)" />
           <Lista titulo="Não inativados por segurança (confira)" itens={resultado.verificar} render={(n) => n} cor="var(--warning)" />
         </div>
