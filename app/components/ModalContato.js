@@ -32,7 +32,7 @@ export default function ModalContato({ adiar = false }) {
         <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>Aviso do RH</div>
         <h3 style={{ marginTop: 0 }}>📱 Confirme o seu WhatsApp</h3>
         <p style={{ fontSize: 14 }}>
-          A partir de agora o RH avisa você também por WhatsApp (resposta aos seus pedidos, comunicados, documentos...) e você poderá abrir e acompanhar pedidos por lá.
+          A partir de agora o RH avisa você também por WhatsApp (resposta às suas solicitações, comunicados, documentos...) e você poderá abrir e acompanhar solicitações por lá.
           {c.telefone ? ' Confira se o número abaixo é o seu, ou corrija.' : ' Informe o seu número.'}
         </p>
         <FormContato inicial={c} rotulo="Confirmar" aoSalvar={() => { setAberto(false); window.dispatchEvent(new Event('contato-atualizado')); }} secundario={<button type="button" className="secundario" onClick={fechar}>Agora não</button>} />

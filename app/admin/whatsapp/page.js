@@ -4,7 +4,7 @@ import BotaoVoltar from '../../components/BotaoVoltar';
 
 // <regras>
 const NOMES_DOS_AVISOS = {
-  'solicitacao.respondida': 'Pedido respondido', 'solicitacao.encerrada': 'Pedido encerrado', 'solicitacao.mensagem': 'Mensagem recebida',
+  'solicitacao.criada': 'Solicitação recebida', 'solicitacao.respondida': 'Solicitação respondida', 'solicitacao.encerrada': 'Solicitação encerrada', 'solicitacao.mensagem': 'Mensagem recebida', 'atualizacao.liberada': 'Atualização de dados',
   'comunicado.novo': 'Comunicado', 'documento.disponivel': 'Documento', 'gorjeta.disponivel': 'Gorjeta', 'gorjeta.fechada': 'Gorjeta fechada',
   'missao.aprovada': 'Missão aprovada', 'missao.recusada': 'Missão recusada', 'troca.entregue': 'Troca entregue', 'troca.recusada': 'Troca recusada',
   'selo.recebido': 'Selo', teste: 'Teste',
@@ -116,7 +116,7 @@ export default function WhatsappAdmin() {
                 {dados.contatos.semTelefone > 0 && <p style={{ fontSize: 13, color: 'var(--warning)', margin: '0 0 6px' }}>{dados.contatos.semTelefone} sem celular: importe a lista de ativos com a coluna de celular, ou eles informam na janela do primeiro acesso.</p>}
               </>
             ) : <p style={{ margin: '0 0 6px', color: 'var(--muted)' }}>Os contatos ainda não foram instalados (falta rodar o SQL dos contatos).</p>}
-            <p style={{ margin: 0 }}>💬 Conversa pelo WhatsApp (abrir e acompanhar pedidos): {dados.entrada ? <b style={{ color: 'var(--success)' }}>ligada</b> : <b style={{ color: 'var(--muted)' }}>desligada</b>}.
+            <p style={{ margin: 0 }}>💬 Conversa pelo WhatsApp (abrir e acompanhar solicitações): {dados.entrada ? <b style={{ color: 'var(--success)' }}>ligada</b> : <b style={{ color: 'var(--muted)' }}>desligada</b>}.
               {!dados.entrada && <span style={{ fontSize: 13, color: 'var(--muted)' }}> Para ligar, crie no Vercel a variável <b>WHATSAPP_ENTRADA_CHAVE</b> (uma senha longa, com pelo menos 24 caracteres) e passe a mesma chave para o time do WhatsApp.</span>}</p>
           </div>
 

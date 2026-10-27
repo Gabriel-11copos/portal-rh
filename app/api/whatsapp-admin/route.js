@@ -9,7 +9,7 @@ const { entradaAtiva } = require('../../../lib/whatsappEntrada');
 async function GET(req) {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
-    // entrada: a conversa pelo WhatsApp (abrir e acompanhar pedidos) está ligada? (só diz sim/não: a chave nunca sai do servidor)
+    // entrada: a conversa pelo WhatsApp (abrir e acompanhar solicitações) está ligada? (só diz sim/não: a chave nunca sai do servidor)
     const base = { configurada: W.ativo(), host: W.hostDoWebhook(), portal: W.baseDoPortal(), entrada: entradaAtiva() };
     if (!W.modeloInstalado(prisma)) return Response.json({ ...base, instalada: false });
     const filtro = new URL(req.url).searchParams.get('filtro') || '';
