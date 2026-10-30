@@ -32,7 +32,7 @@ function SeletorColaboradores({ elenco, escolhidos, onMudar }) {
         <b style={{ fontSize: 13 }}>{plural(escolhidos.length, 'escolhido', 'escolhidos')}</b>
       </div>
       <div style={{ maxHeight: 260, overflowY: 'auto' }}>
-        {visiveis.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>Ninguém encontrado.</p>}
+        {visiveis.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>{busca || loja ? 'Ninguém encontrado com esse filtro.' : 'Todos os colaboradores que podem receber esta coleta já estão incluídos.'}</p>}
         {visiveis.map((c) => (
           <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 14 }}>
             <input type="checkbox" checked={marcados.has(c.id)} onChange={() => alternar(c.id)} style={{ width: 'auto', margin: 0 }} />
@@ -78,7 +78,12 @@ export default function PainelBeneficios() {
     } catch { setErro('Sem conexão. Tente de novo.'); return false; }
   }
   // quem PODE receber: no saldo, quem usa vale-transporte com cartão; na atualização, todos menos quem declarou que não usa
-  const elencoDe = (tipo) => (dados && dados.linhas ? dados.linhas.filter((l) => (tipo === 'saldo' ? l.status === 'mapeado' && ['jae', 'riocard', 'jae_riocard'].includes(l.modalidade) : l.status !== 'nao_usa')).map((l) => ({ id: l.id, nome: l.nome, loja: l.loja })) : []);
+  // Para o seletor de "liberar" usamos o elenco filtrado (o RH já escolheu a unidade).
+  // Para o seletor de "incluir" precisamos de TODOS, pois a tabela pode estar com filtro de nome/loja.
+  const linhasCompletas = dados && dados.linhasCompletas ? dados.linhasCompletas : (dados && dados.linhas ? dados.linhas : []);
+  const filtrarElenco = (lista, tipo) => lista.filter((l) => tipo === 'saldo' ? l.status === 'mapeado' && ['jae', 'riocard', 'jae_riocard'].includes(l.modalidade) : l.status !== 'nao_usa').map((l) => ({ id: l.id, nome: l.nome, loja: l.loja }));
+  const elencoDe = (tipo) => filtrarElenco(dados && dados.linhas ? dados.linhas : [], tipo);
+  const elencoCompleto = (tipo) => filtrarElenco(linhasCompletas, tipo);
   async function liberar(tipo, form, setForm) {
     const a = aud[tipo]; const alguns = a.publico === 'selecionados';
     const quem = tipo === 'saldo' ? 'pedir o saldo do cartão' : 'pedir a atualização do transporte';
@@ -194,7 +199,7 @@ export default function PainelBeneficios() {
                 </div>
                 {incluindo === c.id && c.ativa && (
                   <div>
-                    <SeletorColaboradores elenco={elencoDe(c.tipo).filter((p) => !(c.escolhidosIds || []).includes(p.id))} escolhidos={maisIds} onMudar={setMaisIds} />
+                    <SeletorColaboradores elenco={elencoCompleto(c.tipo).filter((p) => !(c.escolhidosIds || []).includes(p.id))} escolhidos={maisIds} onMudar={setMaisIds} />
                     <button type="button" disabled={maisIds.length === 0} onClick={() => incluir(c)}>Incluir {plural(maisIds.length, 'pessoa', 'pessoas')} e avisar</button>
                   </div>
                 )}

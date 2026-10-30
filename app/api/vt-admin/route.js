@@ -9,8 +9,12 @@ async function GET(req) {
   try {
     if (!E.instalado(prisma)) return Response.json({ instalado: false });
     const u = new URL(req.url);
-    const [lista, coletas, unidades] = await Promise.all([E.listaParaRH(prisma, { loja: u.searchParams.get('loja') || undefined, busca: u.searchParams.get('busca') || undefined }), E.listarColetas(prisma), prisma.unidadeTransporte.findMany({ orderBy: { loja: 'asc' } })]);
-    return Response.json({ instalado: true, ...lista, coletas, lojas: unidades.map((x) => x.loja) });
+    const filtro = { loja: u.searchParams.get('loja') || undefined, busca: u.searchParams.get('busca') || undefined };
+    const temFiltro = !!(filtro.loja || filtro.busca);
+    const [lista, coletas, unidades] = await Promise.all([E.listaParaRH(prisma, filtro), E.listarColetas(prisma), prisma.unidadeTransporte.findMany({ orderBy: { loja: 'asc' } })]);
+    // quando há filtro, a lista de linhas está reduzida; o seletor de "incluir" precisa de todos
+    const listaCompleta = temFiltro ? await E.listaParaRH(prisma, {}) : null;
+    return Response.json({ instalado: true, ...lista, ...(listaCompleta ? { linhasCompletas: listaCompleta.linhas } : {}), coletas, lojas: unidades.map((x) => x.loja) });
   } catch (err) {
     console.error('Erro no painel de benefícios:', err && err.code);
     return Response.json({ erro: 'Não foi possível carregar agora.' }, { status: 500 });
