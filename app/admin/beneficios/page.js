@@ -81,9 +81,9 @@ export default function PainelBeneficios() {
   // Para o seletor de "liberar" usamos o elenco filtrado (o RH já escolheu a unidade).
   // Para o seletor de "incluir" precisamos de TODOS, pois a tabela pode estar com filtro de nome/loja.
   const linhasCompletas = dados && dados.linhasCompletas ? dados.linhasCompletas : (dados && dados.linhas ? dados.linhas : []);
-  const filtrarElenco = (lista, tipo) => lista.filter((l) => tipo === 'saldo' ? l.status === 'mapeado' && ['jae', 'riocard', 'jae_riocard'].includes(l.modalidade) : l.status !== 'nao_usa').map((l) => ({ id: l.id, nome: l.nome, loja: l.loja }));
-  const elencoDe = (tipo) => filtrarElenco(dados && dados.linhas ? dados.linhas : [], tipo);
-  const elencoCompleto = (tipo) => filtrarElenco(linhasCompletas, tipo);
+  const filtrarElenco = (lista) => lista.filter((l) => l.status !== 'nao_usa').map((l) => ({ id: l.id, nome: l.nome, loja: l.loja }));
+  const elencoDe = () => filtrarElenco(dados && dados.linhas ? dados.linhas : []);
+  const elencoCompleto = () => filtrarElenco(linhasCompletas);
   async function liberar(tipo, form, setForm) {
     const a = aud[tipo]; const alguns = a.publico === 'selecionados';
     const quem = tipo === 'saldo' ? 'pedir o saldo do cartão' : 'pedir a atualização do transporte';
@@ -161,7 +161,7 @@ export default function PainelBeneficios() {
       {aba === 'coletas' && dados && dados.instalado !== false && (
         <>
           {[['saldo', '💳 Pedir o saldo do vale-transporte', 'Cada colaborador que usa vale-transporte informa o saldo do cartão e anexa foto ou PDF (os dois cartões, para JAE + RIOCARD).', novaSaldo, setNovaSaldo], ['mapeamento', '🗺️ Pedir a atualização do transporte', 'Todos (menos quem declarou que não usa) conferem ou refazem modalidade, transportes e endereço.', novaMapa, setNovaMapa]].map(([tipo, titulo, ajuda, form, setForm]) => {
-            const a = aud[tipo]; const elenco = elencoDe(tipo); const alguns = a.publico === 'selecionados'; const aberta = coletaAberta(tipo);
+            const a = aud[tipo]; const elenco = elencoDe(); const alguns = a.publico === 'selecionados'; const aberta = coletaAberta(tipo);
             return (
               <div className="card" key={tipo}>
                 <h3 style={{ marginTop: 0 }}>{titulo}</h3>
@@ -173,7 +173,7 @@ export default function PainelBeneficios() {
                       <div><label>Prazo (opcional)</label><input type="date" value={form.prazo} onChange={(e) => setForm({ ...form, prazo: e.target.value })} /></div>
                     </div>
                     <div style={{ margin: '10px 0 2px', fontWeight: 600, fontSize: 14 }}>Para quem?</div>
-                    <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}><input type="radio" name={`publico-${tipo}`} checked={!alguns} onChange={() => setAud({ ...aud, [tipo]: { ...a, publico: 'todos' } })} style={{ width: 'auto', margin: 0 }} />Todos ({plural(elenco.length, 'pessoa pode receber', 'pessoas podem receber')})</label>
+                    <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}><input type="radio" name={`publico-${tipo}`} checked={!alguns} onChange={() => setAud({ ...aud, [tipo]: { ...a, publico: 'todos' } })} style={{ width: 'auto', margin: 0 }} />Todos ({plural(elenco.length, 'colaborador ativo', 'colaboradores ativos')})</label>
                     <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}><input type="radio" name={`publico-${tipo}`} checked={alguns} onChange={() => setAud({ ...aud, [tipo]: { ...a, publico: 'selecionados' } })} style={{ width: 'auto', margin: 0 }} />Escolher pessoas</label>
                     {alguns && <SeletorColaboradores elenco={elenco} escolhidos={a.escolhidos} onMudar={(ids) => setAud({ ...aud, [tipo]: { ...a, escolhidos: ids } })} />}
                     <button type="button" disabled={alguns && a.escolhidos.length === 0} style={{ marginTop: 8 }} onClick={() => liberar(tipo, form, setForm)}>{alguns ? `Liberar para ${plural(a.escolhidos.length, 'colaborador', 'colaboradores')}` : tipo === 'saldo' ? 'Liberar coleta de saldo' : 'Liberar atualização'}</button>
@@ -199,7 +199,7 @@ export default function PainelBeneficios() {
                 </div>
                 {incluindo === c.id && c.ativa && (
                   <div>
-                    <SeletorColaboradores elenco={elencoCompleto(c.tipo).filter((p) => !(c.escolhidosIds || []).includes(p.id))} escolhidos={maisIds} onMudar={setMaisIds} />
+                    <SeletorColaboradores elenco={elencoCompleto().filter((p) => !(c.escolhidosIds || []).includes(p.id))} escolhidos={maisIds} onMudar={setMaisIds} />
                     <button type="button" disabled={maisIds.length === 0} onClick={() => incluir(c)}>Incluir {plural(maisIds.length, 'pessoa', 'pessoas')} e avisar</button>
                   </div>
                 )}
