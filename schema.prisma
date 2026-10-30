@@ -486,6 +486,8 @@ model ColetaVT {
   titulo    String
   prazo     DateTime?
   ativa     Boolean  @default(true)
+  publico   String   @default("todos")
+  alvos     Json?
   criadaPor String?
   criadaEm  DateTime @default(now())
 }

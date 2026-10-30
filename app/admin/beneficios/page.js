@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import BotaoVoltar from '../../components/BotaoVoltar';
 import V from '../../../lib/vt';
 
@@ -7,6 +7,42 @@ const FILTROS = [['', 'Todos'], ['bui', 'BUI a validar'], ['caso_diferente', 'Ca
 const COR = { bui: '#fde68a', caso_diferente: '#fde68a', sem_mapeamento: '#fdecea', saldo_pendente: '#fff3cd', saldo_refazer: '#fff3cd' };
 const dataBR = (d) => (d ? new Date(d).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '');
 const centavos = (c) => (c === null || c === undefined ? '' : V.reais(c));
+const normalizar = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+
+// Escolher colaboradores: busca pelo nome, filtro por unidade e atalho para marcar todos os que aparecem (mesmo jeito da Atualização de dados).
+function SeletorColaboradores({ elenco, escolhidos, onMudar }) {
+  const [busca, setBusca] = useState('');
+  const [loja, setLoja] = useState('');
+  const lojas = useMemo(() => [...new Set(elenco.map((c) => c.loja))].sort((a, b) => String(a).localeCompare(String(b), 'pt-BR')), [elenco]);
+  const visiveis = useMemo(() => { const q = normalizar(busca); return elenco.filter((c) => (!loja || c.loja === loja) && (!q || normalizar(c.nome).includes(q))); }, [elenco, busca, loja]);
+  const marcados = new Set(escolhidos);
+  const alternar = (id) => onMudar(marcados.has(id) ? escolhidos.filter((x) => x !== id) : [...escolhidos, id]);
+  const marcarVisiveis = () => onMudar([...new Set([...escolhidos, ...visiveis.map((c) => c.id)])]);
+  const desmarcarVisiveis = () => { const v = new Set(visiveis.map((c) => c.id)); onMudar(escolhidos.filter((id) => !v.has(id))); };
+  return (
+    <div style={{ border: '1px solid var(--border)', borderRadius: 8, padding: 10, margin: '8px 0' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar colaborador pelo nome..." style={{ flex: '2 1 180px' }} />
+        <select value={loja} onChange={(e) => setLoja(e.target.value)} style={{ flex: '1 1 160px' }}><option value="">Todas as unidades</option>{lojas.map((l) => <option key={l} value={l}>{l}</option>)}</select>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', margin: '8px 0' }}>
+        <button type="button" className="secundario" style={{ padding: '3px 10px', fontSize: 12 }} onClick={marcarVisiveis}>Marcar os {visiveis.length} da lista</button>
+        <button type="button" className="secundario" style={{ padding: '3px 10px', fontSize: 12 }} onClick={desmarcarVisiveis}>Desmarcar os da lista</button>
+        <b style={{ fontSize: 13 }}>{plural(escolhidos.length, 'escolhido', 'escolhidos')}</b>
+      </div>
+      <div style={{ maxHeight: 260, overflowY: 'auto' }}>
+        {visiveis.length === 0 && <p style={{ color: 'var(--muted)', fontSize: 13, margin: 0 }}>Ninguém encontrado.</p>}
+        {visiveis.map((c) => (
+          <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 14 }}>
+            <input type="checkbox" checked={marcados.has(c.id)} onChange={() => alternar(c.id)} style={{ width: 'auto', margin: 0 }} />
+            <span>{c.nome} <span style={{ color: 'var(--muted)', fontSize: 12 }}>· {c.loja}</span></span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // Painel de Benefícios (vale-transporte) do RH.
 export default function PainelBeneficios() {
@@ -16,6 +52,8 @@ export default function PainelBeneficios() {
   const [busca, setBusca] = useState(''); const [loja, setLoja] = useState(''); const [filtro, setFiltro] = useState('');
   const [config, setConfig] = useState(null);
   const [novaSaldo, setNovaSaldo] = useState({ titulo: '', prazo: '' }); const [novaMapa, setNovaMapa] = useState({ titulo: '', prazo: '' });
+  const [aud, setAud] = useState({ saldo: { publico: 'todos', escolhidos: [] }, mapeamento: { publico: 'todos', escolhidos: [] } });   // para quem liberar
+  const [incluindo, setIncluindo] = useState(null); const [maisIds, setMaisIds] = useState([]);
 
   async function carregar() {
     try {
@@ -39,11 +77,24 @@ export default function PainelBeneficios() {
       setAviso(typeof sucesso === 'function' ? sucesso(j) : sucesso); return j;
     } catch { setErro('Sem conexão. Tente de novo.'); return false; }
   }
+  // quem PODE receber: no saldo, quem usa vale-transporte com cartão; na atualização, todos menos quem declarou que não usa
+  const elencoDe = (tipo) => (dados && dados.linhas ? dados.linhas.filter((l) => (tipo === 'saldo' ? l.status === 'mapeado' && ['jae', 'riocard', 'jae_riocard'].includes(l.modalidade) : l.status !== 'nao_usa')).map((l) => ({ id: l.id, nome: l.nome, loja: l.loja })) : []);
   async function liberar(tipo, form, setForm) {
+    const a = aud[tipo]; const alguns = a.publico === 'selecionados';
     const quem = tipo === 'saldo' ? 'pedir o saldo do cartão' : 'pedir a atualização do transporte';
-    if (!window.confirm(`Liberar agora para ${quem}? Os colaboradores serão avisados por WhatsApp.`)) return;
-    const j = await enviar('/api/vt-admin/coletas', 'POST', { acao: 'criar', tipo, ...form }, (x) => `Liberado. ${x.avisados} colaborador(es) na coleta.`);
-    if (j) { setForm({ titulo: '', prazo: '' }); carregar(); }
+    const para = alguns ? plural(a.escolhidos.length, 'colaborador escolhido', 'colaboradores escolhidos') : 'todos';
+    if (!window.confirm(`Liberar agora para ${quem}, para ${para}? Os colaboradores serão avisados por WhatsApp.`)) return;
+    const j = await enviar('/api/vt-admin/coletas', 'POST', { acao: 'criar', tipo, ...form, publico: a.publico, colaboradorIds: alguns ? a.escolhidos : [] }, (x) => `Liberado. ${x.avisados} colaborador(es) na coleta.${x.ignorados ? ` ${plural(x.ignorados, 'escolhido não entrou', 'escolhidos não entraram')} (não se encaixam nesta coleta).` : ''}`);
+    if (j) { setForm({ titulo: '', prazo: '' }); setAud({ ...aud, [tipo]: { publico: 'todos', escolhidos: [] } }); carregar(); }
+  }
+  async function incluir(c) {
+    const j = await enviar('/api/vt-admin/coletas', 'POST', { acao: 'incluir', id: c.id, colaboradorIds: maisIds }, (x) => `${plural(x.incluidos, 'pessoa incluída', 'pessoas incluídas')}; ${x.avisados} avisada(s) por WhatsApp.`);
+    if (j) { setIncluindo(null); setMaisIds([]); carregar(); }
+  }
+  async function estender(c) {
+    if (!window.confirm('Estender esta coleta para todos? Quem ainda não estava nela será avisado por WhatsApp.')) return;
+    const j = await enviar('/api/vt-admin/coletas', 'POST', { acao: 'todos', id: c.id }, (x) => `Agora vale para todos. ${x.avisados} pessoa(s) avisada(s) por WhatsApp.`);
+    if (j) { setIncluindo(null); carregar(); }
   }
   async function encerrar(id) {
     if (!window.confirm('Encerrar esta coleta? Ninguém mais será cobrado por ela.')) return;
@@ -104,26 +155,49 @@ export default function PainelBeneficios() {
 
       {aba === 'coletas' && dados && dados.instalado !== false && (
         <>
-          {[['saldo', '💳 Pedir o saldo do vale-transporte', 'Cada colaborador que usa vale-transporte informa o saldo do cartão e anexa foto ou PDF (os dois cartões, para JAE + RIOCARD).', novaSaldo, setNovaSaldo], ['mapeamento', '🗺️ Pedir a atualização do transporte', 'Todos (menos quem declarou que não usa) conferem ou refazem modalidade, transportes e endereço.', novaMapa, setNovaMapa]].map(([tipo, titulo, ajuda, form, setForm]) => (
-            <div className="card" key={tipo}>
-              <h3 style={{ marginTop: 0 }}>{titulo}</h3>
-              <p style={{ fontSize: 13, color: 'var(--muted)' }}>{ajuda}</p>
-              {coletaAberta(tipo) ? <p style={{ fontSize: 14 }}>Já existe uma coleta aberta: <b>{coletaAberta(tipo).titulo}</b>. Encerre-a abaixo para abrir outra.</p> : (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
-                  <div><label>Título (opcional)</label><input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder={tipo === 'saldo' ? 'Saldo do vale-transporte' : 'Mapeamento de transporte'} /></div>
-                  <div><label>Prazo (opcional)</label><input type="date" value={form.prazo} onChange={(e) => setForm({ ...form, prazo: e.target.value })} /></div>
-                  <button type="button" onClick={() => liberar(tipo, form, setForm)}>{tipo === 'saldo' ? 'Liberar coleta de saldo' : 'Liberar atualização'}</button>
-                </div>
-              )}
-            </div>
-          ))}
+          {[['saldo', '💳 Pedir o saldo do vale-transporte', 'Cada colaborador que usa vale-transporte informa o saldo do cartão e anexa foto ou PDF (os dois cartões, para JAE + RIOCARD).', novaSaldo, setNovaSaldo], ['mapeamento', '🗺️ Pedir a atualização do transporte', 'Todos (menos quem declarou que não usa) conferem ou refazem modalidade, transportes e endereço.', novaMapa, setNovaMapa]].map(([tipo, titulo, ajuda, form, setForm]) => {
+            const a = aud[tipo]; const elenco = elencoDe(tipo); const alguns = a.publico === 'selecionados'; const aberta = coletaAberta(tipo);
+            return (
+              <div className="card" key={tipo}>
+                <h3 style={{ marginTop: 0 }}>{titulo}</h3>
+                <p style={{ fontSize: 13, color: 'var(--muted)' }}>{ajuda}</p>
+                {aberta ? <p style={{ fontSize: 14 }}>Já existe uma coleta aberta: <b>{aberta.titulo}</b>. Encerre-a abaixo para abrir outra{aberta.publico === 'selecionados' ? ', ou inclua mais pessoas nela' : ''}.</p> : (
+                  <>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'end' }}>
+                      <div><label>Título (opcional)</label><input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder={tipo === 'saldo' ? 'Saldo do vale-transporte' : 'Mapeamento de transporte'} /></div>
+                      <div><label>Prazo (opcional)</label><input type="date" value={form.prazo} onChange={(e) => setForm({ ...form, prazo: e.target.value })} /></div>
+                    </div>
+                    <div style={{ margin: '10px 0 2px', fontWeight: 600, fontSize: 14 }}>Para quem?</div>
+                    <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}><input type="radio" name={`publico-${tipo}`} checked={!alguns} onChange={() => setAud({ ...aud, [tipo]: { ...a, publico: 'todos' } })} style={{ width: 'auto', margin: 0 }} />Todos ({plural(elenco.length, 'pessoa pode receber', 'pessoas podem receber')})</label>
+                    <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 400 }}><input type="radio" name={`publico-${tipo}`} checked={alguns} onChange={() => setAud({ ...aud, [tipo]: { ...a, publico: 'selecionados' } })} style={{ width: 'auto', margin: 0 }} />Escolher pessoas</label>
+                    {alguns && <SeletorColaboradores elenco={elenco} escolhidos={a.escolhidos} onMudar={(ids) => setAud({ ...aud, [tipo]: { ...a, escolhidos: ids } })} />}
+                    <button type="button" disabled={alguns && a.escolhidos.length === 0} style={{ marginTop: 8 }} onClick={() => liberar(tipo, form, setForm)}>{alguns ? `Liberar para ${plural(a.escolhidos.length, 'colaborador', 'colaboradores')}` : tipo === 'saldo' ? 'Liberar coleta de saldo' : 'Liberar atualização'}</button>
+                  </>
+                )}
+              </div>
+            );
+          })}
           <div className="card">
             <h3 style={{ marginTop: 0 }}>Coletas</h3>
             {dados.coletas.length === 0 && <p style={{ color: 'var(--muted)' }}>Nenhuma coleta ainda.</p>}
             {dados.coletas.map((c) => (
-              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border)', flexWrap: 'wrap' }}>
-                <div><b>{c.titulo}</b> <span style={{ fontSize: 12, color: 'var(--muted)' }}>({c.tipo === 'saldo' ? 'saldo' : 'transporte'} · aberta em {dataBR(c.criadaEm)}{c.prazo ? ` · prazo ${dataBR(c.prazo)}` : ''})</span><div style={{ fontSize: 13 }}>{c.respondidos} de {c.alvos} responderam</div></div>
-                {c.ativa ? <button type="button" className="secundario" onClick={() => encerrar(c.id)}>Encerrar</button> : <span className="badge encerrada">Encerrada</span>}
+              <div key={c.id} style={{ padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div><b>{c.titulo}</b> <span style={{ fontSize: 12, color: 'var(--muted)' }}>({c.tipo === 'saldo' ? 'saldo' : 'transporte'} · aberta em {dataBR(c.criadaEm)}{c.prazo ? ` · prazo ${dataBR(c.prazo)}` : ''})</span><div style={{ fontSize: 13 }}>{c.respondidos} de {c.alvos} responderam · {c.publico === 'selecionados' ? `👥 ${plural(c.escolhidos, 'pessoa escolhida', 'pessoas escolhidas')}` : '👥 Todos'}</div></div>
+                  {c.ativa ? (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {c.publico === 'selecionados' && <button type="button" className="secundario" onClick={() => { setIncluindo(incluindo === c.id ? null : c.id); setMaisIds([]); }}>Incluir mais pessoas</button>}
+                      {c.publico === 'selecionados' && <button type="button" className="secundario" onClick={() => estender(c)}>Estender a todos</button>}
+                      <button type="button" className="secundario" onClick={() => encerrar(c.id)}>Encerrar</button>
+                    </div>
+                  ) : <span className="badge encerrada">Encerrada</span>}
+                </div>
+                {incluindo === c.id && c.ativa && (
+                  <div>
+                    <SeletorColaboradores elenco={elencoDe(c.tipo).filter((p) => !(c.escolhidosIds || []).includes(p.id))} escolhidos={maisIds} onMudar={setMaisIds} />
+                    <button type="button" disabled={maisIds.length === 0} onClick={() => incluir(c)}>Incluir {plural(maisIds.length, 'pessoa', 'pessoas')} e avisar</button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
