@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import NavColaborador from '../components/NavColaborador';
 import UploadAnexo from '../components/UploadAnexo';
 import Avatar from '../components/Avatar';
@@ -7,6 +8,7 @@ import BotaoVoltar from '../components/BotaoVoltar';
 import CartaoContato from '../components/CartaoContato';
 
 export default function MeuPerfil() {
+  const router = useRouter();
   const [perfil, setPerfil] = useState(null);
   const [nomeSocial, setNomeSocial] = useState('');
   const [salvando, setSalvando] = useState(false);
@@ -95,6 +97,12 @@ export default function MeuPerfil() {
       </div>
 
       <CartaoContato />
+
+      <div className="card">
+        <h3>Benefícios</h3>
+        <p style={{ fontSize: 13, color: 'var(--muted)' }}>Vale-transporte: informe como você vai para o trabalho e o saldo do seu cartão.</p>
+        <button type="button" onClick={() => router.push('/perfil/beneficios')}>Abrir meus benefícios</button>
+      </div>
     </div>
   );
 }

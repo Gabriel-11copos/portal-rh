@@ -422,3 +422,85 @@ model ContatoColaborador {
 
   @@index([telefone])
 }
+
+model UnidadeTransporte {
+  loja         String   @id
+  endereco     String?
+  bairro       String?
+  razaoSocial  String?
+  cnpj         String?
+  atualizadoEm DateTime @default(now()) @updatedAt
+}
+
+model RegraVT {
+  id                        String   @id @default("unico")
+  jaeCentavos               Int      @default(500)
+  riocardUmCentavos         Int      @default(500)
+  riocardIntegracaoCentavos Int      @default(940)
+  atualizadoEm              DateTime @default(now()) @updatedAt
+}
+
+model TransporteColaborador {
+  colaboradorId       String    @id
+  usaVT               Boolean
+  modalidade          String?
+  transportesJae      String    @default("[]")
+  transportesRiocard  String    @default("[]")
+  numeroRiocard       String?
+  buiAtivo            String?
+  origemCep           String?
+  origemLogradouro    String?
+  origemNumero        String?
+  origemComplemento   String?
+  origemBairro        String?
+  origemCidade        String?
+  origemUf            String?
+  lojaDestino         String?
+  valorViagemCentavos Int?
+  valorDiaCentavos    Int?
+  casoDiferente       String?
+  alertas             String    @default("[]")
+  alertaResolvidoPor  String?
+  alertaResolvidoEm   DateTime?
+  alertaNota          String?
+  termoAceitoEm       DateTime?
+  termoTexto          String?
+  reabertoEm          DateTime?
+  atualizadoEm        DateTime  @default(now())
+}
+
+model TransporteHistorico {
+  id            String   @id @default(cuid())
+  colaboradorId String
+  motivo        String
+  autor         String
+  dados         String
+  criadoEm      DateTime @default(now())
+
+  @@index([colaboradorId, criadoEm])
+}
+
+model ColetaVT {
+  id        String   @id @default(cuid())
+  tipo      String
+  titulo    String
+  prazo     DateTime?
+  ativa     Boolean  @default(true)
+  criadaPor String?
+  criadaEm  DateTime @default(now())
+}
+
+model SaldoVT {
+  id                   String   @id @default(cuid())
+  coletaId             String
+  colaboradorId        String
+  saldoJaeCentavos     Int?
+  saldoRiocardCentavos Int?
+  anexos               String   @default("[]")
+  status               String   @default("enviado")
+  motivoRefazer        String?
+  informadoEm          DateTime @default(now())
+
+  @@unique([coletaId, colaboradorId])
+  @@index([colaboradorId])
+}

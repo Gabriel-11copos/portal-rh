@@ -16,6 +16,7 @@ const CAIXINHAS = [
   { id: 'aniversariantes', icon: '🎂', title: 'Aniversariantes', desc: 'Quem faz aniversário no mês e o cartão de parabéns', href: '/admin/aniversariantes' },
   { id: 'selos', icon: '🏅', title: 'Selos', desc: 'Reconhecimentos, presença e tempo de casa', href: '/admin/selos' },
   { id: 'dados', icon: '📋', title: 'Atualização de dados', desc: 'Libere a atualização cadastral e acompanhe', href: '/admin/atualizacao-dados' },
+  { id: 'beneficios', icon: '🚌', title: 'Benefícios', desc: 'Vale-transporte: transporte, saldo e alertas', href: '/admin/beneficios' },
   { id: 'missoes', icon: '🎯', title: 'Missões', desc: 'Missões, aprovações e recompensas', href: '/admin/missoes' },
   { id: 'moedas', icon: 'moeda', title: 'Moedas', desc: 'Regras, prêmios e trocas', href: '/admin/moedas' },
   { id: 'whatsapp', icon: '💬', title: 'WhatsApp', desc: 'Avisos automáticos e fila de envios', href: '/admin/whatsapp' },

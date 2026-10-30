@@ -1,6 +1,7 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { ordenarCombos, montarHistorico } = require('../../../../lib/contracheques');
+const { ehDocumentoDeSaldo } = require('../../../../lib/vt');
 
 // Só RH. Mostra, para um tipo e uma competência, quem já recebeu e quem falta, loja por loja,
 // mais a lista dos envios feitos pelo portal. Lê os documentos registrados, então inclui
@@ -18,7 +19,7 @@ async function GET(req) {
       _count: { _all: true },
       _max: { criadoEm: true },
     });
-    const combos = ordenarCombos(grupos);
+    const combos = ordenarCombos(grupos.filter((g) => !ehDocumentoDeSaldo(g.tipo)));
     const escolhido = combos.find((c) => c.tipo === tipoPedido && c.competencia === competenciaPedida) || combos[0] || null;
 
     let painel = null;

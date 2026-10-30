@@ -23,6 +23,7 @@ export default function ModalContato({ adiar = false }) {
   function fechar() {
     try { sessionStorage.setItem(CHAVE, '1'); } catch { /* ok */ }
     setAberto(false);
+    window.dispatchEvent(new Event('contato-atualizado'));      // libera a fila: a janela do vale-transporte vem depois
   }
 
   if (!aberto || adiar || !c) return null;

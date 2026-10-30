@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import IconeMoeda from './IconeMoeda';
 import ModalContato from './ModalContato';
+import ModalVT from './ModalVT';
 
 export default function NavColaborador() {
   const router = useRouter();
@@ -110,6 +111,7 @@ export default function NavColaborador() {
       )}
 
       <ModalContato adiar={naoLidos.length > 0 || (avisoAberto && !!atualizacao && !naPaginaDeAtualizar) || naPaginaDeAtualizar} />
+      <ModalVT adiar={naoLidos.length > 0 || (avisoAberto && !!atualizacao && !naPaginaDeAtualizar) || naPaginaDeAtualizar || pathname.startsWith('/perfil/beneficios')} />
 
       <div className="topo-marca">
         {moeda && (

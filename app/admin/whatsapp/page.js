@@ -4,7 +4,7 @@ import BotaoVoltar from '../../components/BotaoVoltar';
 
 // <regras>
 const NOMES_DOS_AVISOS = {
-  'solicitacao.criada': 'Solicitação recebida', 'solicitacao.respondida': 'Solicitação respondida', 'solicitacao.encerrada': 'Solicitação encerrada', 'solicitacao.mensagem': 'Mensagem recebida', 'atualizacao.liberada': 'Atualização de dados',
+  'solicitacao.criada': 'Solicitação recebida', 'solicitacao.respondida': 'Solicitação respondida', 'solicitacao.encerrada': 'Solicitação encerrada', 'solicitacao.mensagem': 'Mensagem recebida', 'atualizacao.liberada': 'Atualização de dados', 'vt.saldo.liberado': 'Saldo do vale-transporte', 'vt.mapeamento.liberado': 'Atualização do transporte', 'vt.saldo.refazer': 'Saldo: enviar de novo', 'vt.reaberto': 'Vale-transporte liberado',
   'comunicado.novo': 'Comunicado', 'documento.disponivel': 'Documento', 'gorjeta.disponivel': 'Gorjeta', 'gorjeta.fechada': 'Gorjeta fechada',
   'missao.aprovada': 'Missão aprovada', 'missao.recusada': 'Missão recusada', 'troca.entregue': 'Troca entregue', 'troca.recusada': 'Troca recusada',
   'selo.recebido': 'Selo', teste: 'Teste',
