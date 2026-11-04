@@ -423,6 +423,29 @@ model ContatoColaborador {
   @@index([telefone])
 }
 
+model SaldoVTWhatsapp {
+  id                    String   @id @default(cuid())
+  coletaId              String
+  colaboradorId         String
+  saldoJaeCentavos      Int?
+  saldoRiocardCentavos  Int?
+  leituraJaeCentavos    Int?
+  leituraRiocardCentavos Int?
+  confiancaJae          String?
+  confiancaRiocard      String?
+  fotoJaeUrl            String?
+  fotoRiocardUrl        String?
+  dataHoraPrintJae      DateTime?
+  dataHoraPrintRiocard  DateTime?
+  divergencia           Boolean  @default(false)
+  foraDoPrazo           Boolean  @default(false)
+  origem                String   @default("whatsapp")
+  criadoEm              DateTime @default(now())
+
+  @@unique([coletaId, colaboradorId])
+  @@index([colaboradorId])
+}
+
 model UnidadeTransporte {
   loja         String   @id
   endereco     String?
