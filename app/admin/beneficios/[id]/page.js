@@ -76,7 +76,7 @@ export default function PerfilVT({ params }) {
         {d.saldos.length === 0 && <p style={{ color: 'var(--muted)' }}>Nenhum saldo informado ainda.</p>}
         {d.saldos.map((s) => (
           <div key={s.id} style={{ borderTop: '1px solid var(--border)', padding: '8px 0' }}>
-            <b>{s.coleta || 'Coleta'}</b> <span style={{ fontSize: 12, color: 'var(--muted)' }}>· {dataHora(s.informadoEm)}</span> {s.status === 'refazer' && <span className="badge aberta">Nova foto pedida</span>}
+            <b>{s.coleta || 'Coleta'}</b> <span style={{ fontSize: 12, color: 'var(--muted)' }}>· {dataHora(s.informadoEm)}</span> {s.origem === 'WhatsApp' && <span className="badge" style={{ background: '#25D366', color: '#fff', marginLeft: 4 }}>WhatsApp</span>} {s.status === 'refazer' && <span className="badge aberta">Nova foto pedida</span>} {s.status === 'conferir' && <span className="badge pendente">Conferir</span>}
             <div style={{ fontSize: 14 }}>{s.jaeCentavos !== null ? `Jaé ${centavos(s.jaeCentavos)} ` : ''}{s.riocardCentavos !== null ? `· Riocard ${centavos(s.riocardCentavos)}` : ''}</div>
             <div style={{ fontSize: 13 }}>{s.anexos.map((a, i) => <a key={i} href={a.url} target="_blank" rel="noreferrer" style={{ marginRight: 10 }}>📎 {a.nome}</a>)}</div>
             {s.status === 'refazer' && <div style={{ fontSize: 12, color: 'var(--muted)' }}>Motivo: {s.motivoRefazer}</div>}
