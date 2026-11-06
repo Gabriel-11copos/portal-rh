@@ -35,7 +35,6 @@ async function POST(req) {
   const coleta = await E.coletaAtiva(prisma, 'saldo');
   const foraDoPrazo = !coleta || !coleta.ativa;   // aceita mesmo fora do prazo, mas marca
   const coletaId = coleta ? coleta.id : null;
-  const dentroDoElenco = coleta && E.D ? E.instalado(prisma) : true;
 
   // 3. Lê e valida os saldos
   const reg = await prisma.transporteColaborador.findUnique({ where: { colaboradorId: colaborador.id } });
