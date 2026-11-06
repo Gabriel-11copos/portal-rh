@@ -12,10 +12,13 @@ const { normalizarTelefone } = require('../../../lib/telefone');
 
 const MAX_FOTO = 10 * 1024 * 1024;   // 10 MB: a foto vem do WhatsApp, pode ser maior que a do portal
 const CONFIANCAS = ['alta', 'media', 'baixa'];
-const centavos = (v) => { if (v === null || v === undefined) return null; const n = Math.round(Number(v)); return isNaN(n) || n < 0 ? null : n; };
+const centavos = (v) => { if (v === null || v === undefined) return null; const n = Math.round(Number(v)); return isNaN(n) ? null : n; };   // negativo é válido (Jaé no débito)
 const texto = (v, max = 200) => { const s = String(v == null ? '' : v).trim(); return s.length > 0 && s.length <= max ? s : null; };
 
 async function POST(req) {
+  try { return await _post(req); } catch (err) { console.error('[whatsapp-vt-saldo] erro interno:', err); return Response.json({ erro: 'erro_interno', mensagem: String(err && err.message || err) }, { status: 500 }); }
+}
+async function _post(req) {
   const negado = checarChave(req);
   if (negado) return negado;
 
