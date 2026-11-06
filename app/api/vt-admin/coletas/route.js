@@ -1,7 +1,7 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const E = require('../../../../lib/vtDados');
-const { notificarLote } = require('../../../../lib/whatsapp');
+const { notificarLote, dispararFluxoVT } = require('../../../../lib/whatsapp');
 
 const EVENTO = { saldo: 'vt.saldo.liberado', mapeamento: 'vt.mapeamento.liberado' };
 const diaMes = (d) => { const p = Object.fromEntries(new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' }).formatToParts(new Date(d)).map((x) => [x.type, x.value])); return `${p.day}/${p.month}`; };
@@ -50,6 +50,7 @@ async function POST(req) {
     const r = await E.criarColeta(prisma, { tipo: corpo.tipo, titulo: corpo.titulo, prazo: corpo.prazo, usuario: rh.nome || 'RH', publico: corpo.publico, colaboradorIds: corpo.colaboradorIds });
     if (!r.ok) return Response.json({ erro: r.erro }, { status: r.status });
     await avisar(r.coleta, r.alvos);
+    if (corpo.tipo === 'saldo') dispararFluxoVT(prisma, { coleta: r.coleta, colaboradorIds: r.alvos, evento: 'coleta.saldo.liberada' }).catch(() => {});
     return Response.json({ ok: true, id: r.coleta.id, avisados: r.alvos.length, escolhidos: r.escolhidos, ignorados: r.ignorados });
   } catch (err) {
     console.error('Erro ao liberar a coleta:', err && err.code);
