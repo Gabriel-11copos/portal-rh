@@ -50,8 +50,9 @@ async function _post(req) {
   }
   const precisaJae = reg && reg.modalidade !== 'riocard';
   const precisaRio = reg && reg.modalidade !== 'jae';
-  const jae = centavos(corpo.saldoJae);
-  const rio = centavos(corpo.saldoRiocard);
+  // se o saldo confirmado não veio mas a leitura veio e o colaborador confirmou, usa a leitura
+  const jae = centavos(corpo.saldoJae) !== null ? centavos(corpo.saldoJae) : (!corpo.divergencia && centavos(corpo.leituraJae) !== null ? centavos(corpo.leituraJae) : null);
+  const rio = centavos(corpo.saldoRiocard) !== null ? centavos(corpo.saldoRiocard) : (!corpo.divergencia && centavos(corpo.leituraRiocard) !== null ? centavos(corpo.leituraRiocard) : null);
   const leituraJae = centavos(corpo.leituraJae);
   const leituraRio = centavos(corpo.leituraRiocard);
   const confiancaJae = CONFIANCAS.includes(corpo.confiancaJae) ? corpo.confiancaJae : null;
