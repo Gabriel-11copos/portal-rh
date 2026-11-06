@@ -45,11 +45,16 @@ async function _post(req) {
 
   // 3. Lê e valida os saldos
   const reg = await prisma.transporteColaborador.findUnique({ where: { colaboradorId: colaborador.id } });
-  if (!reg || !reg.usaVT || !V.MODALIDADES_COM_CARTAO?.includes(reg.modalidade)) {
-    // aceita mesmo assim: o RH decide o que fazer
-  }
-  const precisaJae = reg && reg.modalidade !== 'riocard';
-  const precisaRio = reg && reg.modalidade !== 'jae';
+  const modalidade = reg ? reg.modalidade : null;
+  const precisaJae = modalidade && modalidade !== 'riocard';
+  const precisaRio = modalidade && modalidade !== 'jae';
+  // detecta cartão fora do cadastro: colaborador mandou saldo de um cartão que não está no mapeamento
+  const avisos = [];
+  if (jae !== null && !precisaJae && modalidade) avisos.push(`Saldo do JAE recebido mas colaborador está cadastrado como ${V.MODALIDADES[modalidade] || modalidade}.`);
+  if (rio !== null && !precisaRio && modalidade) avisos.push(`Saldo do RIOCARD recebido mas colaborador está cadastrado como ${V.MODALIDADES[modalidade] || modalidade}.`);
+  if (!modalidade) avisos.push('Colaborador ainda não fez o mapeamento do transporte.');
+  // aceita o saldo mesmo assim, mas marca para conferência do RH
+  const temCartaoErrado = avisos.length > 0 && (jae !== null || rio !== null);
   // se o saldo confirmado não veio mas a leitura veio e o colaborador confirmou, usa a leitura
   const jae = centavos(corpo.saldoJae) !== null ? centavos(corpo.saldoJae) : (!corpo.divergencia && centavos(corpo.leituraJae) !== null ? centavos(corpo.leituraJae) : null);
   const rio = centavos(corpo.saldoRiocard) !== null ? centavos(corpo.saldoRiocard) : (!corpo.divergencia && centavos(corpo.leituraRiocard) !== null ? centavos(corpo.leituraRiocard) : null);
@@ -58,7 +63,7 @@ async function _post(req) {
   const confiancaJae = CONFIANCAS.includes(corpo.confiancaJae) ? corpo.confiancaJae : null;
   const confiancaRio = CONFIANCAS.includes(corpo.confiancaRiocard) ? corpo.confiancaRiocard : null;
   const divergencia = corpo.divergencia === true;
-  const conferir = divergencia || confiancaJae === 'baixa' || confiancaRio === 'baixa';
+  const conferir = divergencia || confiancaJae === 'baixa' || confiancaRio === 'baixa' || temCartaoErrado;
 
   // 4. Salva as fotos no Drive (mesma pasta de Vale-Transporte do colaborador)
   const competencia = E.competenciaDe(coleta ? coleta.criadaEm : new Date());
@@ -86,7 +91,8 @@ async function _post(req) {
 
   // sempre grava na SaldoVT (que é o que o painel do RH lê), com ou sem coleta aberta
   const idColeta = coletaId || 'whatsapp';   // 'whatsapp' = chegou fora de uma coleta
-  const saldoVT = { saldoJaeCentavos: precisaJae ? jae : null, saldoRiocardCentavos: precisaRio ? rio : null, anexos: JSON.stringify([...(urlJae ? [{ url: urlJae, nome: 'Foto JAE (WhatsApp)' }] : []), ...(urlRio ? [{ url: urlRio, nome: 'Foto RIOCARD (WhatsApp)' }] : [])]), status: conferir ? 'conferir' : 'enviado', motivoRefazer: null, informadoEm: new Date() };
+  // grava o que veio, mesmo que o cartão não esteja no cadastro (RH vai conferir)
+  const saldoVT = { saldoJaeCentavos: jae, saldoRiocardCentavos: rio, anexos: JSON.stringify([...(urlJae ? [{ url: urlJae, nome: 'Foto JAE (WhatsApp)' }] : []), ...(urlRio ? [{ url: urlRio, nome: 'Foto RIOCARD (WhatsApp)' }] : [])]), status: conferir ? 'conferir' : 'enviado', motivoRefazer: null, informadoEm: new Date() };
   const existente = await prisma.saldoVT.findFirst({ where: { coletaId: idColeta, colaboradorId: colaborador.id } });
   if (existente) await prisma.saldoVT.update({ where: { id: existente.id }, data: saldoVT });
   else await prisma.saldoVT.create({ data: { coletaId: idColeta, colaboradorId: colaborador.id, ...saldoVT } });
@@ -98,7 +104,8 @@ async function _post(req) {
   else await prisma.saldoVTWhatsapp.create({ data: dadosW });
 
   console.log(`[whatsapp-vt-saldo] colaborador=${colaborador.id} coleta=${coletaId || 'fora'} conferir=${conferir} foraDoPrazo=${foraDoPrazo}`);
-  return Response.json({ ok: true, conferir, foraDoPrazo, coletaId, mensagem: conferir ? 'Gravado. Marcado para conferência do RH.' : 'Gravado com sucesso.' });
+  const mensagem = temCartaoErrado ? 'Gravado. Cartão não corresponde ao cadastro — marcado para conferência do RH.' : conferir ? 'Gravado. Marcado para conferência do RH.' : 'Gravado com sucesso.';
+  return Response.json({ ok: true, conferir, foraDoPrazo, coletaId, mensagem, ...(avisos.length ? { avisos } : {}) });
 }
 
 module.exports = { POST };
