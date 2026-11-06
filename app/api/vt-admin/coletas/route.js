@@ -49,8 +49,9 @@ async function POST(req) {
     if (corpo.acao !== 'criar') return Response.json({ erro: 'Ação desconhecida.' }, { status: 400 });
     const r = await E.criarColeta(prisma, { tipo: corpo.tipo, titulo: corpo.titulo, prazo: corpo.prazo, usuario: rh.nome || 'RH', publico: corpo.publico, colaboradorIds: corpo.colaboradorIds });
     if (!r.ok) return Response.json({ erro: r.erro }, { status: r.status });
-    await avisar(r.coleta, r.alvos);
-    if (corpo.tipo === 'saldo') dispararFluxoVT(prisma, { coleta: r.coleta, colaboradorIds: r.alvos, evento: 'coleta.saldo.liberada' }).catch(() => {});
+    const usaDomani = corpo.tipo === 'saldo' && !!String(process.env.VT_WEBHOOK_URL || '').trim();
+    if (!usaDomani) await avisar(r.coleta, r.alvos);   // aviso normal só quando o Domani não está ativo
+    if (usaDomani) dispararFluxoVT(prisma, { coleta: r.coleta, colaboradorIds: r.alvos, evento: 'coleta.saldo.liberada' }).catch(() => {});
     return Response.json({ ok: true, id: r.coleta.id, avisados: r.alvos.length, escolhidos: r.escolhidos, ignorados: r.ignorados });
   } catch (err) {
     console.error('Erro ao liberar a coleta:', err && err.code);
