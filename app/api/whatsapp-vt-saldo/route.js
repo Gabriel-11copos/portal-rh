@@ -83,17 +83,16 @@ async function _post(req) {
   const printRio = corpo.dataHoraPrintRiocard ? new Date(corpo.dataHoraPrintRiocard) : null;
   const dados = { colaboradorId: colaborador.id, saldoJaeCentavos: precisaJae ? jae : null, saldoRiocardCentavos: precisaRio ? rio : null, leituraJaeCentavos: leituraJae, leituraRiocardCentavos: leituraRio, confiancaJae, confiancaRiocard: confiancaRio, fotoJaeUrl: urlJae, fotoRiocardUrl: urlRio, dataHoraPrintJae: printJae && !isNaN(printJae) ? printJae : null, dataHoraPrintRiocard: printRio && !isNaN(printRio) ? printRio : null, divergencia, foraDoPrazo, origem: 'whatsapp' };
 
-  if (coletaId) {
-    // dentro de uma coleta: usa a mesma tabela SaldoVT para o RH ver junto com os do portal
-    const existente = await prisma.saldoVT.findFirst({ where: { coletaId, colaboradorId: colaborador.id } });
-    const saldoVT = { saldoJaeCentavos: precisaJae ? jae : null, saldoRiocardCentavos: precisaRio ? rio : null, anexos: JSON.stringify([...(urlJae ? [{ url: urlJae, nome: 'Foto JAE (WhatsApp)' }] : []), ...(urlRio ? [{ url: urlRio, nome: 'Foto RIOCARD (WhatsApp)' }] : [])]), status: conferir ? 'conferir' : 'enviado', motivoRefazer: null, informadoEm: new Date() };
-    if (existente) await prisma.saldoVT.update({ where: { id: existente.id }, data: saldoVT });
-    else await prisma.saldoVT.create({ data: { coletaId, colaboradorId: colaborador.id, ...saldoVT } });
-  }
+  // sempre grava na SaldoVT (que é o que o painel do RH lê), com ou sem coleta aberta
+  const idColeta = coletaId || 'whatsapp';   // 'whatsapp' = chegou fora de uma coleta
+  const saldoVT = { saldoJaeCentavos: precisaJae ? jae : null, saldoRiocardCentavos: precisaRio ? rio : null, anexos: JSON.stringify([...(urlJae ? [{ url: urlJae, nome: 'Foto JAE (WhatsApp)' }] : []), ...(urlRio ? [{ url: urlRio, nome: 'Foto RIOCARD (WhatsApp)' }] : [])]), status: conferir ? 'conferir' : 'enviado', motivoRefazer: null, informadoEm: new Date() };
+  const existente = await prisma.saldoVT.findFirst({ where: { coletaId: idColeta, colaboradorId: colaborador.id } });
+  if (existente) await prisma.saldoVT.update({ where: { id: existente.id }, data: saldoVT });
+  else await prisma.saldoVT.create({ data: { coletaId: idColeta, colaboradorId: colaborador.id, ...saldoVT } });
 
   // salva o registro detalhado do WhatsApp (leitura da IA, confiança, divergência etc.)
-  const existenteW = coletaId ? await prisma.saldoVTWhatsapp.findFirst({ where: { coletaId, colaboradorId: colaborador.id } }) : null;
-  const dadosW = { ...dados, ...(coletaId ? { coletaId } : { coletaId: 'sem-coleta' }) };
+  const existenteW = await prisma.saldoVTWhatsapp.findFirst({ where: { coletaId: idColeta, colaboradorId: colaborador.id } });
+  const dadosW = { ...dados, coletaId: idColeta };
   if (existenteW) await prisma.saldoVTWhatsapp.update({ where: { id: existenteW.id }, data: dadosW });
   else await prisma.saldoVTWhatsapp.create({ data: dadosW });
 
