@@ -93,9 +93,8 @@ async function _post(req) {
   const idColeta = coletaId || 'whatsapp';   // 'whatsapp' = chegou fora de uma coleta
   // grava o que veio, mesmo que o cartão não esteja no cadastro (RH vai conferir)
   const saldoVT = { saldoJaeCentavos: jae, saldoRiocardCentavos: rio, anexos: JSON.stringify([...(urlJae ? [{ url: urlJae, nome: 'Foto JAE (WhatsApp)' }] : []), ...(urlRio ? [{ url: urlRio, nome: 'Foto RIOCARD (WhatsApp)' }] : [])]), status: conferir ? 'conferir' : 'enviado', motivoRefazer: null, informadoEm: new Date() };
-  const existente = await prisma.saldoVT.findFirst({ where: { coletaId: idColeta, colaboradorId: colaborador.id } });
-  if (existente) await prisma.saldoVT.update({ where: { id: existente.id }, data: saldoVT });
-  else await prisma.saldoVT.create({ data: { coletaId: idColeta, colaboradorId: colaborador.id, ...saldoVT } });
+  await prisma.saldoVT.updateMany({ where: { coletaId: idColeta, colaboradorId: colaborador.id, ativo: true }, data: { ativo: false } });
+  await prisma.saldoVT.create({ data: { coletaId: idColeta, colaboradorId: colaborador.id, ...saldoVT, ativo: true, escolhidoPeloRH: false } });
 
   // salva o registro detalhado do WhatsApp (leitura da IA, confiança, divergência etc.)
   const existenteW = await prisma.saldoVTWhatsapp.findFirst({ where: { coletaId: idColeta, colaboradorId: colaborador.id } });

@@ -48,6 +48,10 @@ async function POST(req, { params }) {
       try { await notificarLote(prisma, [{ evento: 'vt.saldo.refazer', chave: `vt:refazer:${s.id}:${Date.now()}`, colaboradorId: c.id }]); } catch (err) { console.error('WhatsApp (vale-transporte): não avisou', err && err.code); }
       return Response.json({ ok: true });
     }
+    if (corpo.acao === 'usar_este') {
+      const r = await E.usarEsteSaldo(prisma, String(corpo.saldoId || ''), quem);
+      return r.ok ? Response.json({ ok: true }) : Response.json({ erro: r.erro }, { status: r.status });
+    }
     if (corpo.acao === 'preencher') {
       const r = await E.salvarMapeamento(prisma, c, corpo.mapeamento, { autor: 'rh', nomeAutor: quem });
       return r.ok ? Response.json({ ok: true, valorDia: r.valorDia }) : Response.json({ erro: r.erros[0], erros: r.erros }, { status: r.status });

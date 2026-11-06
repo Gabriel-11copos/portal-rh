@@ -28,6 +28,10 @@ export default function PerfilVT({ params }) {
       setAviso(sucesso); setNota(''); carregar();
     } catch { setErro('Sem conexão. Tente de novo.'); }
   }
+  async function usarEste(saldoId) {
+    if (!window.confirm('Usar este envio como o válido? Os outros ficarão marcados como "Não utilizado".')) return;
+    await acao({ acao: 'usar_este', saldoId }, 'Envio selecionado como ativo.');
+  }
   if (!d) return <div><BotaoVoltar />{erro ? <div className="erro" role="alert">{erro}</div> : <p>Carregando...</p>}</div>;
   const m = d.mapeamento; const c = d.colaborador;
   return (

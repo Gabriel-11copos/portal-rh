@@ -525,7 +525,9 @@ model SaldoVT {
   status               String   @default("enviado")
   motivoRefazer        String?
   informadoEm          DateTime @default(now())
+  ativo                Boolean  @default(true)
+  escolhidoPeloRH      Boolean  @default(false)
 
-  @@unique([coletaId, colaboradorId])
+  @@index([coletaId, colaboradorId])
   @@index([colaboradorId])
 }
