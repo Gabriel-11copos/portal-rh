@@ -21,13 +21,17 @@ async function POST(req) {
 
   let corpo;
   try { corpo = await req.json(); } catch { return Response.json({ erro: 'json_invalido', mensagem: 'Envie um JSON válido.' }, { status: 400 }); }
+  console.log('[whatsapp-vt-saldo] recebido:', JSON.stringify({ telefone: corpo && corpo.telefone, temFotoJae: !!(corpo && corpo.fotoJae), temFotoRio: !!(corpo && corpo.fotoRiocard), saldoJae: corpo && corpo.saldoJae, saldoRiocard: corpo && corpo.saldoRiocard }));
   if (!corpo || typeof corpo !== 'object') return Response.json({ erro: 'json_invalido', mensagem: 'Envie um JSON válido.' }, { status: 400 });
 
   // 1. Identifica o colaborador pelo telefone
   const numero = normalizarTelefone(corpo.telefone);
-  if (!numero) return Response.json({ erro: 'telefone_invalido', mensagem: 'Informe o telefone com DDD.' }, { status: 400 });
-  const achados = await C.buscarPorTelefone(prisma, numero);
-  if (achados.length === 0) return Response.json({ erro: 'nao_encontrado', mensagem: 'Número não encontrado no cadastro.' }, { status: 404 });
+  if (!numero) return Response.json({ erro: 'telefone_invalido', mensagem: 'Informe o telefone com DDD. Recebido: ' + String(corpo.telefone || '') }, { status: 400 });
+  let achados = await C.buscarPorTelefone(prisma, numero);
+  // tenta sem o código do país se não achou (plataforma pode mandar só DDD + número)
+  if (achados.length === 0 && numero.startsWith('55') && numero.length >= 12) achados = await C.buscarPorTelefone(prisma, numero.slice(2));
+  console.log('[whatsapp-vt-saldo] telefone:', numero, '| achados:', achados.length);
+  if (achados.length === 0) return Response.json({ erro: 'nao_encontrado', mensagem: 'Número não encontrado no cadastro: ' + numero }, { status: 404 });
   if (achados.length > 1) return Response.json({ erro: 'telefone_compartilhado', mensagem: 'Número cadastrado para mais de uma pessoa.' }, { status: 409 });
   const { colaborador } = achados[0];
 
