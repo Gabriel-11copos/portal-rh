@@ -3,7 +3,7 @@ const { getSessaoRH, gerarHash } = require('../../../lib/auth');
 const { conferirMaster } = require('../../../lib/acesso');
 const { validarSenha } = require('../../../lib/senhas');
 
-// Lista os usuários do RH/DP (sem expor a senha).
+// Lista os usuários do GGC (sem expor a senha).
 async function GET() {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -15,7 +15,7 @@ async function GET() {
   return Response.json(usuarios);
 }
 
-// Cria um novo usuário do RH/DP (ex: a Dani), com nome, e-mail e senha próprios.
+// Cria um novo usuário do GGC (ex: a Dani), com nome, e-mail e senha próprios.
 async function POST(req) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

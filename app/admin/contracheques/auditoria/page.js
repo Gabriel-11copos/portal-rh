@@ -91,7 +91,7 @@ function extrairEmpresa(texto) {
 const MAX_PAGINAS_PESSOA = 3;
 
 // Descobre de quem é o PDF, comparando o nome lido com o cadastro (elenco).
-// Resultado: ok | aviso (publica, com ressalva sem risco) | conferir (só publica se o RH confirmar) | nao (não identificado).
+// Resultado: ok | aviso (publica, com ressalva sem risco) | conferir (só publica se o GGC confirmar) | nao (não identificado).
 function identificar(paginas, elenco) {
   let linhaNome = null;
   let empresaLida = null;
@@ -151,7 +151,7 @@ function identificar(paginas, elenco) {
 // Um PDF pode trazer o contracheque de VÁRIAS pessoas (um por página, às vezes mais de uma página por pessoa).
 // Agrupa as páginas por pessoa: páginas seguidas com o MESMO nome são da mesma pessoa; outro nome começa um grupo novo.
 // Uma página em que não deu para ler o nome NUNCA é grudada na pessoa anterior (foi assim que contracheques de outras
-// pessoas foram parar no arquivo de uma só): ela fica separada, como "não identificada", para o RH conferir.
+// pessoas foram parar no arquivo de uma só): ela fica separada, como "não identificada", para o GGC conferir.
 function agruparPaginas(textos) {
   const grupos = [];
   textos.forEach((t, i) => {

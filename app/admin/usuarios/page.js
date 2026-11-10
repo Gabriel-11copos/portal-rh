@@ -118,7 +118,7 @@ export default function UsuariosRH() {
   return (
     <div>
       <BotaoVoltar />
-      <h2>{usuarios ? 'Meu perfil e usuários do RH/DP' : 'Meu perfil'}</h2>
+      <h2>{usuarios ? 'Meu perfil e usuários do GGC' : 'Meu perfil'}</h2>
 
       {meuPerfil && (
         <div className="card" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -154,7 +154,7 @@ export default function UsuariosRH() {
 
       {usuarios && (<>
       <div className="card">
-        <h3>Novo usuário do RH/DP</h3>
+        <h3>Novo usuário do GGC</h3>
         <p style={{ fontSize: 13, color: 'var(--muted)' }}>
           Ex: crie um acesso próprio para a Dani, com o nome e a senha que ela vai usar.
         </p>
@@ -171,7 +171,7 @@ export default function UsuariosRH() {
       </div>
 
       <div className="card">
-        <h3>Usuários com acesso ao RH/DP</h3>
+        <h3>Usuários com acesso ao GGC</h3>
         {msgLista && <p style={{ fontSize: 13 }}>{msgLista}</p>}
         {usuarios.map((u) => {
           const euMesmo = meuPerfil && u.id === meuPerfil.id;

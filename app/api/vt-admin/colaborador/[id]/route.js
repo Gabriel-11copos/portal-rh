@@ -3,7 +3,7 @@ const { getSessaoRH } = require('../../../../../lib/auth');
 const E = require('../../../../../lib/vtDados');
 const { notificarLote } = require('../../../../../lib/whatsapp');
 
-// Perfil de vale-transporte de UM colaborador (para o RH).
+// Perfil de vale-transporte de UM colaborador (para o GGC).
 async function GET(req, { params }) {
   const rh = getSessaoRH();
   if (!rh) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -18,7 +18,7 @@ async function GET(req, { params }) {
   }
 }
 
-// Ações do RH: resolver o alerta, reabrir o preenchimento, pedir nova foto do saldo ou preencher no lugar da pessoa.
+// Ações do GGC: resolver o alerta, reabrir o preenchimento, pedir nova foto do saldo ou preencher no lugar da pessoa.
 async function POST(req, { params }) {
   const rh = getSessaoRH();
   if (!rh) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -29,7 +29,7 @@ async function POST(req, { params }) {
     if (!E.instalado(prisma)) return Response.json({ erro: 'O vale-transporte ainda não está instalado.' }, { status: 503 });
     const c = await prisma.colaborador.findUnique({ where: { id: params.id } });
     if (!c) return Response.json({ erro: 'Colaborador não encontrado.' }, { status: 404 });
-    const quem = rh.nome || 'RH';
+    const quem = rh.nome || 'GGC';
     if (corpo.acao === 'resolver') {
       const r = await E.resolverAlerta(prisma, c.id, corpo.nota, quem);
       return r.ok ? Response.json({ ok: true }) : Response.json({ erro: r.erro }, { status: r.status });

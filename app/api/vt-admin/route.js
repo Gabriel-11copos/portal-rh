@@ -2,7 +2,7 @@ const { prisma } = require('../../../lib/db');
 const { getSessaoRH } = require('../../../lib/auth');
 const E = require('../../../lib/vtDados');
 
-// Painel do RH: todos os colaboradores ativos com o transporte, os alertas e o saldo da coleta aberta.
+// Painel do GGC: todos os colaboradores ativos com o transporte, os alertas e o saldo da coleta aberta.
 async function GET(req) {
   const rh = getSessaoRH();
   if (!rh) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

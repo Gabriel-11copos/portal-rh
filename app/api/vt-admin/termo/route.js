@@ -3,7 +3,7 @@ const { getSessaoRH } = require('../../../../lib/auth');
 const E = require('../../../../lib/vtDados');
 const { gerarPdfDoTermo } = require('../../../../lib/termoPdf');
 
-// O termo de não optante de um colaborador (PDF), para o RH.
+// O termo de não optante de um colaborador (PDF), para o GGC.
 async function GET(req) {
   const rh = getSessaoRH();
   if (!rh) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

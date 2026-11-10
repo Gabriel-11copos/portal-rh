@@ -4,8 +4,8 @@ const { lerTipo, lerCompetencia, lerLoja, origemDoDocumento } = require('../../.
 
 const LIMITE = 5000;
 
-// Documentos já enviados, para o RH gerenciar (ver, filtrar e excluir): de um tipo, e opcionalmente de uma competência e de uma loja.
-// Traz também o resumo do tipo inteiro (quantos por competência e por loja), para o RH ver o que existe antes de filtrar.
+// Documentos já enviados, para o GGC gerenciar (ver, filtrar e excluir): de um tipo, e opcionalmente de uma competência e de uma loja.
+// Traz também o resumo do tipo inteiro (quantos por competência e por loja), para o GGC ver o que existe antes de filtrar.
 async function GET(req) {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

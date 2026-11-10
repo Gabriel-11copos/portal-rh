@@ -3,7 +3,7 @@ const { getSessaoRH } = require('../../../../../lib/auth');
 const M = require('../../../../../lib/moedas');
 const { notificar } = require('../../../../../lib/whatsapp');
 
-// O RH marca a troca como entregue (já creditou o saldo no Zig ou entregou o prêmio) ou recusa (as moedas voltam para a pessoa).
+// O GGC marca a troca como entregue (já creditou o saldo no Zig ou entregou o prêmio) ou recusa (as moedas voltam para a pessoa).
 async function POST(req, { params }) {
   try {
     const sessao = getSessaoRH();

@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 const { getSessaoRHBruta, sessaoRHAntiga } = require('../../lib/auth');
 const { permitido } = require('../../lib/permissoes');
 
-// Protege todas as telas do painel do RH. Quem não tem permissão para a tela que abriu vê um aviso (e não a tela).
+// Protege todas as telas do painel do GGC. Quem não tem permissão para a tela que abriu vê um aviso (e não a tela).
 // A proteção de verdade dos DADOS está nas rotas da API (veja lib/auth.js); isto é o que evita a pessoa ver uma tela vazia ou com erros.
 export default function LayoutDoPainel({ children }) {
   // sessão de antes das permissões: é só entrar de novo (uma única vez)

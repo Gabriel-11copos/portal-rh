@@ -1,7 +1,7 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH, gerarHash } = require('../../../lib/auth');
 
-// RH cadastra um colaborador. Login = CPF (campo "matricula"). Se a senha não for
+// GGC cadastra um colaborador. Login = CPF (campo "matricula"). Se a senha não for
 // informada, usa automaticamente os 6 primeiros dígitos do CPF.
 async function POST(req) {
   const sessao = getSessaoRH();

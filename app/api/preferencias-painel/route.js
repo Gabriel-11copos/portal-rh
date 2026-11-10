@@ -1,7 +1,7 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH } = require('../../../lib/auth');
 
-// Guarda a ordem das caixinhas do painel, separada para cada usuário do RH.
+// Guarda a ordem das caixinhas do painel, separada para cada usuário do GGC.
 // Ações: "ler", "salvar" (com a lista de ids) e "restaurar" (volta à ordem padrão).
 async function POST(req) {
   try {

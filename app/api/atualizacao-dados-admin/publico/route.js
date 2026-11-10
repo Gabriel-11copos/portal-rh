@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { lerPublico, alvosDe, MAX_ALVOS } = require('../../../../lib/dadosPessoais');
 
-// Só RH. Muda para quem a atualização liberada vale, sem precisar encerrar e começar de novo:
+// Só GGC. Muda para quem a atualização liberada vale, sem precisar encerrar e começar de novo:
 //  - incluir: acrescenta mais colaboradores à lista (só quando foi liberada para alguns);
 //  - todos: passa a valer para todos os colaboradores ativos.
 async function POST(req) {

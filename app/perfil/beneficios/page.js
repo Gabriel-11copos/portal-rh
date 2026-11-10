@@ -18,10 +18,10 @@ export default function Beneficios() {
   let selo = null;
   if (vt === undefined) resumo = 'Carregando...';
   else if (!vt || !vt.disponivel) resumo = 'Em breve.';
-  else if (vt.pendencia) { resumo = vt.pendencia === 'primeiro' ? 'Falta informar o seu transporte.' : 'O RH pediu para você atualizar o seu transporte.'; selo = <span className="badge aberta">Pendente</span>; }
+  else if (vt.pendencia) { resumo = vt.pendencia === 'primeiro' ? 'Falta informar o seu transporte.' : 'O GGC pediu para você atualizar o seu transporte.'; selo = <span className="badge aberta">Pendente</span>; }
   else if (vt.usaVT === false) resumo = 'Você declarou que não utiliza vale-transporte.';
   else if (vt.mapeado) resumo = `${V.MODALIDADES[vt.modalidade] || ''}${vt.valores && vt.valores.dia ? ` · ${V.reais(vt.valores.dia)} por dia` : ''}`;
-  if (vt && vt.saldo && !vt.saldo.respondido) { resumo = vt.saldo.status === 'refazer' ? 'O RH pediu para você enviar o saldo de novo.' : 'Falta informar o saldo do seu cartão.'; selo = <span className="badge aberta">Pendente</span>; }
+  if (vt && vt.saldo && !vt.saldo.respondido) { resumo = vt.saldo.status === 'refazer' ? 'O GGC pediu para você enviar o saldo de novo.' : 'Falta informar o saldo do seu cartão.'; selo = <span className="badge aberta">Pendente</span>; }
 
   return (
     <div>

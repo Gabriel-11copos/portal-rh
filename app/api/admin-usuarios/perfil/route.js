@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH, gerarHash, conferirSenha } = require('../../../../lib/auth');
 const { validarSenha } = require('../../../../lib/senhas');
 
-// Dados do próprio usuário RH logado (para a tela "Meu perfil" dele).
+// Dados do próprio usuário GGC logado (para a tela "Meu perfil" dele).
 async function GET() {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

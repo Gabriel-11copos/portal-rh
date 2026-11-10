@@ -2,7 +2,7 @@ import './globals.css';
 
 export const metadata = {
   title: 'Portal do Colaborador',
-  description: 'Solicitações e comunicados de RH/DP',
+  description: 'Solicitações e comunicados de GGC',
 };
 
 export default function RootLayout({ children }) {

@@ -3,7 +3,7 @@ const { getSessaoRH } = require('../../../../lib/auth');
 const { ordenarCombos, montarHistorico } = require('../../../../lib/contracheques');
 const { ehDocumentoDeSaldo } = require('../../../../lib/vt');
 
-// Só RH. Mostra, para um tipo e uma competência, quem já recebeu e quem falta, loja por loja,
+// Só GGC. Mostra, para um tipo e uma competência, quem já recebeu e quem falta, loja por loja,
 // mais a lista dos envios feitos pelo portal. Lê os documentos registrados, então inclui
 // também o que foi enviado pela tela antiga (.zip).
 async function GET(req) {

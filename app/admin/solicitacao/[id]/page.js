@@ -125,7 +125,7 @@ export default function DetalheSolicitacao() {
           {solicitacao.whatsapp && ` · WhatsApp: ${solicitacao.whatsapp}`}
         </p>
         <p style={{ fontSize: 12, color: 'var(--muted)' }}>Aberta em {formatarDataHora(solicitacao.dataAbertura)}</p>
-        {solicitacao.destino === 'gestor' && <p style={{ fontSize: 12, color: 'var(--muted)' }}>🧑‍💼 Pedido atendido pelo gestor da loja (Portal do Gestor). O RH acompanha e pode responder também.</p>}
+        {solicitacao.destino === 'gestor' && <p style={{ fontSize: 12, color: 'var(--muted)' }}>🧑‍💼 Pedido atendido pelo gestor da loja (Portal do Gestor). O GGC acompanha e pode responder também.</p>}
 
         {solicitacao.status !== 'encerrada' && (
           <div style={{ marginTop: 12, borderTop: '1px solid var(--border)', paddingTop: 12 }}>
@@ -162,10 +162,10 @@ export default function DetalheSolicitacao() {
         const isColab = r.autor === 'colaborador';
         return (
           <div key={r.id} className="linha-mensagem" style={{ justifyContent: isColab ? 'flex-end' : 'flex-start' }}>
-            {!isColab && <Avatar fotoUrl={r.autorFotoUrl} nome={r.nomeAutor || 'RH'} size={28} />}
+            {!isColab && <Avatar fotoUrl={r.autorFotoUrl} nome={r.nomeAutor || 'GGC'} size={28} />}
             <div className={`bolha ${r.autor}`}>
               <div className="autor">
-                {isColab ? nomeColab : (r.nomeAutor || 'RH/DP')}
+                {isColab ? nomeColab : (r.nomeAutor || 'GGC')}
                 {r.automatica && ' · resposta automática'}
               </div>
               {r.texto}
@@ -197,7 +197,7 @@ export default function DetalheSolicitacao() {
                 <span style={{ fontSize: 20 }}>{iconeArquivo(a.nomeArquivo)}</span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nomeArquivo}</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{a.enviadoPor === 'rh' ? 'Enviado pelo RH' : a.enviadoPor === 'gestor' ? 'Enviado pelo gestor' : 'Do colaborador'}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{a.enviadoPor === 'rh' ? 'Enviado pelo GGC' : a.enviadoPor === 'gestor' ? 'Enviado pelo gestor' : 'Do colaborador'}</div>
                 </span>
               </a>
             ))}

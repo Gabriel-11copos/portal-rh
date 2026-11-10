@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoColaborador } = require('../../../../lib/auth');
 const M = require('../../../../lib/moedas');
 
-// O colaborador troca moedas por um prêmio. As moedas saem na hora e o pedido vai para o RH entregar.
+// O colaborador troca moedas por um prêmio. As moedas saem na hora e o pedido vai para o GGC entregar.
 async function POST(req) {
   try {
     const sessao = getSessaoColaborador();

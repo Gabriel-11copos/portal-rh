@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { lerTipo, lerCompetencia, idDriveDeQualquerUrl, origemDoDocumento, urlDoArquivo } = require('../../../../lib/contracheques');
 
-// Lista os documentos de um tipo e competência (ex.: "Contracheque", "08/2026") para o RH conferir se cada arquivo é do dono.
+// Lista os documentos de um tipo e competência (ex.: "Contracheque", "08/2026") para o GGC conferir se cada arquivo é do dono.
 // Entram TODOS os documentos, de todas as lojas e de qualquer envio (novo ou antigo). A conferência do CONTEÚDO é feita
 // na tela (o PDF é lido no navegador); aqui só se entrega a lista e por onde abrir cada arquivo.
 async function GET(req) {
@@ -24,7 +24,7 @@ async function GET(req) {
         return {
           id: d.id, nomeArquivo: d.nomeArquivo, criadoEm: d.criadoEm,
           origem: origemDoDocumento(d.url),                       // portal | drive-antigo | outro
-          arquivoUrl: driveId ? urlDoArquivo(driveId) : null,     // por onde o RH abre o arquivo (null: não dá para abrir)
+          arquivoUrl: driveId ? urlDoArquivo(driveId) : null,     // por onde o GGC abre o arquivo (null: não dá para abrir)
           visto: !!d.vistoColaborador,                            // o colaborador já abriu? (importante para avaliar um envio errado)
           colaborador: d.colaborador,
         };

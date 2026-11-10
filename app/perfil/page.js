@@ -83,7 +83,7 @@ export default function MeuPerfil() {
       <div className="card">
         <h3>Nome social</h3>
         <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-          Se preenchido, esse é o nome que vai aparecer para você e para o RH em todo o sistema.
+          Se preenchido, esse é o nome que vai aparecer para você e para o GGC em todo o sistema.
         </p>
         <form onSubmit={salvarNomeSocial}>
           <input

@@ -51,7 +51,7 @@ export default function EscalaPrevia() {
       <h2>Prévia da escala de um colaborador</h2>
       <p style={{ fontSize: 13, color: 'var(--muted)' }}>
         Escolha um colaborador e veja a escala exatamente como ele verá. Serve para conferir com o
-        escalas-app antes de liberar. Esta tela é só do RH e funciona mesmo com a escala fechada para os
+        escalas-app antes de liberar. Esta tela é só do GGC e funciona mesmo com a escala fechada para os
         colaboradores.
       </p>
 

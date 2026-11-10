@@ -3,7 +3,7 @@ const { getSessaoRH, gerarHash } = require('../../../../lib/auth');
 const { conferirMaster } = require('../../../../lib/acesso');
 const { validarSenha } = require('../../../../lib/senhas');
 
-// Edita um usuário do RH/DP (nome, e-mail, foto, e opcionalmente redefine a senha). Só o master.
+// Edita um usuário do GGC (nome, e-mail, foto, e opcionalmente redefine a senha). Só o master.
 async function PATCH(req, { params }) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -35,7 +35,7 @@ async function PATCH(req, { params }) {
   }
 }
 
-// Exclui um usuário do RH/DP. Só o master, e nunca o próprio usuário.
+// Exclui um usuário do GGC. Só o master, e nunca o próprio usuário.
 // Também tira a pessoa dos assuntos que atendia e apaga o acesso e a ordem de caixinhas dela.
 // O nome dela continua nas respostas e nos selos que já deu (ficam gravados como texto).
 async function DELETE(req, { params }) {

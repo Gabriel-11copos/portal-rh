@@ -5,7 +5,7 @@ const { guardarDocumento } = require('../../../lib/guardarDocumento');
 const { creditar } = require('../../../lib/moedas');
 const { registrarDaAtualizacao } = require('../../../lib/contatos');
 
-// O colaborador envia os dados pessoais e o comprovante de residência da atualização liberada pelo RH.
+// O colaborador envia os dados pessoais e o comprovante de residência da atualização liberada pelo GGC.
 // O comprovante vai para o Drive (Loja > Ano > Colaborador > Mês), privado, e aparece também em "Documentos".
 async function POST(req) {
   try {

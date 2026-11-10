@@ -107,7 +107,7 @@ export default function SelosAdmin() {
           <input value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="Ex: Cobriu um turno quando a equipe precisou" />
           <label>Grupo</label>
           <select value={form.grupo} onChange={(e) => setForm({ ...form, grupo: e.target.value })}>
-            <option value="reconhecimento">Reconhecimento (dado pelo RH quando acontecer)</option>
+            <option value="reconhecimento">Reconhecimento (dado pelo GGC quando acontecer)</option>
             <option value="presenca">Presença (por mês de referência)</option>
           </select>
           <button type="submit">Criar selo</button>

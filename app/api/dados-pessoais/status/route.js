@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoColaborador } = require('../../../../lib/auth');
 const { fazParte } = require('../../../../lib/dadosPessoais');
 
-// O colaborador vê se há uma atualização de dados liberada pelo RH e se ainda falta ele fazer.
+// O colaborador vê se há uma atualização de dados liberada pelo GGC e se ainda falta ele fazer.
 // Também devolve os dados da última vez, para a tela já vir preenchida.
 async function GET() {
   try {

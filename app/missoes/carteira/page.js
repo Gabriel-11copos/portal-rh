@@ -50,13 +50,13 @@ export default function Carteira() {
   useEffect(() => { carregar(); }, []);
 
   async function trocar(premio) {
-    if (!window.confirm(`Trocar ${quantidade(dados.config, premio.custo)} por "${premio.nome}"? As moedas saem do seu saldo agora e o RH entrega o prêmio.`)) return;
+    if (!window.confirm(`Trocar ${quantidade(dados.config, premio.custo)} por "${premio.nome}"? As moedas saem do seu saldo agora e o GGC entrega o prêmio.`)) return;
     setTrocando(premio.id); setAviso(''); setErro('');
     try {
       const r = await fetch('/api/moedas/resgatar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ premioId: premio.id }) });
       const j = await r.json();
       if (!r.ok) { setErro(j.erro || 'Não foi possível trocar agora.'); }
-      else { setAviso('Pedido enviado! O RH vai entregar e você acompanha em "Minhas trocas".'); window.dispatchEvent(new Event('moedas-atualizadas')); }
+      else { setAviso('Pedido enviado! O GGC vai entregar e você acompanha em "Minhas trocas".'); window.dispatchEvent(new Event('moedas-atualizadas')); }
       await carregar();
     } catch (e) {
       setErro(e.message || 'Não foi possível trocar agora.');

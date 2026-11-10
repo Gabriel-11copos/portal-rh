@@ -39,21 +39,21 @@ function Resumo({ st, aoEditar }) {
     <div className="card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <h3 style={{ margin: 0 }}>🚌 O seu transporte</h3>
-        {st.pendencia ? <span className="badge aberta">Atualização pedida pelo RH</span> : <span className="badge respondida">Informado em {dataBR(st.atualizadoEm)}</span>}
+        {st.pendencia ? <span className="badge aberta">Atualização pedida pelo GGC</span> : <span className="badge respondida">Informado em {dataBR(st.atualizadoEm)}</span>}
       </div>
       {st.usaVT === false ? (
         <>
           <p style={{ fontSize: 14 }}>Você declarou que <b>não utiliza vale-transporte</b>{st.termo ? ` (termo aceito em ${dataBR(st.termo.aceitoEm)})` : ''}.</p>
           <a href="/api/vt/termo" target="_blank" rel="noreferrer">📄 Abrir o termo assinado (PDF)</a>
-          <p style={{ fontSize: 13, color: 'var(--muted)' }}>Se a sua necessidade mudar, abra uma solicitação ao RH. Quando o RH liberar, você preenche o seu transporte aqui.</p>
+          <p style={{ fontSize: 13, color: 'var(--muted)' }}>Se a sua necessidade mudar, abra uma solicitação ao GGC. Quando o GGC liberar, você preenche o seu transporte aqui.</p>
         </>
       ) : (
         <>
           <p style={{ fontSize: 14, margin: '8px 0' }}><b>{V.MODALIDADES[st.modalidade]}</b>{st.jae.length + st.riocard.length > 0 ? ` · ${[...V.nomesDosTransportes(st.jae), ...V.nomesDosTransportes(st.riocard)].join(' + ')}` : ''}</p>
-          {st.modalidade === 'diferente' ? <p style={{ fontSize: 13 }}>O RH vai olhar o seu caso: “{st.casoDiferente}”.</p> : v && v.dia !== null && (
+          {st.modalidade === 'diferente' ? <p style={{ fontSize: 13 }}>O GGC vai olhar o seu caso: “{st.casoDiferente}”.</p> : v && v.dia !== null && (
             <p style={{ fontSize: 13, margin: '4px 0' }}>{V.reais(v.viagem)} por viagem · <b>{V.reais(v.dia)} por dia</b> (ida e volta) · cerca de {V.reais(v.mensal)} em {String(v.mes).padStart(2, '0')}/{v.ano} ({v.diasNoMes} dias, antes dos descontos de folgas e faltas)</p>
           )}
-          {(st.modalidade === 'riocard' || st.modalidade === 'jae_riocard') && st.buiAtivo && st.buiAtivo !== 'sim' && <Aviso>⚠️ Você disse que {st.buiAtivo === 'nao' ? 'não tem' : 'não sabe se tem'} o BUI ativo. O RH vai entrar em contato para ajudar.</Aviso>}
+          {(st.modalidade === 'riocard' || st.modalidade === 'jae_riocard') && st.buiAtivo && st.buiAtivo !== 'sim' && <Aviso>⚠️ Você disse que {st.buiAtivo === 'nao' ? 'não tem' : 'não sabe se tem'} o BUI ativo. O GGC vai entrar em contato para ajudar.</Aviso>}
           {st.links ? (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
               <a href={st.links.ida} target="_blank" rel="noreferrer">🗺️ Ver trajeto de ida</a>
@@ -124,7 +124,7 @@ function FormMapeamento({ st, aoSalvo, aoCancelar }) {
   return (
     <div className="card">
       <h3 style={{ marginTop: 0 }}>🚌 {st.mapeado ? 'Atualizar o meu transporte' : 'Vamos mapear o seu transporte'}</h3>
-      <p style={{ fontSize: 13, color: 'var(--muted)' }}>É rápido. Com isso o RH calcula o seu vale-transporte direitinho.</p>
+      <p style={{ fontSize: 13, color: 'var(--muted)' }}>É rápido. Com isso o GGC calcula o seu vale-transporte direitinho.</p>
       <label>Você usa vale-transporte para ir ao trabalho?</label>
       <Opcao valor="sim" atual={usa} aoEscolher={setUsa} titulo="Sim, uso" />
       <Opcao valor="nao" atual={usa} aoEscolher={setUsa} titulo="Não, não preciso" ajuda="Você aceita um termo e ele fica guardado no seu perfil." />
@@ -137,7 +137,7 @@ function FormMapeamento({ st, aoSalvo, aoCancelar }) {
           <p style={{ margin: '8px 0' }}>{st.termoParaLer.local}</p>
           <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 600 }}><input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} style={{ width: 'auto' }} />Li o termo e aceito.</label>
         </div>
-      ) : <Aviso>O RH ainda precisa cadastrar os dados da empresa da sua unidade para gerar o termo. Fale com o RH.</Aviso>)}
+      ) : <Aviso>O GGC ainda precisa cadastrar os dados da empresa da sua unidade para gerar o termo. Fale com o GGC.</Aviso>)}
 
       {usa === 'sim' && (
         <>
@@ -157,7 +157,7 @@ function FormMapeamento({ st, aoSalvo, aoCancelar }) {
           <Opcao valor="jae" atual={modalidade} aoEscolher={trocarModalidade} titulo="JAE" ajuda="Ônibus municipal, van, BRT, cabritinho e VLT." />
           <Opcao valor="riocard" atual={modalidade} aoEscolher={trocarModalidade} titulo="RIOCARD" ajuda="Ônibus intermunicipal, barca, metrô e trem (ônibus municipal só junto com outro transporte do Riocard)." />
           <Opcao valor="jae_riocard" atual={modalidade} aoEscolher={trocarModalidade} titulo="JAE + RIOCARD" ajuda="Usa os dois: por exemplo van (JAE) + metrô (Riocard)." />
-          <Opcao valor="diferente" atual={modalidade} aoEscolher={trocarModalidade} titulo="Meu caso é diferente" ajuda="O seu trajeto não se encaixa nas opções acima. O RH vai te ajudar." />
+          <Opcao valor="diferente" atual={modalidade} aoEscolher={trocarModalidade} titulo="Meu caso é diferente" ajuda="O seu trajeto não se encaixa nas opções acima. O GGC vai te ajudar." />
 
           {usaJae && (<><label>{modalidade === 'jae_riocard' ? 'Transportes do JAE que você usa' : 'Quais transportes você usa?'}</label><Caixas itens={V.TRANSPORTES.jae} marcados={jae} aoMarcar={(k) => alternar(jae, setJae, k)} /></>)}
           {modalidade === 'riocard' && (<><label>Quais transportes do Riocard você usa? <span style={{ fontWeight: 400, color: 'var(--muted)' }}>(no máximo 2)</span></label><Caixas itens={V.TRANSPORTES.riocard} marcados={riocard} aoMarcar={(k) => alternar(riocard, setRiocard, k)} /></>)}
@@ -169,13 +169,13 @@ function FormMapeamento({ st, aoSalvo, aoCancelar }) {
               <b>⚠️ Atenção ao BUI.</b> Para usar o Riocard você precisa ter o <b>BUI (Bilhete Único Intermunicipal) ativo</b>.
               <div style={{ margin: '6px 0 2px' }}>Você tem o BUI ativo?</div>
               {Object.entries(V.BUI).map(([k, rot]) => <label key={k} style={{ display: 'inline-flex', gap: 6, alignItems: 'center', marginRight: 14, fontWeight: 400 }}><input type="radio" name="bui" checked={bui === k} onChange={() => setBui(k)} style={{ width: 'auto' }} />{rot}</label>)}
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Se não tem ou não sabe, tudo bem: você continua e o RH entra em contato para ajudar.</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Se não tem ou não sabe, tudo bem: você continua e o GGC entra em contato para ajudar.</div>
               <label style={{ marginTop: 8 }}>Número do Riocard <span style={{ fontWeight: 400, color: 'var(--muted)' }}>(se quiser informar)</span></label>
               <input value={numero} onChange={(e) => setNumero(e.target.value)} inputMode="numeric" />
             </Aviso>
           )}
 
-          {modalidade === 'diferente' ? <Aviso cor="var(--border)" fundo="#f6f8f6">Neste caso o valor não é calculado: o RH vai analisar e falar com você.</Aviso> : calc && (calc.ok ? (
+          {modalidade === 'diferente' ? <Aviso cor="var(--border)" fundo="#f6f8f6">Neste caso o valor não é calculado: o GGC vai analisar e falar com você.</Aviso> : calc && (calc.ok ? (
             <Aviso cor="var(--verde)" fundo="var(--verde-pastel)">
               <b>{V.reais(calc.viagem)} por viagem</b> · <b>{V.reais(calc.dia)} por dia</b> (ida e volta)<br />
               <span style={{ fontSize: 12 }}>Cerca de {V.reais(mensal)} neste mês ({V.diasNoMes(agora.getFullYear(), agora.getMonth() + 1)} dias), antes dos descontos de folgas e faltas.</span>
@@ -270,7 +270,7 @@ export default function ValeTransporte() {
         <div className="card">
           <h3 style={{ marginTop: 0 }}>💳 {saldo.titulo}</h3>
           {saldo.prazo && <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 6px' }}>Envie até {dataBR(saldo.prazo)}.</p>}
-          {saldo.status === 'refazer' && <Aviso>O RH pediu para você enviar de novo: <b>{saldo.motivoRefazer}</b></Aviso>}
+          {saldo.status === 'refazer' && <Aviso>O GGC pediu para você enviar de novo: <b>{saldo.motivoRefazer}</b></Aviso>}
           {saldo.respondido && !reenviando ? (
             <>
               <p style={{ fontSize: 14 }}>✅ Enviado em {dataBR(saldo.enviado.informadoEm)}{saldo.enviado.jaeCentavos !== null ? ` · Jaé ${V.reais(saldo.enviado.jaeCentavos)}` : ''}{saldo.enviado.riocardCentavos !== null ? ` · Riocard ${V.reais(saldo.enviado.riocardCentavos)}` : ''}</p>
@@ -281,8 +281,8 @@ export default function ValeTransporte() {
       )}
       {st.mapeado && !formulario && <Resumo st={st} aoEditar={() => setEditando(true)} />}
       {formulario && <FormMapeamento st={st} aoCancelar={st.mapeado && !st.pendencia ? () => setEditando(false) : null} aoSalvo={() => { setEditando(false); setMsg(st.mapeado ? 'Transporte atualizado. Obrigado!' : 'Transporte informado. Obrigado!'); carregar(); }} />}
-      {!st.mapeado && !st.podeEditar && <div className="card">Aguarde: o RH precisa liberar o seu preenchimento.</div>}
-      <p style={{ fontSize: 12, color: 'var(--muted)' }}>Dúvidas? <a href="/nova-solicitacao" onClick={(e) => { e.preventDefault(); router.push('/nova-solicitacao'); }}>Abra uma solicitação ao RH</a>.</p>
+      {!st.mapeado && !st.podeEditar && <div className="card">Aguarde: o GGC precisa liberar o seu preenchimento.</div>}
+      <p style={{ fontSize: 12, color: 'var(--muted)' }}>Dúvidas? <a href="/nova-solicitacao" onClick={(e) => { e.preventDefault(); router.push('/nova-solicitacao'); }}>Abra uma solicitação ao GGC</a>.</p>
     </div>
   );
 }

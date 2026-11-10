@@ -3,7 +3,7 @@ const { getSessaoRH, getSessaoColaborador } = require('../../../lib/auth');
 const { lerGuia, idsDeMidia } = require('../../../lib/guias');
 const { modoDeAcesso } = require('../../../lib/contexto');
 
-// Lista os guias. O RH vê todos (inclusive rascunhos); o colaborador vê só os publicados.
+// Lista os guias. O GGC vê todos (inclusive rascunhos); o colaborador vê só os publicados.
 async function GET(req) {
   try {
     const modo = modoDeAcesso(req, { rh: getSessaoRH(), colaborador: getSessaoColaborador() });
@@ -26,7 +26,7 @@ async function GET(req) {
   }
 }
 
-// Só RH: cria um guia.
+// Só GGC: cria um guia.
 async function POST(req) {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

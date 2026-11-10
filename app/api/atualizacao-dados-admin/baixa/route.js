@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { fazParte } = require('../../../../lib/dadosPessoais');
 
-// Só RH. Dá baixa na atualização de um colaborador (por exemplo, ele falou com o RH): o sistema para de avisar.
+// Só GGC. Dá baixa na atualização de um colaborador (por exemplo, ele falou com o GGC): o sistema para de avisar.
 // Também desfaz uma baixa dada por engano. Não mexe em quem já atualizou os dados sozinho.
 async function POST(req) {
   try {
@@ -22,7 +22,7 @@ async function POST(req) {
     const existente = await prisma.atualizacaoDados.findFirst({ where: { campanhaId: campanha.id, colaboradorId: colaborador.id } });
 
     if (acao === 'desfazer') {
-      if (!existente || existente.origem !== 'baixa_rh') return Response.json({ erro: 'Só dá para desfazer uma baixa dada pelo RH.' }, { status: 409 });
+      if (!existente || existente.origem !== 'baixa_rh') return Response.json({ erro: 'Só dá para desfazer uma baixa dada pelo GGC.' }, { status: 409 });
       await prisma.atualizacaoDados.deleteMany({ where: { id: existente.id, origem: 'baixa_rh' } });
       return Response.json({ ok: true });
     }

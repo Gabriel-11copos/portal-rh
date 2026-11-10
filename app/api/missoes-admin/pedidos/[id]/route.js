@@ -4,7 +4,7 @@ const { hojeBrasilia } = require('../../../../../lib/missoes');
 const { creditar } = require('../../../../../lib/moedas');
 const { notificar } = require('../../../../../lib/whatsapp');
 
-// Só RH: decide um pedido de missão.
+// Só GGC: decide um pedido de missão.
 //  - aprovar: dá o selo da missão (se houver) e, se houver recompensa em texto, deixa "a entregar";
 //  - recusar: com um motivo opcional que o colaborador vê;
 //  - entregar: marca que a recompensa em texto (ex: voucher) já foi entregue.

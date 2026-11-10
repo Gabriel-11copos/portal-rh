@@ -13,7 +13,7 @@ const ESTADOS = {
   concluida: { texto: 'Concluída ✓', classe: 'respondida' },
   encerrada: { texto: 'Encerrada', classe: 'encerrada' },
 };
-const STATUS_PEDIDO = { pendente: 'Em análise pelo RH', aprovada: 'Aprovada ✓', recusada: 'Não aprovada' };
+const STATUS_PEDIDO = { pendente: 'Em análise pelo GGC', aprovada: 'Aprovada ✓', recusada: 'Não aprovada' };
 
 // Datas de calendário ficam guardadas à meia-noite UTC: ler em UTC evita o "um dia a menos".
 function dataCal(v) {
@@ -63,7 +63,7 @@ export default function Missoes() {
       const json = await r.json();
       if (!r.ok) { setErroForm(json.erro || 'Não foi possível registrar.'); return; }
       setAberta(null);
-      setAviso('Pedido enviado! O RH vai analisar e você vê o resultado aqui.');
+      setAviso('Pedido enviado! O GGC vai analisar e você vê o resultado aqui.');
       await carregar(false);
     } catch (e) {
       setErroForm(e.message || 'Não foi possível registrar.');
@@ -123,7 +123,7 @@ export default function Missoes() {
                     {p.referencia && <span> · {m.rotuloReferencia}: {p.referencia}</span>}
                     <span style={{ color: 'var(--muted)' }}> · {dataHora(p.criadoEm)}</span>
                     {p.status === 'recusada' && p.motivoRecusa && <div style={{ color: 'var(--danger)' }}>Motivo: {p.motivoRecusa}</div>}
-                    {p.status === 'aprovada' && p.recompensaPendente && <div style={{ color: 'var(--warning)' }}>🎁 Sua recompensa será entregue pelo RH.</div>}
+                    {p.status === 'aprovada' && p.recompensaPendente && <div style={{ color: 'var(--warning)' }}>🎁 Sua recompensa será entregue pelo GGC.</div>}
                   </div>
                 ))}
               </div>
@@ -143,7 +143,7 @@ export default function Missoes() {
                         <input value={referencia} maxLength={100} onChange={(e) => setReferencia(e.target.value)} />
                       </>
                     )}
-                    <label>Mensagem para o RH (opcional)</label>
+                    <label>Mensagem para o GGC (opcional)</label>
                     <textarea rows={3} value={mensagem} maxLength={300} onChange={(e) => setMensagem(e.target.value)} />
                     {erroForm && <div className="erro">{erroForm}</div>}
                     <div style={{ display: 'flex', gap: 8 }}>

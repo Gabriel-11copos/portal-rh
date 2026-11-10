@@ -1,7 +1,7 @@
 const { prisma } = require('../../../../../lib/db');
 const { getSessaoRH, getSessaoColaborador } = require('../../../../../lib/auth');
 
-// Entrega uma imagem ou arquivo de um guia. Só para quem está logado (RH ou colaborador):
+// Entrega uma imagem ou arquivo de um guia. Só para quem está logado (GGC ou colaborador):
 // diferente de um link público do Drive, não abre para quem não tem login no portal.
 async function GET(req, { params }) {
   try {

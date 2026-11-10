@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { normalizaCpf, montarSemana } = require('../../../../lib/escalas');
 
-// Só RH. Mostra como a escala de um colaborador aparece para ele, sem precisar entrar com o
+// Só GGC. Mostra como a escala de um colaborador aparece para ele, sem precisar entrar com o
 // login dele. Funciona mesmo com a escala ainda fechada para os colaboradores.
 async function GET(req) {
   try {

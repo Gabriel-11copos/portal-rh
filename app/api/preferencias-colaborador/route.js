@@ -2,7 +2,7 @@ const { prisma } = require('../../../lib/db');
 const { getSessaoColaborador } = require('../../../lib/auth');
 
 // Guarda a ordem das caixinhas da tela inicial, separada para cada colaborador.
-// Usa a mesma tabela do painel do RH (PreferenciaPainel), com o dono "col:<id>".
+// Usa a mesma tabela do painel do GGC (PreferenciaPainel), com o dono "col:<id>".
 // Ações: "ler", "salvar" (com a lista de ids) e "restaurar" (volta à ordem padrão).
 async function POST(req) {
   try {

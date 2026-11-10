@@ -13,7 +13,7 @@ async function GET(req, { params }) {
   return Response.json(historico);
 }
 
-// RH altera situação, loja ou cargo manualmente (ex: desligamento imediato, sem esperar
+// GGC altera situação, loja ou cargo manualmente (ex: desligamento imediato, sem esperar
 // a próxima planilha). Cada mudança também entra no histórico.
 async function PATCH(req, { params }) {
   const sessao = getSessaoRH();

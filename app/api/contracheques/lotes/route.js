@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { lerTipo, lerCompetencia, lerLoja } = require('../../../../lib/contracheques');
 
-// Só RH. Abre o registro de um envio no histórico (qual loja, qual competência, quantos documentos).
+// Só GGC. Abre o registro de um envio no histórico (qual loja, qual competência, quantos documentos).
 // Cada documento publicado depois, com este código, vai somando no registro.
 async function POST(req) {
   try {

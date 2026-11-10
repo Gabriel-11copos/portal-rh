@@ -91,7 +91,7 @@ function extrairEmpresa(texto) {
 const MAX_PAGINAS_PESSOA = 3;
 
 // Descobre de quem é o PDF, comparando o nome lido com o cadastro (elenco).
-// Resultado: ok | aviso (publica, com ressalva sem risco) | conferir (só publica se o RH confirmar) | nao (não identificado).
+// Resultado: ok | aviso (publica, com ressalva sem risco) | conferir (só publica se o GGC confirmar) | nao (não identificado).
 function identificar(paginas, elenco) {
   let linhaNome = null;
   let empresaLida = null;
@@ -151,7 +151,7 @@ function identificar(paginas, elenco) {
 // Um PDF pode trazer o contracheque de VÁRIAS pessoas (um por página, às vezes mais de uma página por pessoa).
 // Agrupa as páginas por pessoa: páginas seguidas com o MESMO nome são da mesma pessoa; outro nome começa um grupo novo.
 // Uma página em que não deu para ler o nome NUNCA é grudada na pessoa anterior (foi assim que contracheques de outras
-// pessoas foram parar no arquivo de uma só): ela fica separada, como "não identificada", para o RH conferir.
+// pessoas foram parar no arquivo de uma só): ela fica separada, como "não identificada", para o GGC conferir.
 function agruparPaginas(textos) {
   const grupos = [];
   textos.forEach((t, i) => {
@@ -275,7 +275,7 @@ export default function Contracheques() {
   const [lote, setLote] = useState(null);         // código do registro deste envio no histórico
   const [avisoLote, setAvisoLote] = useState('');
   const [notas, setNotas] = useState([]);           // avisos como "este PDF tinha 12 contracheques"
-  const [liberados, setLiberados] = useState({});     // itens "para conferir" que o RH marcou como conferidos
+  const [liberados, setLiberados] = useState({});     // itens "para conferir" que o GGC marcou como conferidos
   const [lendo, setLendo] = useState('');
   const [publicando, setPublicando] = useState(null); // { feitos, total }
   const [relatorio, setRelatorio] = useState(null);   // { criados, substituidos, falhas: [...] }
@@ -436,7 +436,7 @@ export default function Contracheques() {
       <p style={{ fontSize: 13, color: 'var(--muted)' }}>
         Escolha os PDFs (um por colaborador, com qualquer nome de arquivo). O portal lê o nome dentro de cada PDF,
         mostra quem é quem para você conferir e, só depois que você confirmar, guarda cada um na pasta do colaborador.
-        Os arquivos ficam privados: só o próprio colaborador e o RH abrem.
+        Os arquivos ficam privados: só o próprio colaborador e o GGC abrem.
       </p>
       {erro && <div className="erro">{erro}</div>}
 

@@ -68,7 +68,7 @@ function ordenar(lista) {
 function previa(s) {
   const conversa = montarConversa(s);
   const r = conversa[conversa.length - 1];
-  const quem = r.autor === 'colaborador' ? 'Você' : (r.nomeAutor || 'RH/DP');
+  const quem = r.autor === 'colaborador' ? 'Você' : (r.nomeAutor || 'GGC');
   const texto = String(r.texto || '').replace(/\s+/g, ' ').trim();
   return `${quem}: ${texto.length > 90 ? `${texto.slice(0, 90).trim()}…` : texto}`;
 }
@@ -150,13 +150,13 @@ function CartaoSolicitacao({ s, onAtualizar, perfil }) {
 
           {conversa.map((r) => {
             const isColab = r.autor === 'colaborador';
-            const nomeAvatar = isColab ? nomeExibido : (r.nomeAutor || 'RH');
+            const nomeAvatar = isColab ? nomeExibido : (r.nomeAutor || 'GGC');
             return (
               <div key={r.id} className="linha-mensagem" style={{ justifyContent: isColab ? 'flex-end' : 'flex-start' }}>
                 {!isColab && <Avatar fotoUrl={r.autorFotoUrl} nome={nomeAvatar} size={28} />}
                 <div className={`bolha ${r.autor}`}>
                   <div className="autor">
-                    {isColab ? 'Você' : (r.nomeAutor || 'RH/DP')}
+                    {isColab ? 'Você' : (r.nomeAutor || 'GGC')}
                     {r.automatica && ' · resposta automática'}
                   </div>
                   {r.texto}
@@ -172,7 +172,7 @@ function CartaoSolicitacao({ s, onAtualizar, perfil }) {
           {anexos.map((a) => (
             <div key={a.id} style={{ marginTop: 6 }}>
               <a href={a.linkDrive} target="_blank" rel="noreferrer">
-                📎 {a.nomeArquivo} {a.enviadoPor === 'rh' ? '(do RH)' : '(enviado por você)'}
+                📎 {a.nomeArquivo} {a.enviadoPor === 'rh' ? '(do GGC)' : '(enviado por você)'}
               </a>
             </div>
           ))}
@@ -292,7 +292,7 @@ export default function MinhasSolicitacoes() {
 
       {comunicados.length > 0 && (
         <>
-          <h3 style={{ marginTop: 32 }}>Comunicados recebidos do RH</h3>
+          <h3 style={{ marginTop: 32 }}>Comunicados recebidos do GGC</h3>
           {comunicados.map((c) => (
             <div key={c.id} className="card">
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>

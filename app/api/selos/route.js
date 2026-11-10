@@ -2,7 +2,7 @@ const { prisma } = require('../../../lib/db');
 const { getSessaoRH } = require('../../../lib/auth');
 const { SELOS_TEMPO, SELO_ANIVERSARIO, slugDoNome, lerCamposDoSelo, idDaImagemDoSelo } = require('../../../lib/selos');
 
-// Só RH. Lista os selos que o RH gerencia e mostra os automáticos (só leitura).
+// Só GGC. Lista os selos que o GGC gerencia e mostra os automáticos (só leitura).
 async function GET() {
   try {
     const sessao = getSessaoRH();

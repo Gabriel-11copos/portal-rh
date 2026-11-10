@@ -1,7 +1,7 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 
-// Só RH. Lista enxuta de colaboradores (sem senha nem CPF) para o navegador identificar de quem é cada PDF.
+// Só GGC. Lista enxuta de colaboradores (sem senha nem CPF) para o navegador identificar de quem é cada PDF.
 async function GET() {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

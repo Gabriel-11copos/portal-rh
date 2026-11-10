@@ -4,9 +4,9 @@ const { prisma } = require('../../../lib/db');
 
 // Recebe um arquivo via multipart/form-data e devolve o link do Google Drive.
 // Organiza dentro da subpasta do colaborador (do próprio, se for ele enviando;
-// ou do colaborador informado, se for o RH enviando numa solicitação específica).
+// ou do colaborador informado, se for o GGC enviando numa solicitação específica).
 async function POST(req) {
-  // só quem está logado (colaborador ou RH) pode enviar arquivos para o Drive da empresa
+  // só quem está logado (colaborador ou GGC) pode enviar arquivos para o Drive da empresa
   const sessaoColaborador = getSessaoColaborador();
   if (!sessaoColaborador && !getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
 

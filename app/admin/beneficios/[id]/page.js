@@ -7,7 +7,7 @@ const dataHora = (d) => (d ? V.dataHoraBR(d) : '');
 const centavos = (c) => (c === null || c === undefined ? '' : V.reais(c));
 const MOTIVOS = { primeiro_mapeamento: 'Primeiro mapeamento', atualizacao: 'Atualização', termo_nao_optante: 'Termo de não optante' };
 
-// Perfil de vale-transporte de UM colaborador, para o RH validar e ajudar.
+// Perfil de vale-transporte de UM colaborador, para o GGC validar e ajudar.
 export default function PerfilVT({ params }) {
   const [d, setD] = useState(null);
   const [erro, setErro] = useState(''); const [aviso, setAviso] = useState('');
@@ -99,7 +99,7 @@ export default function PerfilVT({ params }) {
         {d.historico.length === 0 && <p style={{ color: 'var(--muted)' }}>Sem registros.</p>}
         {d.historico.map((h) => (
           <div key={h.id} style={{ fontSize: 13, borderTop: '1px solid var(--border)', padding: '6px 0' }}>
-            <b>{MOTIVOS[h.motivo] || h.motivo}</b> · {dataHora(h.em)} · por {h.autor === 'colaborador' ? 'o colaborador' : h.autor.replace(/^rh:/, 'RH: ')}
+            <b>{MOTIVOS[h.motivo] || h.motivo}</b> · {dataHora(h.em)} · por {h.autor === 'colaborador' ? 'o colaborador' : h.autor.replace(/^rh:/, 'GGC: ')}
             <div style={{ color: 'var(--muted)' }}>{h.dados.usaVT === false ? 'Não utiliza' : `${V.MODALIDADES[h.dados.modalidade] || ''} · ${[...V.nomesDosTransportes(h.dados.transportesJae || []), ...V.nomesDosTransportes(h.dados.transportesRiocard || [])].join(' + ')}${h.dados.valorDiaCentavos ? ` · ${centavos(h.dados.valorDiaCentavos)}/dia` : ''}`}</div>
           </div>
         ))}

@@ -1,6 +1,6 @@
 'use client';
 
-// Mostra os blocos de um guia, de cima para baixo. Usado na leitura do colaborador e na pré-visualização do RH.
+// Mostra os blocos de um guia, de cima para baixo. Usado na leitura do colaborador e na pré-visualização do GGC.
 export default function GuiaBlocos({ blocos }) {
   return (
     <div>

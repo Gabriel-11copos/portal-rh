@@ -21,7 +21,7 @@ async function POST(req, { params }) {
       solicitacaoId: id,
       texto,
       autor: 'rh',
-      nomeAutor: admin?.nome || 'RH/DP',
+      nomeAutor: admin?.nome || 'GGC',
       autorFotoUrl: admin?.fotoUrl || null,
       automatica: false,
     },
@@ -47,7 +47,7 @@ async function POST(req, { params }) {
   await enviarEmail(
     solicitacao.colaborador.email,
     `Sua solicitação foi respondida: ${solicitacao.assunto.nome}`,
-    `<p>Olá ${solicitacao.colaborador.nome}, ${admin?.nome || 'a equipe de RH/DP'} respondeu sua solicitação:</p><p>${texto}</p>
+    `<p>Olá ${solicitacao.colaborador.nome}, ${admin?.nome || 'a equipe de GGC'} respondeu sua solicitação:</p><p>${texto}</p>
      <p>Acesse o portal para ver os detalhes${anexos?.length ? ' e baixar os documentos anexados' : ''}, e responder se precisar.</p>`
   );
 

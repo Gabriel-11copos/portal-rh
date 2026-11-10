@@ -122,7 +122,7 @@ export default function MinhasConquistas() {
           <h3 style={{ marginBottom: 0 }}>Reconhecimentos e presença</h3>
           {dados.concedidos.length === 0 ? (
             <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-              Ainda não há reconhecimentos por aqui. Eles aparecem quando o RH registra uma conquista sua.
+              Ainda não há reconhecimentos por aqui. Eles aparecem quando o GGC registra uma conquista sua.
             </p>
           ) : (
             <div className="sl-grade">

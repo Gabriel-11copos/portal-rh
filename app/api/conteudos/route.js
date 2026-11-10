@@ -1,7 +1,7 @@
 const { prisma } = require('../../../lib/db');
 const { getSessaoRH, getSessaoColaborador } = require('../../../lib/auth');
 
-// Lista conteúdos: colaborador só vê os ativos; RH vê todos (inclusive inativos).
+// Lista conteúdos: colaborador só vê os ativos; GGC vê todos (inclusive inativos).
 async function GET() {
   const sessaoRH = getSessaoRH();
   const sessaoColaborador = getSessaoColaborador();
@@ -14,7 +14,7 @@ async function GET() {
   return Response.json(conteudos);
 }
 
-// RH cria um novo conteúdo (curso, link, contato, benefício, regra, manual...).
+// GGC cria um novo conteúdo (curso, link, contato, benefício, regra, manual...).
 async function POST(req) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

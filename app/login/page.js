@@ -50,7 +50,7 @@ export default function Login() {
           onClick={() => setAba('rh')}
           type="button"
         >
-          RH / DP
+          GGC
         </button>
       </div>
 

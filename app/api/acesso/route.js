@@ -6,7 +6,7 @@ const { carregarAcesso, assuntosDoUsuario, tabelaNaoExiste, modelosInstalados } 
 
 const SEIS_HORAS = 60 * 60 * 6;
 
-// O que o usuário do RH logado pode fazer AGORA (lido do banco). O menu usa isto para mostrar só o que a pessoa pode abrir.
+// O que o usuário do GGC logado pode fazer AGORA (lido do banco). O menu usa isto para mostrar só o que a pessoa pode abrir.
 // Aproveita para atualizar a sessão: se o master mudou as permissões, a pessoa passa a ter as novas sem precisar sair;
 // se o usuário foi removido do painel, a sessão é encerrada.
 async function GET() {

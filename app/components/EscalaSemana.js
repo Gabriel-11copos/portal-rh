@@ -1,6 +1,6 @@
 'use client';
 
-// Mostra uma semana de escala. Usado pela tela do colaborador e pela prévia do RH.
+// Mostra uma semana de escala. Usado pela tela do colaborador e pela prévia do GGC.
 
 // <ajudantes>
 const ROTULO_STATUS = {

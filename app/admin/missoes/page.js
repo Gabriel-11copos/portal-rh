@@ -66,7 +66,7 @@ export default function MissoesAdmin() {
       setMsg(acao === 'aprovar' ? 'Aprovada. O selo foi concedido.' : acao === 'recusar' ? 'Pedido recusado.' : 'Marcado como entregue.');
       carregar();
     } else {
-      carregar();   // se outro usuário do RH já decidiu, a fila se atualiza
+      carregar();   // se outro usuário do GGC já decidiu, a fila se atualiza
     }
   }
 
@@ -139,7 +139,7 @@ export default function MissoesAdmin() {
           <textarea rows={3} value={form.descricao} maxLength={400} onChange={(e) => setForm({ ...form, descricao: e.target.value })} />
           <label>Como a missão é cumprida</label>
           <select value={form.modo} onChange={(e) => setForm({ ...form, modo: e.target.value })}>
-            <option value="aprovacao">A pessoa registra e o RH aprova</option>
+            <option value="aprovacao">A pessoa registra e o GGC aprova</option>
             <option value="selo">Sozinha, quando a pessoa ganha um selo</option>
           </select>
           <label>{ehSelo ? 'Selo que cumpre a missão' : 'Selo de recompensa (opcional)'}</label>

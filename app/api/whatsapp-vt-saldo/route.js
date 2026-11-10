@@ -1,6 +1,6 @@
 // Recebe da IA do WhatsApp o saldo do vale-transporte confirmado pelo colaborador.
 // A IA já validou a foto (data/hora, tela correta, confirmação com o colaborador).
-// O portal salva as fotos no Drive, registra o saldo e sinaliza divergências ao RH.
+// O portal salva as fotos no Drive, registra o saldo e sinaliza divergências ao GGC.
 
 const { prisma } = require('../../../lib/db');
 const { checarChave } = require('../../../lib/integracao');
@@ -53,7 +53,7 @@ async function _post(req) {
   if (jae !== null && !precisaJae && modalidade) avisos.push(`Saldo do JAE recebido mas colaborador está cadastrado como ${V.MODALIDADES[modalidade] || modalidade}.`);
   if (rio !== null && !precisaRio && modalidade) avisos.push(`Saldo do RIOCARD recebido mas colaborador está cadastrado como ${V.MODALIDADES[modalidade] || modalidade}.`);
   if (!modalidade) avisos.push('Colaborador ainda não fez o mapeamento do transporte.');
-  // aceita o saldo mesmo assim, mas marca para conferência do RH
+  // aceita o saldo mesmo assim, mas marca para conferência do GGC
   const temCartaoErrado = avisos.length > 0 && (jae !== null || rio !== null);
   // se o saldo confirmado não veio mas a leitura veio e o colaborador confirmou, usa a leitura
   const jae = centavos(corpo.saldoJae) !== null ? centavos(corpo.saldoJae) : (!corpo.divergencia && centavos(corpo.leituraJae) !== null ? centavos(corpo.leituraJae) : null);
@@ -89,9 +89,9 @@ async function _post(req) {
   const printRio = corpo.dataHoraPrintRiocard ? new Date(corpo.dataHoraPrintRiocard) : null;
   const dados = { colaboradorId: colaborador.id, saldoJaeCentavos: precisaJae ? jae : null, saldoRiocardCentavos: precisaRio ? rio : null, leituraJaeCentavos: leituraJae, leituraRiocardCentavos: leituraRio, confiancaJae, confiancaRiocard: confiancaRio, fotoJaeUrl: urlJae, fotoRiocardUrl: urlRio, dataHoraPrintJae: printJae && !isNaN(printJae) ? printJae : null, dataHoraPrintRiocard: printRio && !isNaN(printRio) ? printRio : null, divergencia, foraDoPrazo, origem: 'whatsapp' };
 
-  // sempre grava na SaldoVT (que é o que o painel do RH lê), com ou sem coleta aberta
+  // sempre grava na SaldoVT (que é o que o painel do GGC lê), com ou sem coleta aberta
   const idColeta = coletaId || 'whatsapp';   // 'whatsapp' = chegou fora de uma coleta
-  // grava o que veio, mesmo que o cartão não esteja no cadastro (RH vai conferir)
+  // grava o que veio, mesmo que o cartão não esteja no cadastro (GGC vai conferir)
   const saldoVT = { saldoJaeCentavos: jae, saldoRiocardCentavos: rio, anexos: JSON.stringify([...(urlJae ? [{ url: urlJae, nome: 'Foto JAE (WhatsApp)' }] : []), ...(urlRio ? [{ url: urlRio, nome: 'Foto RIOCARD (WhatsApp)' }] : [])]), status: conferir ? 'conferir' : 'enviado', motivoRefazer: null, informadoEm: new Date() };
   await prisma.saldoVT.updateMany({ where: { coletaId: idColeta, colaboradorId: colaborador.id, ativo: true }, data: { ativo: false } });
   await prisma.saldoVT.create({ data: { coletaId: idColeta, colaboradorId: colaborador.id, ...saldoVT, ativo: true, escolhidoPeloRH: false } });
@@ -103,7 +103,7 @@ async function _post(req) {
   else await prisma.saldoVTWhatsapp.create({ data: dadosW });
 
   console.log(`[whatsapp-vt-saldo] colaborador=${colaborador.id} coleta=${coletaId || 'fora'} conferir=${conferir} foraDoPrazo=${foraDoPrazo}`);
-  const mensagem = temCartaoErrado ? 'Gravado. Cartão não corresponde ao cadastro — marcado para conferência do RH.' : conferir ? 'Gravado. Marcado para conferência do RH.' : 'Gravado com sucesso.';
+  const mensagem = temCartaoErrado ? 'Gravado. Cartão não corresponde ao cadastro — marcado para conferência do GGC.' : conferir ? 'Gravado. Marcado para conferência do GGC.' : 'Gravado com sucesso.';
   return Response.json({ ok: true, conferir, foraDoPrazo, coletaId, mensagem, ...(avisos.length ? { avisos } : {}) });
 }
 

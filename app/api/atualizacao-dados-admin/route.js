@@ -3,7 +3,7 @@ const { getSessaoRH } = require('../../../lib/auth');
 const { lerCampanha, lerPublico, alvosDe, fazParte } = require('../../../lib/dadosPessoais');
 const { notificarLote } = require('../../../lib/whatsapp');
 
-// Só RH. Acompanha a atualização de dados: quem já fez, quem falta e o histórico das anteriores.
+// Só GGC. Acompanha a atualização de dados: quem já fez, quem falta e o histórico das anteriores.
 // Com ?resumo=1 devolve só os números (usado pela bolinha do menu).
 async function GET(req) {
   try {
@@ -70,7 +70,7 @@ async function GET(req) {
       historico,
     });
   } catch (err) {
-    console.error('Erro ao carregar a atualização de dados do RH:', err);
+    console.error('Erro ao carregar a atualização de dados do GGC:', err);
     return Response.json({ erro: 'Não foi possível carregar.' }, { status: 500 });
   }
 }
@@ -102,7 +102,7 @@ async function POST(req) {
     try {
       criada = await prisma.campanhaDados.create({ data: { ...campanha, publico, alvos, criadaPor: typeof sessao.nome === 'string' ? sessao.nome : null } });
     } catch (err) {
-      // dois usuários do RH liberaram ao mesmo tempo: o banco só aceita uma liberada por vez
+      // dois usuários do GGC liberaram ao mesmo tempo: o banco só aceita uma liberada por vez
       if (err && err.code === 'P2002') return Response.json({ erro: 'Já existe uma atualização liberada. Encerre a atual antes de liberar outra.' }, { status: 409 });
       throw err;
     }

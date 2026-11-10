@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 const CHAVE = 'aviso-vt';
 const CHAVE_CONTATO = 'aviso-contato';
 const TEXTOS = {
-  primeiro: 'Precisamos mapear o seu transporte: como você vai para o trabalho, qual cartão usa e quais transportes pega. É rápido e ajuda o RH a calcular o seu vale-transporte direitinho.',
-  coleta: 'O RH pediu para você atualizar o seu transporte (vale-transporte e trajeto até o trabalho). É rápido.',
-  reaberto: 'O RH liberou o preenchimento do seu vale-transporte. Faça agora, é rápido.',
+  primeiro: 'Precisamos mapear o seu transporte: como você vai para o trabalho, qual cartão usa e quais transportes pega. É rápido e ajuda o GGC a calcular o seu vale-transporte direitinho.',
+  coleta: 'O GGC pediu para você atualizar o seu transporte (vale-transporte e trajeto até o trabalho). É rápido.',
+  reaberto: 'O GGC liberou o preenchimento do seu vale-transporte. Faça agora, é rápido.',
 };
 
-// Primeiro acesso (e quando o RH pede para atualizar): convida a mapear o transporte. Aparece uma vez por entrada no portal, depois da janela do
+// Primeiro acesso (e quando o GGC pede para atualizar): convida a mapear o transporte. Aparece uma vez por entrada no portal, depois da janela do
 // WhatsApp. Não trava nada: "Depois" fecha, e o convite continua no perfil. "adiar" segura a janela enquanto outro aviso está na tela.
 export default function ModalVT({ adiar = false }) {
   const router = useRouter();
@@ -51,7 +51,7 @@ export default function ModalVT({ adiar = false }) {
   return (
     <div role="dialog" aria-modal="true" aria-label="Atualize o seu vale-transporte" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 1000 }}>
       <div className="card" style={{ maxWidth: 420, width: '100%' }}>
-        <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>Aviso do RH</div>
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>Aviso do GGC</div>
         <h3 style={{ marginTop: 0 }}>🚌 Vale-transporte</h3>
         <p style={{ fontSize: 14 }}>{TEXTOS[pendencia] || TEXTOS.coleta}</p>
         <div style={{ display: 'flex', gap: 8 }}>

@@ -2,7 +2,7 @@ const { prisma } = require('../../../lib/db');
 const { getSessaoRH } = require('../../../lib/auth');
 
 // Lista assuntos: colaborador vê só os ativos (formulário de nova solicitação);
-// RH vê todos, inclusive inativos, para poder reativar se precisar.
+// GGC vê todos, inclusive inativos, para poder reativar se precisar.
 async function GET() {
   const sessao = getSessaoRH();
   const assuntos = await prisma.assunto.findMany({
@@ -12,7 +12,7 @@ async function GET() {
   return Response.json(assuntos);
 }
 
-// RH cria um novo assunto/categoria.
+// GGC cria um novo assunto/categoria.
 async function POST(req) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

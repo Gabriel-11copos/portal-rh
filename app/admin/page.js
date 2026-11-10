@@ -6,7 +6,7 @@ import GradeCaixinhas, { aplicarOrdemCaixinhas } from '../components/GradeCaixin
 // <ajudantes>
 // Lista das caixinhas (na ordem padrão). Para acrescentar uma nova, é só incluir uma linha aqui.
 const CAIXINHAS = [
-  { id: 'solicitacoes', icon: '📨', title: 'Solicitações', desc: 'Pedidos dos colaboradores ao RH e ao DP', href: '/admin/solicitacoes' },
+  { id: 'solicitacoes', icon: '📨', title: 'Solicitações', desc: 'Pedidos dos colaboradores ao GGC', href: '/admin/solicitacoes' },
   { id: 'atendimento', icon: '📥', title: 'Meus atendimentos', desc: 'Solicitações dos assuntos que você atende', href: '/admin/solicitacoes' },
   { id: 'colaboradores', icon: '👥', title: 'Colaboradores', desc: 'Cadastro, lista de ativos e histórico', href: '/admin/colaboradores' },
   { id: 'comunicados', icon: '📢', title: 'Enviar comunicado', desc: 'Avisos para um, vários ou todos', href: '/admin/comunicados' },
@@ -24,12 +24,12 @@ const CAIXINHAS = [
   { id: 'guias', icon: '📖', title: 'Guias e treinamentos', desc: 'Páginas com texto, imagens, arquivos e links', href: '/admin/guias' },
   { id: 'conteudos', icon: '📚', title: 'Conteúdos', desc: 'Cursos, links, benefícios, regras e manuais', href: '/admin/conteudos' },
   { id: 'assuntos', icon: '🗂️', title: 'Assuntos', desc: 'Tipos de pedido, prazos e respostas automáticas', href: '/admin/assuntos' },
-  { id: 'usuarios', icon: '👤', title: 'Usuários', desc: 'Quem acessa o painel do RH e o seu perfil', href: '/admin/usuarios' },
+  { id: 'usuarios', icon: '👤', title: 'Usuários', desc: 'Quem acessa o painel do GGC e o seu perfil', href: '/admin/usuarios' },
   { id: 'perfil', icon: '🙂', title: 'Meu perfil', desc: 'Sua foto e seus dados no painel', href: '/admin/usuarios' },
   { id: 'permissoes', icon: '🔐', title: 'Permissões', desc: 'Defina o que cada usuário pode fazer', href: '/admin/permissoes' },
 ];
 
-// Números do menu. A bolinha mostra só o que está ESPERANDO o RH (pendentes de resposta).
+// Números do menu. A bolinha mostra só o que está ESPERANDO o GGC (pendentes de resposta).
 // "Atrasada" = não encerrada e com o prazo vencido (mesma regra da tela de solicitações).
 function calcularResumo(solicitacoes, agora) {
   let pendentes = 0;
@@ -211,7 +211,7 @@ export default function PainelRH() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
         <div>
-          <h2 style={{ margin: 0 }}>Painel RH / DP</h2>
+          <h2 style={{ margin: 0 }}>Painel GGC</h2>
           <p style={{ margin: '4px 0 0', fontSize: 14, color: 'var(--muted)' }}>
             {nome ? `Olá, ${nome}! ` : ''}O que você precisa fazer hoje?
           </p>

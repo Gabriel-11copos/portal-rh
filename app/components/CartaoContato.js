@@ -53,7 +53,7 @@ export function FormContato({ inicial, aoSalvar, rotulo = 'Salvar', secundario =
       <input value={telefone} inputMode="tel" placeholder="(21) 99999-9999" onChange={(e) => setTelefone(mascaraTelefone(e.target.value))} />
       <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 14 }}>
         <input type="checkbox" checked={receber} onChange={(e) => setReceber(e.target.checked)} style={{ width: 'auto', margin: '3px 0 0' }} />
-        <span>Quero receber os avisos do RH por WhatsApp neste número (respostas, comunicados, documentos...).</span>
+        <span>Quero receber os avisos do GGC por WhatsApp neste número (respostas, comunicados, documentos...).</span>
       </label>
       {erro && <p role="alert" style={{ color: 'var(--danger)', fontSize: 13, margin: '6px 0' }}>{erro}</p>}
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -74,7 +74,7 @@ export default function CartaoContato() {
     <div className="card">
       <h3>Meu WhatsApp</h3>
       <p style={{ fontSize: 13, color: 'var(--muted)' }}>
-        {c.confirmado ? 'Número confirmado por você.' : 'O RH tem este número na lista. Confira se está certo.'} Os avisos do RH chegam por aqui e por WhatsApp.
+        {c.confirmado ? 'Número confirmado por você.' : 'O GGC tem este número na lista. Confira se está certo.'} Os avisos do GGC chegam por aqui e por WhatsApp.
       </p>
       <FormContato inicial={c} rotulo="Salvar" aoSalvar={(j) => { setC({ ...c, telefone: j.telefone, whatsappAtivo: j.whatsappAtivo, confirmado: true }); setOk('Salvo!'); }} />
       {ok && <p style={{ fontSize: 13, color: 'var(--success)' }}>{ok}</p>}

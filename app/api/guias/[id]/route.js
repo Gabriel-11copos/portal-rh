@@ -21,7 +21,7 @@ async function GET(req, { params }) {
   }
 }
 
-// Só RH: salva as alterações. Imagens e arquivos que saíram do guia são apagados do banco.
+// Só GGC: salva as alterações. Imagens e arquivos que saíram do guia são apagados do banco.
 async function PUT(req, { params }) {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -60,7 +60,7 @@ async function PUT(req, { params }) {
   }
 }
 
-// Só RH: apaga o guia e as imagens e arquivos dele.
+// Só GGC: apaga o guia e as imagens e arquivos dele.
 async function DELETE(req, { params }) {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

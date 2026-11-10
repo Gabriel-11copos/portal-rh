@@ -1,7 +1,7 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 
-// Só RH. Encerra a atualização liberada: os colaboradores param de ser avisados.
+// Só GGC. Encerra a atualização liberada: os colaboradores param de ser avisados.
 async function POST() {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

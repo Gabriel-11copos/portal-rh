@@ -1,7 +1,7 @@
 const { getSessaoRH } = require('../../../../lib/auth');
 const drive = require('../../../../lib/driveContracheques');
 
-// Só RH. Confere a conexão com o Google Drive em passos e devolve o que encontrou (qual conta, qual pasta, qual passo falhou).
+// Só GGC. Confere a conexão com o Google Drive em passos e devolve o que encontrou (qual conta, qual pasta, qual passo falhou).
 async function GET() {
   if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
   try {

@@ -146,14 +146,14 @@ export default function AtualizarDados() {
 
       {!status && !erro && <p style={{ color: 'var(--muted)' }}>Carregando...</p>}
       {erro && <div className="erro">{erro}</div>}
-      {status && !campanha && <p>Não há atualização de dados liberada no momento. Quando o RH liberar, você será avisado aqui.</p>}
+      {status && !campanha && <p>Não há atualização de dados liberada no momento. Quando o GGC liberar, você será avisado aqui.</p>}
 
       {campanha && (
         <>
           <div className="card" style={{ background: '#fff8e1', borderColor: '#f5d77a' }}>
             <b>📋 {campanha.titulo}</b>
             <p style={{ fontSize: 14, margin: '6px 0 0' }}>
-              {campanha.mensagem || 'O RH pediu que você confirme seus dados de contato e endereço e envie um comprovante de residência.'}
+              {campanha.mensagem || 'O GGC pediu que você confirme seus dados de contato e endereço e envie um comprovante de residência.'}
             </p>
             {campanha.prazo && <p style={{ fontSize: 13, margin: '6px 0 0' }}>⏳ Faça até {dataCal(campanha.prazo)}.</p>}
           </div>
@@ -161,7 +161,7 @@ export default function AtualizarDados() {
           {sucesso && <div className="card" style={{ borderColor: 'var(--success)' }}><b style={{ color: 'var(--success)' }}>✓ Dados atualizados! Obrigado.</b></div>}
           {status.concluido && !sucesso && (
             <p style={{ fontSize: 14, color: 'var(--success)' }}>
-              ✓ {status.origem === 'baixa_rh' ? 'O RH já registrou a sua atualização.' : 'Você já concluiu esta atualização.'} Se quiser, pode corrigir os dados abaixo.
+              ✓ {status.origem === 'baixa_rh' ? 'O GGC já registrou a sua atualização.' : 'Você já concluiu esta atualização.'} Se quiser, pode corrigir os dados abaixo.
             </p>
           )}
 

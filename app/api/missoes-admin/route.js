@@ -6,7 +6,7 @@ function diasDesde(data) {
   return Math.max(0, Math.floor((Date.now() - new Date(data).getTime()) / 86400000));
 }
 
-// Só RH: tudo para gerenciar as missões (as missões, os pedidos esperando decisão e as recompensas a entregar).
+// Só GGC: tudo para gerenciar as missões (as missões, os pedidos esperando decisão e as recompensas a entregar).
 async function GET() {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -46,7 +46,7 @@ async function GET() {
       })),
     });
   } catch (err) {
-    console.error('Erro ao carregar as missões do RH:', err);
+    console.error('Erro ao carregar as missões do GGC:', err);
     return Response.json({ erro: 'Não foi possível carregar as missões.' }, { status: 500 });
   }
 }

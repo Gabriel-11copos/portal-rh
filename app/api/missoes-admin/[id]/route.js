@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { lerEdicaoMissao } = require('../../../../lib/missoes');
 
-// Só RH: edita uma missão (texto, recompensa, prazo) ou a ativa/desativa.
+// Só GGC: edita uma missão (texto, recompensa, prazo) ou a ativa/desativa.
 async function PATCH(req, { params }) {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

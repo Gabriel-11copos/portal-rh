@@ -1,5 +1,5 @@
 // O símbolo da moeda do Brew: o desenho da tampinha dourada (public/moeda.png), que aparece em qualquer aparelho.
-// O RH pode escolher outro símbolo (um emoji) no painel; "moeda" (ou vazio) significa "usar o desenho".
+// O GGC pode escolher outro símbolo (um emoji) no painel; "moeda" (ou vazio) significa "usar o desenho".
 // "🪙" também mostra o desenho: o emoji é recente e some em aparelhos e navegadores mais antigos.
 export function usaDesenho(simbolo) {
   return !simbolo || simbolo === 'moeda' || simbolo === '🪙';

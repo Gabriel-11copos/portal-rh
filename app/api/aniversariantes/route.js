@@ -2,7 +2,7 @@ const { prisma } = require('../../../lib/db');
 const { getSessaoRH } = require('../../../lib/auth');
 const { hojeBrasilia, aniversariantesDoMes } = require('../../../lib/aniversarios');
 
-// Só RH: aniversariantes ativos de um mês (padrão: o mês atual).
+// Só GGC: aniversariantes ativos de um mês (padrão: o mês atual).
 async function GET(req) {
   try {
     const sessao = getSessaoRH();

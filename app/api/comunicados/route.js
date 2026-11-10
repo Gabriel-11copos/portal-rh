@@ -38,7 +38,7 @@ async function POST(req) {
 
     await enviarEmail(
       colaborador.email,
-      `Comunicado do RH: ${assunto}`,
+      `Comunicado do GGC: ${assunto}`,
       `<p>Olá ${colaborador.nome},</p><p>${texto}</p><p>Acesse o portal para ver os detalhes.</p>`
     );
     avisosWhatsapp.push({ evento: 'comunicado.novo', chave: `comunicado:${comunicadoCriado.id}`, colaborador, dados: { assunto } });
@@ -49,8 +49,8 @@ async function POST(req) {
   return Response.json({ ok: true, enviados: destinatarios.length });
 }
 
-// Lista comunicados. Telas do painel (RH): todos. Telas do colaborador: só os do colaborador logado,
-// mesmo que a pessoa também tenha o login do RH aberto no mesmo navegador.
+// Lista comunicados. Telas do painel (GGC): todos. Telas do colaborador: só os do colaborador logado,
+// mesmo que a pessoa também tenha o login do GGC aberto no mesmo navegador.
 async function GET(req) {
   const modo = modoDeAcesso(req, { rh: getSessaoRH(), colaborador: getSessaoColaborador() });
 

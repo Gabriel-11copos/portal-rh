@@ -68,12 +68,12 @@ async function POST(req) {
   return Response.json({ ok: true, id: solicitacao.id });
 }
 
-// Lista solicitações: do colaborador logado, ou todas (para o RH, com filtros opcionais).
+// Lista solicitações: do colaborador logado, ou todas (para o GGC, com filtros opcionais).
 async function GET(req) {
   const url = new URL(req.url);
   const sessaoColaborador = getSessaoColaborador();
   const sessaoRH = getSessaoRH();
-  // quem tem os dois logins no mesmo navegador: nas telas do painel vale o RH, nas do colaborador vale o colaborador
+  // quem tem os dois logins no mesmo navegador: nas telas do painel vale o GGC, nas do colaborador vale o colaborador
   const modo = modoDeAcesso(req, { rh: sessaoRH, colaborador: sessaoColaborador });
 
   if (modo === 'rh') {

@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { MAX_BYTES, classificarMidia, assinaturaConfere, nomeSeguroDoArquivo } = require('../../../../lib/guias');
 
-// Só RH: envia uma imagem ou um arquivo (até 4 MB) para usar num guia.
+// Só GGC: envia uma imagem ou um arquivo (até 4 MB) para usar num guia.
 // Arquivos maiores devem entrar como link (ex: do Google Drive).
 async function POST(req) {
   try {

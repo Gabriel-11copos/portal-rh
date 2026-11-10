@@ -2,7 +2,7 @@ const { prisma } = require('../../../../../lib/db');
 const { getSessaoColaborador } = require('../../../../../lib/auth');
 const { hojeBrasilia, estadoDaMissao, lerPedido } = require('../../../../../lib/missoes');
 
-// O colaborador registra que cumpriu uma missão que depende da aprovação do RH.
+// O colaborador registra que cumpriu uma missão que depende da aprovação do GGC.
 async function POST(req, { params }) {
   try {
     const sessao = getSessaoColaborador();

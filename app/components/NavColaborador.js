@@ -10,7 +10,7 @@ export default function NavColaborador() {
   const router = useRouter();
   const pathname = usePathname();
   const [naoLidos, setNaoLidos] = useState([]);
-  const [atualizacao, setAtualizacao] = useState(null);   // a atualização de dados que o RH liberou e ele ainda não fez
+  const [atualizacao, setAtualizacao] = useState(null);   // a atualização de dados que o GGC liberou e ele ainda não fez
   const [avisoAberto, setAvisoAberto] = useState(false);
   const [moeda, setMoeda] = useState(null);   // saldo de moedas (só aparece com o programa ligado)
 
@@ -21,7 +21,7 @@ export default function NavColaborador() {
       .catch(() => {});
 
     // atualização de dados pendente: aparece a janela de aviso uma vez a cada vez que ele entra no portal,
-    // e a faixa fica nas telas até ele fazer (ou o RH dar baixa)
+    // e a faixa fica nas telas até ele fazer (ou o GGC dar baixa)
     fetch('/api/dados-pessoais/status')
       .then((r) => (r.ok ? r.json() : null))
       .then((s) => {
@@ -72,7 +72,7 @@ export default function NavColaborador() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20,
         }}>
           <div className="card" style={{ maxWidth: 420, width: '100%' }}>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>Comunicado do RH</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>Comunicado do GGC</div>
             <h3 style={{ marginTop: 0 }}>{naoLidos[0].assunto}</h3>
             <p style={{ fontSize: 14 }}>{naoLidos[0].texto}</p>
             {naoLidos[0].anexos?.map((a) => (
@@ -96,10 +96,10 @@ export default function NavColaborador() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20,
         }}>
           <div className="card" style={{ maxWidth: 420, width: '100%' }}>
-            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>Aviso do RH</div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>Aviso do GGC</div>
             <h3 style={{ marginTop: 0 }}>📋 {atualizacao.titulo}</h3>
             <p style={{ fontSize: 14 }}>
-              {atualizacao.mensagem || 'O RH liberou a atualização dos seus dados. Falta você informar telefone, e-mail, endereço e enviar um comprovante de residência.'}
+              {atualizacao.mensagem || 'O GGC liberou a atualização dos seus dados. Falta você informar telefone, e-mail, endereço e enviar um comprovante de residência.'}
             </p>
             {atualizacao.prazo && <p style={{ fontSize: 13 }}>⏳ Faça até {new Date(atualizacao.prazo).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}.</p>}
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>

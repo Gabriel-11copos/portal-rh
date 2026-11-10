@@ -1,7 +1,7 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 
-// RH edita um assunto existente (nome, prazo, responsável, resposta automática, ativo).
+// GGC edita um assunto existente (nome, prazo, responsável, resposta automática, ativo).
 async function PATCH(req, { params }) {
   const sessao = getSessaoRH();
   if (!sessao) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });

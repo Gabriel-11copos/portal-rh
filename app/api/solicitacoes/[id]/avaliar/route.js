@@ -25,7 +25,7 @@ async function POST(req, { params }) {
   });
 
   // moedas: quem dá a nota ao atendimento ganha (uma vez por pedido; só vale com o programa ligado e um valor definido)
-  if (nota) await creditar(prisma, { colaboradorId: sessao.id, origem: 'avaliou_atendimento', referencia: id, descricao: 'Avaliou um atendimento do RH' });
+  if (nota) await creditar(prisma, { colaboradorId: sessao.id, origem: 'avaliou_atendimento', referencia: id, descricao: 'Avaliou um atendimento do GGC' });
 
   {
     await avisarGestor('solicitacao.encerrada', id);

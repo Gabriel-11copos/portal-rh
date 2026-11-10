@@ -3,7 +3,7 @@ const { getSessaoRH } = require('../../../../lib/auth');
 const { hojeBrasilia, extrairCpfs, validarPeriodoRef, planejarConcessao } = require('../../../../lib/selos');
 const { notificarLote } = require('../../../../lib/whatsapp');
 
-// Só RH. Dá um selo a uma ou várias pessoas, escolhidas por nome (colaboradorIds) e/ou por uma lista
+// Só GGC. Dá um selo a uma ou várias pessoas, escolhidas por nome (colaboradorIds) e/ou por uma lista
 // de CPFs (texto colado ou lido de planilha). Com { simular: true } só mostra a prévia, sem gravar.
 async function POST(req) {
   try {

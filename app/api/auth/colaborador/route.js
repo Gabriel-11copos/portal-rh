@@ -17,7 +17,7 @@ async function POST(req) {
 
   // Quem foi inativado (saiu da empresa) não consegue mais entrar.
   if (!colaborador.ativo) {
-    return Response.json({ erro: 'Acesso desativado. Procure o RH/DP.' }, { status: 403 });
+    return Response.json({ erro: 'Acesso desativado. Procure o GGC.' }, { status: 403 });
   }
 
   criarSessaoColaborador(colaborador);

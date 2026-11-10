@@ -5,7 +5,7 @@ const drive = require('../../../../../lib/driveContracheques');
 
 const TIPOS = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png' };
 
-// Entrega o arquivo (PDF ou foto do comprovante). O colaborador só abre os DELE; o RH abre qualquer um. Sem login, não abre.
+// Entrega o arquivo (PDF ou foto do comprovante). O colaborador só abre os DELE; o GGC abre qualquer um. Sem login, não abre.
 async function GET(req, { params }) {
   try {
     const rh = getSessaoRH();

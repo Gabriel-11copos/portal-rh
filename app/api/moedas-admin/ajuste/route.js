@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const M = require('../../../../lib/moedas');
 
-// O RH dá (número positivo) ou tira (negativo) moedas de uma pessoa, sempre com um motivo que fica no extrato dela.
+// O GGC dá (número positivo) ou tira (negativo) moedas de uma pessoa, sempre com um motivo que fica no extrato dela.
 async function POST(req) {
   try {
     const sessao = getSessaoRH();

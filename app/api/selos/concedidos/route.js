@@ -1,7 +1,7 @@
 const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 
-// Só RH. Últimas concessões (para conferir e corrigir) e remoção de uma concessão feita por engano.
+// Só GGC. Últimas concessões (para conferir e corrigir) e remoção de uma concessão feita por engano.
 async function GET() {
   try {
     const sessao = getSessaoRH();

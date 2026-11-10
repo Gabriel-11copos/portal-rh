@@ -1,7 +1,7 @@
 const { getSessaoRH } = require('../../../../lib/auth');
 const { consultarEscalas, descreverResposta, resumoDaChave } = require('../../../../lib/escalas');
 
-// Ferramenta de teste (só RH): consulta o escalas-app para um dia e devolve um RESUMO da
+// Ferramenta de teste (só GGC): consulta o escalas-app para um dia e devolve um RESUMO da
 // resposta (campos, quantidade e uma amostra com CPF e nome mascarados), além de um resumo
 // seguro da chave em uso (tamanho e últimos 4 caracteres, nunca a chave inteira).
 async function GET(req) {

@@ -21,7 +21,7 @@ async function GET() {
   catch (err) { console.error('Erro ao listar coletas:', err && err.code); return Response.json({ erro: 'Não foi possível carregar agora.' }, { status: 500 }); }
 }
 
-// O RH libera (para todos ou só para algumas pessoas), inclui mais pessoas, estende a todos ou encerra a coleta de saldo / de atualização do transporte.
+// O GGC libera (para todos ou só para algumas pessoas), inclui mais pessoas, estende a todos ou encerra a coleta de saldo / de atualização do transporte.
 async function POST(req) {
   const rh = getSessaoRH();
   if (!rh) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -47,7 +47,7 @@ async function POST(req) {
       return Response.json({ ok: true, avisados: r.alvos.length });
     }
     if (corpo.acao !== 'criar') return Response.json({ erro: 'Ação desconhecida.' }, { status: 400 });
-    const r = await E.criarColeta(prisma, { tipo: corpo.tipo, titulo: corpo.titulo, prazo: corpo.prazo, usuario: rh.nome || 'RH', publico: corpo.publico, colaboradorIds: corpo.colaboradorIds });
+    const r = await E.criarColeta(prisma, { tipo: corpo.tipo, titulo: corpo.titulo, prazo: corpo.prazo, usuario: rh.nome || 'GGC', publico: corpo.publico, colaboradorIds: corpo.colaboradorIds });
     if (!r.ok) return Response.json({ erro: r.erro }, { status: r.status });
     const usaDomani = corpo.tipo === 'saldo' && !!String(process.env.VT_WEBHOOK_URL || '').trim();
     if (!usaDomani) await avisar(r.coleta, r.alvos);   // aviso normal só quando o Domani não está ativo

@@ -2,7 +2,7 @@ const { prisma } = require('../../../lib/db');
 const { getSessaoRH } = require('../../../lib/auth');
 const M = require('../../../lib/moedas');
 
-// Visão geral do programa para o RH: configuração, o que cada atividade vale, prêmios, trocas a entregar e totais.
+// Visão geral do programa para o GGC: configuração, o que cada atividade vale, prêmios, trocas a entregar e totais.
 async function GET() {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -34,7 +34,7 @@ async function GET() {
       emCirculacao: (soma && soma._sum && soma._sum.valor) || 0,
     });
   } catch (err) {
-    console.error('Erro ao carregar as moedas (RH):', err && err.code);
+    console.error('Erro ao carregar as moedas (GGC):', err && err.code);
     return Response.json({ erro: 'Não foi possível carregar agora.' }, { status: 500 });
   }
 }

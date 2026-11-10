@@ -3,7 +3,7 @@ const { getSessaoColaborador } = require('../../../lib/auth');
 const { hojeBrasilia, conquistasDeTempo, emMesDeAniversario, SELO_ANIVERSARIO } = require('../../../lib/selos');
 
 // Tudo o que o colaborador conquistou: tempo de casa e aniversário (calculados na hora)
-// e os selos que o RH concedeu (presença e reconhecimentos). Sempre só os dele.
+// e os selos que o GGC concedeu (presença e reconhecimentos). Sempre só os dele.
 async function GET() {
   try {
     const sessao = getSessaoColaborador();

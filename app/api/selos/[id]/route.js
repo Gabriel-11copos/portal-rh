@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const { lerCamposDoSelo, idDaImagemDoSelo } = require('../../../../lib/selos');
 
-// Só RH. Edita nome, descrição e ícone, ou ativa e desativa um selo.
+// Só GGC. Edita nome, descrição e ícone, ou ativa e desativa um selo.
 // Desativar esconde o selo na hora de conceder, mas quem já ganhou continua com ele.
 async function PATCH(req, { params }) {
   try {

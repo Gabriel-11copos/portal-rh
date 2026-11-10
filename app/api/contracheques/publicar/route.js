@@ -4,7 +4,7 @@ const { MAX_BYTES, ehPdf, lerCompetencia, lerTipo, lerLoja } = require('../../..
 const { guardarDocumento } = require('../../../../lib/guardarDocumento');
 const { notificar } = require('../../../../lib/whatsapp');
 
-// Só RH. Recebe UM PDF já identificado (de quem é, tipo e competência), guarda no Drive (privado)
+// Só GGC. Recebe UM PDF já identificado (de quem é, tipo e competência), guarda no Drive (privado)
 // e registra em "Documentos" do colaborador. Se já existir o mesmo tipo e competência, substitui.
 // Se vier o código de um registro de envio (loteId), soma este documento nele.
 async function POST(req) {

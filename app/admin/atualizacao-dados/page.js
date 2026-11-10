@@ -43,7 +43,7 @@ function gerarCsv({ concluidos, pendentes }) {
   const linhas = [cab.join(';')];
   for (const c of concluidos) {
     const e = c.endereco || {};
-    linhas.push([c.nome, c.loja, c.cpf, c.origem === 'colaborador' ? 'Atualizou' : 'Baixa do RH', dataHora(c.quando), formatarTelefone(c.telefone), c.email, formatarCep(e.cep), e.logradouro, e.numero, e.complemento, e.bairro, e.cidade, e.uf, c.baixaPor, c.baixaMotivo].map(celulaCsv).join(';'));
+    linhas.push([c.nome, c.loja, c.cpf, c.origem === 'colaborador' ? 'Atualizou' : 'Baixa do GGC', dataHora(c.quando), formatarTelefone(c.telefone), c.email, formatarCep(e.cep), e.logradouro, e.numero, e.complemento, e.bairro, e.cidade, e.uf, c.baixaPor, c.baixaMotivo].map(celulaCsv).join(';'));
   }
   for (const p of pendentes) linhas.push([p.nome, p.loja, '', 'Pendente'].map(celulaCsv).join(';'));
   return `\ufeff${linhas.join('\r\n')}\r\n`;
@@ -169,7 +169,7 @@ export default function AtualizacaoDadosAdmin() {
     const ok = await enviar('/api/atualizacao-dados-admin/baixa', { colaboradorId, acao, motivo });
     setBaixando(null);
     if (ok) setMsg(acao === 'dar' ? 'Baixa registrada. O colaborador não será mais avisado.' : 'Baixa desfeita. O colaborador volta a ser avisado.');
-    carregar();   // se outro usuário do RH mexeu antes, a lista se atualiza
+    carregar();   // se outro usuário do GGC mexeu antes, a lista se atualiza
   }
 
   function baixarPlanilha() {
@@ -268,7 +268,7 @@ export default function AtualizacaoDadosAdmin() {
               {t.pendentes > 0 ? <span> · <b style={{ color: 'var(--warning)' }}>faltam {t.pendentes}</b></span> : <span> · ✓ todos em dia</span>}
             </div>
             <Barra feitos={t.atualizaram + t.baixas} total={t.ativos} />
-            <div style={{ fontSize: 13, color: 'var(--muted)' }}>{t.atualizaram} atualizaram sozinhos · {t.baixas} com baixa do RH · {t.pendentes} pendentes</div>
+            <div style={{ fontSize: 13, color: 'var(--muted)' }}>{t.atualizaram} atualizaram sozinhos · {t.baixas} com baixa do GGC · {t.pendentes} pendentes</div>
           </div>
 
           {incluindo && ativa.publico === 'selecionados' && (
@@ -302,8 +302,8 @@ export default function AtualizacaoDadosAdmin() {
                   </div>
                   {baixando && baixando.id === p.id && (
                     <div style={{ marginTop: 6 }}>
-                      <label>Motivo (opcional, só o RH vê)</label>
-                      <input value={baixando.motivo} maxLength={200} placeholder="Ex: falou com o RH por telefone" onChange={(e) => setBaixando({ id: p.id, motivo: e.target.value })} />
+                      <label>Motivo (opcional, só o GGC vê)</label>
+                      <input value={baixando.motivo} maxLength={200} placeholder="Ex: falou com o GGC por telefone" onChange={(e) => setBaixando({ id: p.id, motivo: e.target.value })} />
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button type="button" onClick={() => baixa(p.id, 'dar', baixando.motivo)}>Confirmar baixa</button>
                         <button type="button" className="secundario" onClick={() => setBaixando(null)}>Cancelar</button>
@@ -324,7 +324,7 @@ export default function AtualizacaoDadosAdmin() {
                   <b>{c.nome}</b> <span style={{ color: 'var(--muted)', fontSize: 13 }}>· {c.loja}</span>
                   <div style={{ fontSize: 12, color: 'var(--muted)' }}>{dataHora(c.quando)}</div>
                 </div>
-                <span className={`badge ${c.origem === 'colaborador' ? 'respondida' : 'encerrada'}`}>{c.origem === 'colaborador' ? '✓ Atualizou' : 'Baixa do RH'}</span>
+                <span className={`badge ${c.origem === 'colaborador' ? 'respondida' : 'encerrada'}`}>{c.origem === 'colaborador' ? '✓ Atualizou' : 'Baixa do GGC'}</span>
               </div>
               {c.origem === 'colaborador' ? (
                 <>
@@ -342,7 +342,7 @@ export default function AtualizacaoDadosAdmin() {
                 </>
               ) : (
                 <div style={{ fontSize: 13, marginTop: 6 }}>
-                  Baixa dada por {c.baixaPor || 'RH'}{c.baixaMotivo ? `: ${c.baixaMotivo}` : ''}.{' '}
+                  Baixa dada por {c.baixaPor || 'GGC'}{c.baixaMotivo ? `: ${c.baixaMotivo}` : ''}.{' '}
                   <button type="button" className="secundario" style={{ padding: '3px 10px', fontSize: 12 }} onClick={() => baixa(c.colaboradorId, 'desfazer')}>Desfazer baixa</button>
                 </div>
               )}

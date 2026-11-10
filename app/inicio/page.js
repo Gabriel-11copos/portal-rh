@@ -10,9 +10,9 @@ import GradeCaixinhas, { aplicarOrdemCaixinhas } from '../components/GradeCaixin
 // Lista das caixinhas (na ordem padrão). Para acrescentar uma nova, é só incluir uma linha aqui
 // (e tratar o id dela em montarCaixinhas, se ela tiver bolinha ou regra para aparecer).
 const CAIXINHAS = [
-  { id: 'solicitacoes', icon: '📨', title: 'Minhas solicitações', desc: 'Acompanhe seus pedidos ao RH e ao DP', href: '/minhas-solicitacoes' },
-  { id: 'nova', icon: '✍️', title: 'Nova solicitação', desc: 'Envie um pedido ao RH ou ao DP', href: '/nova-solicitacao' },
-  { id: 'comunicados', icon: '📢', title: 'Comunicados', desc: 'Avisos do RH e da empresa', href: '/comunicados' },
+  { id: 'solicitacoes', icon: '📨', title: 'Minhas solicitações', desc: 'Acompanhe seus pedidos ao GGC', href: '/minhas-solicitacoes' },
+  { id: 'nova', icon: '✍️', title: 'Nova solicitação', desc: 'Envie um pedido ao GGC', href: '/nova-solicitacao' },
+  { id: 'comunicados', icon: '📢', title: 'Comunicados', desc: 'Avisos do GGC e da empresa', href: '/comunicados' },
   { id: 'documentos', icon: '📄', title: 'Documentos', desc: 'Contracheques e outros documentos pessoais', href: '/documentos' },
   { id: 'gorjeta', icon: '💰', title: 'Minha gorjeta', desc: 'Extrato por período: apuração, descontos e valor líquido', href: '/gorjeta' },
   { id: 'escala', icon: '🗓️', title: 'Minha escala', desc: 'Veja seus turnos da semana', href: '/escala' },
@@ -228,7 +228,7 @@ export default function Inicio() {
           <div className="card" style={{ background: '#fff8e1', borderColor: '#f5d77a', marginBottom: 14 }}>
             <b>📋 {dados.atualizacao.titulo}</b>
             <p style={{ fontSize: 14, margin: '6px 0 10px' }}>
-              {dados.atualizacao.mensagem || 'O RH liberou a atualização dos seus dados. Falta você informar telefone, e-mail, endereço e enviar um comprovante de residência.'}
+              {dados.atualizacao.mensagem || 'O GGC liberou a atualização dos seus dados. Falta você informar telefone, e-mail, endereço e enviar um comprovante de residência.'}
             </p>
             {dados.atualizacao.prazo && (
               <p style={{ fontSize: 13, margin: '0 0 10px' }}>⏳ Faça até {new Date(dados.atualizacao.prazo).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}.</p>

@@ -2,7 +2,7 @@ const { prisma } = require('../../../../../lib/db');
 const { getSessaoRH } = require('../../../../../lib/auth');
 const { conferirAtendimento } = require('../../../../../lib/acesso');
 
-// RH define um novo prazo (ex: para evitar que uma solicitação fique marcada como
+// GGC define um novo prazo (ex: para evitar que uma solicitação fique marcada como
 // atrasada). Isso também move a solicitação para "em andamento", sinalizando que
 // está sendo ativamente cuidada com uma nova data prevista.
 async function POST(req, { params }) {

@@ -2,7 +2,7 @@ const { prisma } = require('../../../lib/db');
 const { getSessaoColaborador } = require('../../../lib/auth');
 const C = require('../../../lib/contatos');
 
-// O WhatsApp do próprio colaborador: ver (já com o número que o RH tem na lista, para ele só conferir) e confirmar/corrigir.
+// O WhatsApp do próprio colaborador: ver (já com o número que o GGC tem na lista, para ele só conferir) e confirmar/corrigir.
 // Só mexe nos dados de quem está logado.
 async function GET() {
   try {

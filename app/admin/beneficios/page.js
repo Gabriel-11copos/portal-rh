@@ -44,7 +44,7 @@ function SeletorColaboradores({ elenco, escolhidos, onMudar }) {
   );
 }
 
-// Painel de Benefícios (vale-transporte) do RH.
+// Painel de Benefícios (vale-transporte) do GGC.
 export default function PainelBeneficios() {
   const [aba, setAba] = useState('colaboradores');
   const [dados, setDados] = useState(null);
@@ -78,7 +78,7 @@ export default function PainelBeneficios() {
     } catch { setErro('Sem conexão. Tente de novo.'); return false; }
   }
   // quem PODE receber: no saldo, quem usa vale-transporte com cartão; na atualização, todos menos quem declarou que não usa
-  // Para o seletor de "liberar" usamos o elenco filtrado (o RH já escolheu a unidade).
+  // Para o seletor de "liberar" usamos o elenco filtrado (o GGC já escolheu a unidade).
   // Para o seletor de "incluir" precisamos de TODOS, pois a tabela pode estar com filtro de nome/loja.
   const linhasCompletas = dados && dados.linhasCompletas ? dados.linhasCompletas : (dados && dados.linhas ? dados.linhas : []);
   const filtrarElenco = (lista) => lista.filter((l) => l.status !== 'nao_usa').map((l) => ({ id: l.id, nome: l.nome, loja: l.loja }));

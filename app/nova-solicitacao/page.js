@@ -127,7 +127,7 @@ export default function NovaSolicitacao() {
               <input type="date" value={dataAtestado} onChange={(e) => setDataAtestado(e.target.value)} required />
               <label>Quantos dias de atestado?</label>
               <input type="number" min="1" max="30" value={dias} onChange={(e) => setDias(e.target.value)} required />
-              <p style={{ fontSize: 13, color: 'var(--muted)' }}>Anexe abaixo a foto ou o PDF do atestado. Seu gestor vai conferir a data e os dias e encaminhar ao RH.</p>
+              <p style={{ fontSize: 13, color: 'var(--muted)' }}>Anexe abaixo a foto ou o PDF do atestado. Seu gestor vai conferir a data e os dias e encaminhar ao GGC.</p>
             </div>
           )}
 

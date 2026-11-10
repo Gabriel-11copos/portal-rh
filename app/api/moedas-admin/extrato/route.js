@@ -2,7 +2,7 @@ const { prisma } = require('../../../../lib/db');
 const { getSessaoRH } = require('../../../../lib/auth');
 const M = require('../../../../lib/moedas');
 
-// O extrato de uma pessoa (para o RH conferir o saldo e o que aconteceu).
+// O extrato de uma pessoa (para o GGC conferir o saldo e o que aconteceu).
 async function GET(req) {
   try {
     if (!getSessaoRH()) return Response.json({ erro: 'Não autenticado.' }, { status: 401 });
@@ -17,7 +17,7 @@ async function GET(req) {
     ]);
     return Response.json({ colaborador, saldo, extrato: lancamentos.map((l) => ({ ...M.visaoDoLancamento(l), criadoPor: l.criadoPor || null })) });
   } catch (err) {
-    console.error('Erro ao carregar o extrato (RH):', err && err.code);
+    console.error('Erro ao carregar o extrato (GGC):', err && err.code);
     return Response.json({ erro: 'Não foi possível carregar agora.' }, { status: 500 });
   }
 }

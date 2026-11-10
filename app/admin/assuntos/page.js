@@ -96,7 +96,7 @@ export default function GerenciarAssuntos() {
   return (
     <div>
       <BotaoVoltar />
-      <h2>Assuntos (RH e DP)</h2>
+      <h2>Assuntos (GGC)</h2>
 
       {erro && <div className="erro">{erro}</div>}
       <div className="card">
@@ -108,12 +108,12 @@ export default function GerenciarAssuntos() {
           <label>Prazo padrão (dias úteis)</label>
           <input type="number" value={form.prazoPadraoDias} onChange={(e) => setForm({ ...form, prazoPadraoDias: e.target.value })} required />
 
-          <label>Responsável padrão (ex: RH, DP, Financeiro)</label>
+          <label>Responsável padrão (ex: GGC, DP, Financeiro)</label>
           <input value={form.responsavelPadrao} onChange={(e) => setForm({ ...form, responsavelPadrao: e.target.value })} />
 
           <label>Para onde vai o pedido</label>
           <select value={form.destino} onChange={(e) => setForm({ ...form, destino: e.target.value })}>
-            <option value="rh">RH/DP (só o RH vê; também aparece no painel, só pro RH)</option>
+            <option value="rh">GGC (só o GGC vê; também aparece no painel, só pro GGC)</option>
             <option value="gestor">Gestor da loja (aparece no Portal do Gestor)</option>
           </select>
 
@@ -169,7 +169,7 @@ export default function GerenciarAssuntos() {
 
       {assuntos.map((a) => (
         <div key={a.id} className="card" style={{ cursor: 'pointer', opacity: a.ativo ? 1 : 0.5 }} onClick={() => editar(a)}>
-          <b>{a.nome}</b> {!a.ativo && <span className="badge encerrada">Inativo</span>} · prazo: {a.prazoPadraoDias} dias úteis · responsável: {a.responsavelPadrao || '-'} · destino: {a.destino === 'gestor' ? 'gestor da loja' : 'RH/DP'}{a.fluxo === 'atestado' && ' · tipo: atestado médico'}{a.fluxo === 'uniforme' && ' · tipo: uniforme e EPI'}
+          <b>{a.nome}</b> {!a.ativo && <span className="badge encerrada">Inativo</span>} · prazo: {a.prazoPadraoDias} dias úteis · responsável: {a.responsavelPadrao || '-'} · destino: {a.destino === 'gestor' ? 'gestor da loja' : 'GGC'}{a.fluxo === 'atestado' && ' · tipo: atestado médico'}{a.fluxo === 'uniforme' && ' · tipo: uniforme e EPI'}
           {a.respostaAutomatica && <p style={{ fontSize: 13, color: 'var(--success)' }}>✓ Resposta automática configurada</p>}
           {ehMaster && (atendentes[a.id] || []).length > 0 && (
             <p style={{ fontSize: 13, margin: '4px 0 0' }}>
