@@ -51,8 +51,8 @@ async function POST(req, { params }) {
      <p>Acesse o portal para ver os detalhes${anexos?.length ? ' e baixar os documentos anexados' : ''}, e responder se precisar.</p>`
   );
 
-  // WhatsApp: só um aviso genérico + link (o texto da resposta fica no portal, com login)
-  await notificar(prisma, { evento: 'solicitacao.respondida', chave: `resposta:${respostaCriada.id}`, colaborador: solicitacao.colaborador });
+  // WhatsApp: manda o texto da resposta direto (o colaborador lê sem entrar no portal). Anexos ficam no portal, com login.
+  await notificar(prisma, { evento: 'solicitacao.respondida', chave: `resposta:${respostaCriada.id}`, colaborador: solicitacao.colaborador, dados: { resposta: texto, temAnexo: !!(anexos && anexos.length) } });
 
   {
     await avisarGestor('solicitacao.mensagem', id, {
