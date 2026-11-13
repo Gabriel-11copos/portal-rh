@@ -52,7 +52,7 @@ async function POST(req, { params }) {
   );
 
   // WhatsApp: manda o texto da resposta direto (o colaborador lê sem entrar no portal). Anexos ficam no portal, com login.
-  await notificar(prisma, { evento: 'solicitacao.respondida', chave: `resposta:${respostaCriada.id}`, colaborador: solicitacao.colaborador, dados: { resposta: texto, temAnexo: !!(anexos && anexos.length) } });
+  await notificar(prisma, { evento: 'solicitacao.respondida', chave: `resposta:${respostaCriada.id}`, colaborador: solicitacao.colaborador, dados: { resposta: texto, temAnexo: !!(anexos && anexos.length), assunto: solicitacao.assunto?.nome || '', autor: admin?.nome || 'O GGC' } });
 
   {
     await avisarGestor('solicitacao.mensagem', id, {
