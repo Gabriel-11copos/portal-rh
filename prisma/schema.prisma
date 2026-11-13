@@ -32,6 +32,7 @@ model Assunto {
   destino            String  @default("rh") // rh | gestor: pra onde vai o pedido
   id                 String  @id @default(cuid())
   nome               String  @unique
+  codigo             String? @unique   // código de integração (WhatsApp/Domani): gerado do nome, editável
   prazoPadraoDias    Int     @default(5)
   responsavelPadrao  String?
   respostaAutomatica String?

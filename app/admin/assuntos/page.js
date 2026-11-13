@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import BotaoVoltar from '../../components/BotaoVoltar';
 
-const VAZIO = { nome: '', prazoPadraoDias: 5, responsavelPadrao: '', respostaAutomatica: '', destino: 'rh', fluxo: 'padrao', ativo: true };
+const VAZIO = { nome: '', codigo: '', prazoPadraoDias: 5, responsavelPadrao: '', respostaAutomatica: '', destino: 'rh', fluxo: 'padrao', ativo: true };
 
 export default function GerenciarAssuntos() {
   const [assuntos, setAssuntos] = useState([]);
@@ -13,6 +13,7 @@ export default function GerenciarAssuntos() {
   const [atendentes, setAtendentes] = useState({});          // assuntoId -> [usuarioId]
   const [escolhidos, setEscolhidos] = useState([]);          // quem atende o assunto que está no formulário
   const [erro, setErro] = useState('');
+  const [aviso, setAviso] = useState('');
 
   function carregar() {
     fetch('/api/assuntos').then((r) => r.json()).then(setAssuntos);
@@ -39,6 +40,7 @@ export default function GerenciarAssuntos() {
     setEditandoId(a.id);
     setForm({
       nome: a.nome,
+      codigo: a.codigo || '',
       prazoPadraoDias: a.prazoPadraoDias,
       responsavelPadrao: a.responsavelPadrao || '',
       respostaAutomatica: a.respostaAutomatica || '',
@@ -99,11 +101,16 @@ export default function GerenciarAssuntos() {
       <h2>Assuntos (GGC)</h2>
 
       {erro && <div className="erro">{erro}</div>}
+      {aviso && <div style={{ background: '#E3F1E6', color: '#075E54', padding: 10, borderRadius: 8, margin: '8px 0' }}>{aviso}</div>}
       <div className="card">
         <h3>{editandoId ? 'Editar assunto' : 'Novo assunto'}</h3>
         <form onSubmit={salvar}>
           <label>Nome</label>
           <input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required />
+
+          <label>Código de integração (WhatsApp) — gerado do nome; edite se quiser</label>
+          <input value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} placeholder="Deixe em branco para gerar automático" />
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: -4 }}>É o valor que vai no campo "tipo" das mensagens; a Domani usa para acionar o fluxo certo.</p>
 
           <label>Prazo padrão (dias úteis)</label>
           <input type="number" value={form.prazoPadraoDias} onChange={(e) => setForm({ ...form, prazoPadraoDias: e.target.value })} required />
@@ -167,9 +174,19 @@ export default function GerenciarAssuntos() {
         </form>
       </div>
 
+      <div className="card" style={{ background: 'var(--bg-suave, #f6f8f7)' }}>
+        <b>Códigos de integração (WhatsApp)</b>
+        <p style={{ fontSize: 13, color: 'var(--muted)' }}>Lista de assunto → código para passar à Domani. Eles usam o código no campo "tipo" para acionar cada fluxo.</p>
+        <button type="button" className="secundario" onClick={() => {
+          const linhas = assuntos.filter((a) => a.ativo).map((a) => `${a.nome} => ${a.codigo || '(sem código)'}`).join('\n');
+          navigator.clipboard?.writeText(linhas).then(() => setAviso('Lista copiada! Cole na conversa com a Domani.')).catch(() => setAviso('Não consegui copiar. Veja a lista abaixo.'));
+        }}>📋 Copiar lista para a Domani</button>
+      </div>
+
       {assuntos.map((a) => (
         <div key={a.id} className="card" style={{ cursor: 'pointer', opacity: a.ativo ? 1 : 0.5 }} onClick={() => editar(a)}>
           <b>{a.nome}</b> {!a.ativo && <span className="badge encerrada">Inativo</span>} · prazo: {a.prazoPadraoDias} dias úteis · responsável: {a.responsavelPadrao || '-'} · destino: {a.destino === 'gestor' ? 'gestor da loja' : 'GGC'}{a.fluxo === 'atestado' && ' · tipo: atestado médico'}{a.fluxo === 'uniforme' && ' · tipo: uniforme e EPI'}
+          {a.codigo && <p style={{ fontSize: 12, color: 'var(--muted)', margin: '2px 0 0', fontFamily: 'monospace' }}>tipo: {a.codigo}</p>}
           {a.respostaAutomatica && <p style={{ fontSize: 13, color: 'var(--success)' }}>✓ Resposta automática configurada</p>}
           {ehMaster && (atendentes[a.id] || []).length > 0 && (
             <p style={{ fontSize: 13, margin: '4px 0 0' }}>
