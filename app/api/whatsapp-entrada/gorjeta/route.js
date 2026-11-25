@@ -4,7 +4,7 @@ const E = require('../../../../lib/whatsappEntrada');
 // Extrato de gorjeta do colaborador pelo WhatsApp (chave no cabeçalho "Authorization: Bearer ...").
 // Corpo: { telefone }. Veja lib/whatsappEntrada.js.
 async function POST(req) {
-  return E.comEntrada(prisma, req, { confirmado: true }, (ctx) => E.acaoGorjeta(ctx));
+  return E.comEntrada(prisma, req, { confirmado: true }, (ctx) => E.acaoGorjeta(prisma, ctx));
 }
 
 module.exports = { POST };
